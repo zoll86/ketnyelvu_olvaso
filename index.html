@@ -70,6 +70,9 @@ body.reading #tools{display:flex}
 body.reading.chrome #tools{transform:translateY(0)}
 .grp{display:flex;gap:var(--sp1)}
 body.reading .brand{display:none}
+#libBtn{display:none}
+body.reading #libBtn{display:inline-block}
+body.reading #openBtn{display:none}
 body.reading select#chapSel{max-width:none;flex:1 1 auto;text-overflow:ellipsis}
 body.reading header{position:fixed;top:0;left:0;right:0;padding-right:3.3rem;
   transform:translateY(-102%);opacity:0;pointer-events:none;
@@ -154,6 +157,48 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 /* ---------- kezdőállapot ---------- */
 #start{max-width:32rem;margin:auto;padding:2rem 1.3rem;text-align:center}
+#lib{text-align:left;margin:var(--sp5) 0 0}
+.libhead{display:flex;align-items:center;gap:var(--sp2);
+  font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:var(--sp2)}
+.libcount{font-family:var(--mono);letter-spacing:0}
+.bcard{display:flex;align-items:center;gap:var(--sp3);width:100%;text-align:left;
+  padding:var(--sp2) var(--sp3);margin-bottom:var(--sp2);border:1px solid var(--line2);
+  border-radius:var(--r2);background:var(--s1);cursor:pointer;
+  transition:background .2s,border-color .2s,transform .2s var(--spring)}
+.bcard:hover{background:var(--s2);border-color:var(--line)}
+.bcard:active{transform:scale(.99)}
+.bcov{flex:0 0 auto;width:46px;height:69px;border-radius:6px;overflow:hidden;
+  background:var(--s2);border:1px solid var(--line2);display:grid;place-items:center}
+.bcov img{width:100%;height:100%;object-fit:cover;display:block}
+.bcov.empty{color:var(--faint);font-size:20px;font-weight:600}
+.bauth{font-size:var(--t2);color:var(--dim);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bmain{flex:1;min-width:0}
+.btitle{font-size:var(--t3);color:var(--txt);font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bmeta{font-size:var(--t1);color:var(--faint);font-family:var(--mono);margin-top:2px}
+.bprog{height:2px;border-radius:2px;background:var(--line2);margin-top:var(--sp2);overflow:hidden}
+.bprog i{display:block;height:100%;background:var(--gold)}
+.bdel{flex:0 0 auto;background:none;border:1px solid transparent;color:var(--faint);
+  font-size:var(--t3);line-height:1;cursor:pointer;padding:6px 8px;border-radius:var(--r1)}
+.bdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
+.startrow{display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap;margin-top:var(--sp4)}
+#libList.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:var(--sp3)}
+#libList.grid .bcard{display:block;padding:0;border:0;background:none;margin:0;position:relative}
+#libList.grid .bcard:hover{background:none}
+#libList.grid .bcov{width:100%;height:auto;aspect-ratio:2/3;border-radius:var(--r1);
+  border:1px solid var(--line2);position:relative}
+#libList.grid .bmain{margin-top:var(--sp1)}
+#libList.grid .btitle{font-size:var(--t1);color:var(--dim);white-space:normal;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+#libList.grid .bauth,#libList.grid .bmeta{display:none}
+#libList.grid .bprog{margin-top:var(--sp1)}
+#libList.grid .bdel{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.6);
+  border-radius:var(--r1);padding:2px 5px;font-size:var(--t1);opacity:.55}
+#libList.grid .bdel.arm{opacity:1;background:rgba(0,0,0,.85)}
+.bpct{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.72);color:var(--gold);
+  font-family:var(--mono);font-size:10px;padding:2px 4px;border-radius:5px;letter-spacing:0}
 #start h1{font-size:26px;font-weight:600;line-height:1.3;letter-spacing:-.01em;margin:0 0 var(--sp3)}
 #start h1 em{font-style:normal;color:var(--gold)}
 #start p{color:var(--dim);font-size:var(--t3);line-height:1.65;font-weight:300}
@@ -191,6 +236,21 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   transition:color .2s,border-color .2s}
 .vdel:hover{color:var(--dim)}
 .vdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
+#about{position:fixed;inset:auto 0 0 0;z-index:42;border-radius:var(--r3) var(--r3) 0 0;
+  padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
+  transition:transform .42s var(--spring);box-shadow:var(--shadow);
+  max-height:88vh;overflow-y:auto;overscroll-behavior:contain}
+#about.open{transform:translateY(0)}
+#about>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);
+  padding-left:var(--sp4);padding-right:var(--sp4);
+  background:rgba(24,19,14,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+#about h3{font-size:var(--t4);font-weight:600;margin:0;color:var(--txt);letter-spacing:-.01em}
+.abody{text-align:left;padding-bottom:var(--sp4)}
+.abody h4{font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
+  margin:var(--sp5) 0 var(--sp2);font-weight:600}
+.abody p{font-size:var(--t3);line-height:1.65;color:var(--dim);margin:0 0 var(--sp3);font-weight:300}
+.abody b{color:var(--txt);font-weight:500}
 #setts{position:fixed;inset:auto 0 0 0;z-index:41;border-radius:var(--r3) var(--r3) 0 0;
   padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
   transition:transform .42s var(--spring);box-shadow:var(--shadow);
@@ -253,7 +313,9 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 <header>
   <div class="brand">KÉTNYELVŰ OLVASÓ<small>EPUB · EN → HU</small></div>
   <select id="chapSel" class="btn" style="display:none"></select>
+  <span class="chip" id="progTxt"></span>
   <div class="hspace"></div>
+  <button class="btn pri" id="libBtn">← könyvtár</button>
   <button class="btn pri" id="openBtn">könyv</button>
 </header>
 
@@ -277,15 +339,23 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <main id="main">
   <section id="start">
-    <h1>Olvasd angolul vagy dánul.<br>Koppints a mondatra, <em>és magyarul is érted.</em></h1>
-    <p>Töltsd be a saját EPUB könyvedet, angolul vagy dánul. Minden mondat külön koppintható: a fordítás közvetlenül a mondat alatt nyílik ki, a szövegkörnyezet figyelembevételével. A szavakat egy koppintással a szótárba teheted, és Anki-barát TSV-ként exportálhatod.</p>
-    <div class="drop" id="drop">
-      <b>Válaszd ki az EPUB fájlt</b>
-      <small>vagy húzd ide · a fájl nem hagyja el a böngészőt</small>
+    <h1>Kétnyelvű olvasó</h1>
+    <div id="lib" hidden>
+      <div class="libhead"><span>Könyvtár</span><span class="libcount" id="libCount"></span>
+        <span style="flex:1"></span>
+        <button class="mini" id="viewBtn">rács</button></div>
+      <div id="libList"></div>
     </div>
-    <p class="note" style="margin-top:0">A fordítás ingyenes, kulcs nélküli motorokkal megy (Google · Lingva · MyMemory), amelyek közül magától azt használja, amelyik éppen válaszol. Minden lefordított mondat elmentődik, így másodszor már hálózat nélkül is előjön.</p>
-    <button class="btn" id="setBtn2" style="margin-top:var(--sp3)">fordítómotor és API kulcs beállítása</button>
-    <button class="btn pri" id="instBtn" hidden style="margin-top:var(--sp3)">telepítés a kezdőlapra</button>
+    <div class="drop" id="drop">
+      <b>Könyv hozzáadása</b>
+      <small>vagy húzd ide · a könyv a készüléken marad, a könyvtárba kerül</small>
+    </div>
+    <div class="startrow">
+      <button class="btn" id="aboutBtn">bemutató</button>
+      <button class="btn" id="setBtn2">beállítások</button>
+      <button class="btn pri" id="instBtn" hidden>telepítés</button>
+    </div>
+
   </section>
   <article id="reader" style="display:none"></article>
 </main>
@@ -301,7 +371,27 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   </div>
   <div id="vlist"></div>
 </div>
-<div id="setts" class="glass">
+<div id="about" class="glass sheet">
+  <div class="shead">
+    <h3>Bemutató</h3><div style="flex:1"></div><button class="mini" id="aClose">bezár</button>
+  </div>
+  <div class="abody">
+    <h4>Mire jó</h4>
+    <p>Angol vagy dán EPUB könyvet olvasol az eredeti nyelven, és amelyik mondatot nem érted, arra koppintasz: a magyar fordítás közvetlenül a mondat alatt nyílik ki. Nem kell kiszótárazni, nem kell átváltani másik alkalmazásra.</p>
+    <h4>Fordítás</h4>
+    <p>Alapból ingyenes, kulcs nélküli motorokkal megy — Google, Lingva, MyMemory —, és magától azt használja, amelyik éppen válaszol. A fordítás az előző két mondatot is megkapja szövegkörnyezetként, hogy a névmások és az igeidő stimmeljen. Minden lefordított mondat elmentődik, tehát másodszorra hálózat nélkül is előjön.</p>
+    <p>Ha egy fordítás furcsa, a panelban a <b>↻</b> gomb újrafordítja másik motorral — és rá van írva, melyik jön. Igényesebb fordításhoz a beállításokban Claude vagy bármely OpenAI-kompatibilis API (Kimi, OpenRouter) is bekapcsolható; ez fizetős, a költségmérő valós elszámolásból számol.</p>
+    <h4>Szótár</h4>
+    <p>A fordítás alatt a <b>szavak</b> gomb szószedetet ad: magyar jelentés, szófaj, magyarázat magyarul, igéknél az összes alak magyar címkével, főneveknél a többesszám. Egy koppintás a szóra, és a szótárba kerül a mondattal együtt. Onnan Anki-barát TSV-ként vagy CSV-ként exportálható.</p>
+    <h4>Gyakorlás</h4>
+    <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
+    <h4>Olvasás</h4>
+    <p>A ⋯ gombbal lehozod a sávokat, ott a fejezetválasztó, a betűméret és a szótár. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
+    <h4>Adatok</h4>
+    <p>A könyvek, a szótár és a beállítások a készüléken maradnak, semmi nem kerül fel szerverre. Csak a lefordítandó mondat megy ki a fordítószolgáltatóhoz. Telepítés után offline is elindul; a fordításhoz kell hálózat.</p>
+  </div>
+</div>
+<div id="setts" class="glass sheet">
   <div class="shead">
     <h3>Beállítások</h3><div style="flex:1"></div><button class="mini" id="sClose">bezár</button>
   </div>
@@ -355,11 +445,11 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   </div>
 </div>
 <div id="toast"></div>
-<input type="file" id="file" accept=".epub,application/epub+zip" style="display:none">
+<input type="file" id="file" accept=".epub,application/epub+zip" multiple style="display:none">
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v20';
+const APP_VER='v25';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -456,6 +546,40 @@ function vocabBadge(){
 const saveVocab=()=>{store.set('ek_vocab',JSON.stringify(vocab));vocabBadge()};
 vocabBadge();
 
+/* ============ könyvtár: IndexedDB tároló ============ */
+const IDB={p:null};
+function idb(){
+  if(IDB.p) return IDB.p;
+  IDB.p=new Promise((res,rej)=>{
+    const r=indexedDB.open('olvaso',1);
+    r.onupgradeneeded=()=>{const d=r.result;
+      if(!d.objectStoreNames.contains('books')) d.createObjectStore('books',{keyPath:'id'});};
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error||new Error('IndexedDB nem elérhető'));
+  });
+  return IDB.p;
+}
+function idbOp(mode,fn){
+  return idb().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction('books',mode), st=t.objectStore('books');
+    let out; try{ out=fn(st) }catch(e){ rej(e); return }
+    t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);
+    t.onerror=()=>rej(t.error);
+  }));
+}
+const libPut=rec=>idbOp('readwrite',st=>st.put(rec));
+const libAll=()=>idbOp('readonly',st=>st.getAll());
+const libGet=id=>idbOp('readonly',st=>st.get(id));
+const libDel=id=>idbOp('readwrite',st=>st.delete(id));
+function bookKey(title,size){ return (title||'?').replace(/\s+/g,' ').trim().slice(0,60)+'|'+size }
+async function libSave(file,title,chapCount){
+  try{
+    const buf=await file.arrayBuffer();
+    await libPut({id:bookKey(title,file.size), title, size:file.size, chaps:chapCount,
+                  name:file.name, added:Date.now(), data:buf});
+    return true;
+  }catch(e){ console.warn('könyvtár mentés nem sikerült',e); return false }
+}
 /* ============ Claude API + költségmérés ============ */
 /* árak USD / millió token, forrás: platform.claude.com/docs/en/about-claude/pricing */
 const MODELS={
@@ -784,6 +908,51 @@ function zfile(zip,path){
   return zip.file(path)||zip.file(decodeURIComponent(path))||
          zip.file(path.replace(/^\//,''))||null;
 }
+/* csak a metaadatok és a borító — teljes feldolgozás nélkül */
+async function shrink(blob,maxW,maxH){
+  const url=URL.createObjectURL(blob);
+  try{
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('kép'));i.src=url});
+    const r=Math.min(maxW/img.width,maxH/img.height,1);
+    const w=Math.max(1,Math.round(img.width*r)), h=Math.max(1,Math.round(img.height*r));
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    return cv.toDataURL('image/jpeg',.72);
+  } finally { URL.revokeObjectURL(url) }
+}
+async function epubMeta(file){
+  const zip=await JSZip.loadAsync(file);
+  const P=new DOMParser();
+  const cont=await zfile(zip,'META-INF/container.xml').async('text');
+  const opfPath=P.parseFromString(cont,'application/xml').querySelector('rootfile').getAttribute('full-path');
+  const dir=opfPath.split('/').slice(0,-1).join('/');
+  const opf=P.parseFromString(await zfile(zip,opfPath).async('text'),'application/xml');
+  const pick=sel=>{const n=opf.querySelector(sel);return n?n.textContent.replace(/\s+/g,' ').trim():''};
+  const title=pick('metadata title')||pick('title')||file.name.replace(/\.epub$/i,'');
+  const author=pick('metadata creator')||pick('creator')||'';
+  const items=[...opf.querySelectorAll('manifest item')];
+  const spine=[...opf.querySelectorAll('spine itemref')].length;
+  let href='';
+  const c3=items.find(i=>(i.getAttribute('properties')||'').split(/\s+/).includes('cover-image'));
+  if(c3) href=c3.getAttribute('href');
+  if(!href){
+    const m=[...opf.querySelectorAll('metadata meta')].find(x=>(x.getAttribute('name')||'')==='cover');
+    const id=m&&m.getAttribute('content');
+    const it=id&&items.find(i=>i.getAttribute('id')===id);
+    if(it) href=it.getAttribute('href');
+  }
+  if(!href){
+    const imgs=items.filter(i=>/^image\//.test(i.getAttribute('media-type')||''));
+    const named=imgs.find(i=>/cover/i.test(i.getAttribute('href')||''));
+    if(named||imgs.length) href=(named||imgs[0]).getAttribute('href');
+  }
+  let cover='';
+  if(href){
+    const e=zfile(zip,resolve(dir,href));
+    if(e){ try{ cover=await shrink(await e.async('blob'),220,330) }catch(err){} }
+  }
+  return {title,author,spine,cover};
+}
 async function loadEpub(f){
   $('bar').style.width='12%';
   const zip=await JSZip.loadAsync(f);
@@ -846,7 +1015,7 @@ async function loadEpub(f){
   }
   if(!chapters.length) throw new Error('Nem találtam olvasható szöveget ebben az EPUB-ban.');
   totalSent=Math.max(1,Math.round(chapters.reduce((a,c)=>a+c.words,0)/14));
-  book={title}; bookId='ek_pos_'+title.replace(/\W+/g,'').slice(0,40)+'_'+chapters.length;
+  book={title,id:bookKey(title,f.size)}; bookId='ek_pos_'+book.id;
   const sel=$('chapSel'); sel.innerHTML=''; sel.style.display='';
   chapters.forEach((c,i)=>{const o=document.createElement('option');o.value=i;
     o.textContent=(i+1)+'.'+(c.name?'  '+c.name:'');sel.appendChild(o)});
@@ -855,8 +1024,11 @@ async function loadEpub(f){
     setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+(src==='da'?'DA':'EN')+'→HU-ra',3400),1200)}
   $('start').style.display='none'; $('reader').style.display='';
   document.body.classList.add('reading'); setChrome(false);
-  const pos=parseInt(store.get(bookId)||'0',10);
-  renderChapter(Number.isFinite(pos)&&pos<chapters.length?pos:0);
+  try{ history.pushState({book:1},'') }catch(e){}
+  let pos={c:0,s:0};
+  try{ const raw=store.get(bookId); if(raw) pos=JSON.parse(raw) }catch(e){}
+  if(!(pos.c>=0&&pos.c<chapters.length)) pos={c:0,s:0};
+  renderChapter(pos.c,pos.s);
   drawSpend();
   $('bar').style.width='100%'; setTimeout(()=>$('bar').style.width='0',600);
   toast('«'+title+'» betöltve — '+chapters.length+' fejezet');
@@ -864,8 +1036,8 @@ async function loadEpub(f){
 
 /* ============ megjelenítés ============ */
 const BLOCK='p,h1,h2,h3,h4,h5,h6,li,blockquote,td,dd,dt';
-function renderChapter(idx){
-  curChap=idx; $('chapSel').value=idx; store.set(bookId,String(idx));
+function renderChapter(idx,sIdx){
+  curChap=idx; $('chapSel').value=idx;
   const src=chapters[idx].body.cloneNode(true);
   const out=document.createElement('div');
   let counter=0;
@@ -919,6 +1091,28 @@ function renderChapter(idx){
     b.onclick=()=>{renderChapter(idx+1);$('main').scrollTop=0};nav.appendChild(b)}
   r.appendChild(nav);
   $('main').scrollTop=0;
+  if(sIdx>0){
+    const all=sentList();
+    const t=all[Math.min(sIdx,all.length-1)];
+    if(t) requestAnimationFrame(()=>{
+      const top=t.getBoundingClientRect().top+$('main').scrollTop-70;
+      $('main').scrollTop=Math.max(0,top);
+    });
+  }
+  savePos();
+}
+/* olvasási pozíció: az első látható mondat sorszáma */
+function savePos(){
+  if(!bookId||!chapters.length) return;
+  const all=sentList(); let idx=0, ratio=0;
+  const y=$('main').scrollTop;
+  for(let i=0;i<all.length;i++){
+    if(all[i].getBoundingClientRect().bottom>90){ idx=i; break }
+  }
+  if(all.length) ratio=idx/all.length;
+  store.set(bookId,JSON.stringify({c:curChap,s:idx,r:+ratio.toFixed(3),t:Date.now()}));
+  const pc=$('progTxt');
+  if(pc&&chapters.length) pc.textContent=Math.round((curChap+ratio)/chapters.length*100)+'%';
 }
 
 /* ============ mondat koppintás ============ */
@@ -1230,19 +1424,133 @@ $('expCsv').onclick=()=>{ if(!vocab.length)return toast('a szótár üres');
   dl('szotar.csv','nyelv,szo,magyar,megjegyzes,mondat,konyv\n'+vocab.map(v=>[v.lang||'en',v.en,v.hu,v.note,v.src,v.book].map(q).join(',')).join('\n'),'text/csv');
   toast('CSV letöltve')};
 
+/* ============ könyvtár megjelenítése ============ */
+function progOf(id,chaps){
+  try{
+    const raw=store.get('ek_pos_'+id);
+    if(!raw) return 0;
+    const p=JSON.parse(raw);
+    if(!chaps) return 0;
+    return Math.min(100,Math.round(((p.c||0)+ (p.r||0))/chaps*100));
+  }catch(e){ return 0 }
+}
+let libView=store.get('ek_libview')||'grid';
+async function drawLib(){
+  let list=[];
+  try{ list=await libAll() }catch(e){}
+  const box=$('libList'), wrap=$('lib');
+  if(!list.length){ wrap.hidden=true; return }
+  list.sort((a,b)=>(b.last||b.added||0)-(a.last||a.added||0));
+  wrap.hidden=false;
+  $('libCount').textContent=list.length+' könyv';
+  box.className=libView==='grid'?'grid':'';
+  $('viewBtn').textContent=libView==='grid'?'lista':'rács';
+  box.innerHTML='';
+  list.forEach(b=>{
+    const pct=progOf(b.id,b.chaps);
+    const c=document.createElement('div'); c.className='bcard';
+    c.innerHTML='<div class="bcov"></div><div class="bmain"><div class="btitle"></div>'+
+      '<div class="bauth"></div><div class="bmeta"></div>'+
+      '<div class="bprog"><i></i></div></div><button class="bdel" title="törlés">\u2715</button>';
+    const cov=c.querySelector('.bcov');
+    if(b.cover){ const im=document.createElement('img'); im.src=b.cover; im.alt=''; cov.appendChild(im) }
+    else { cov.classList.add('empty'); cov.textContent=(b.title||'?').trim().charAt(0).toUpperCase() }
+    if(pct){ const pb=document.createElement('span'); pb.className='bpct'; pb.textContent=pct+'%';
+             cov.appendChild(pb) }
+    c.title=(b.title||'')+(b.author?' — '+b.author:'');
+    c.querySelector('.btitle').textContent=b.title||b.name;
+    c.querySelector('.bauth').textContent=b.author||'';
+    if(!b.author) c.querySelector('.bauth').style.display='none';
+    c.querySelector('.bmeta').textContent=
+      (b.chaps?b.chaps+' fejezet · ':'')+Math.round(b.size/1024/1024*10)/10+' MB'+(pct?' · '+pct+'%':'');
+    c.querySelector('.bprog i').style.width=pct+'%';
+    c.onclick=e=>{ if(e.target.closest('.bdel')) return; openFromLib(b.id) };
+    const del=c.querySelector('.bdel'); let armed=false;
+    del.onclick=async e=>{
+      e.stopPropagation();
+      if(!armed){armed=true;del.classList.add('arm');del.textContent='törlöm?';
+        setTimeout(()=>{if(armed){armed=false;del.classList.remove('arm');del.textContent='\u2715'}},2600);return}
+      await libDel(b.id).catch(()=>{}); drawLib(); toast('könyv törölve');
+    };
+    box.appendChild(c);
+  });
+}
+async function openFromLib(id){
+  try{
+    const rec=await libGet(id);
+    if(!rec||!rec.data) return toast('a könyv nem található a tárolóban');
+    const f=new File([rec.data],rec.name||'book.epub',{type:'application/epub+zip'});
+    rec.last=Date.now(); libPut(rec).catch(()=>{});
+    await go(f,true);
+  }catch(e){ toast('megnyitás nem sikerült: '+e.message) }
+}
+/* ============ kilépés a könyvből ============ */
+function closeBook(){
+  savePos();
+  sentList().forEach(sp=>{ if(sp._panel&&sp._panel.isConnected) sp._panel.remove() });
+  document.body.classList.remove('reading','chrome');
+  $('setts').classList.remove('open'); $('vocab').classList.remove('open');
+  $('reader').style.display='none'; $('reader').innerHTML='';
+  $('start').style.display='';
+  $('chapSel').style.display='none'; $('progTxt').textContent='';
+  chapters=[]; book=null; bookId=''; totalSent=0; pq=[];
+  drawLib();
+  $('main').scrollTop=0;
+}
+/* Android vissza-gomb: a könyvből a könyvtárba lép, nem az alkalmazásból ki */
+addEventListener('popstate',()=>{
+  if(document.body.classList.contains('reading')) closeBook();
+});
 /* ============ vezérlők ============ */
 $('openBtn').onclick=()=>$('file').click();
+$('libBtn').onclick=closeBook;
+$('viewBtn').onclick=()=>{libView=libView==='grid'?'list':'grid';store.set('ek_libview',libView);drawLib()};
 $('drop').onclick=()=>$('file').click();
-$('file').onchange=e=>{const f=e.target.files[0];if(f)go(f)};
+$('file').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)addBooks(fs)};
 ['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over')}));
-$('drop').addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)go(f)});
+$('drop').addEventListener('drop',e=>{const fs=[...e.dataTransfer.files];if(fs.length)addBooks(fs)});
 document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer?.files?.[0];if(f&&/\.epub$/i.test(f.name))go(f)});
-async function go(f){
-  try{ await loadEpub(f) }
+document.addEventListener('drop',e=>{e.preventDefault();
+  const fs=[...(e.dataTransfer?.files||[])].filter(f=>/\.epub$/i.test(f.name));
+  if(fs.length&&!document.body.classList.contains('reading')) addBooks(fs)});
+async function addBooks(files){
+  const eps=files.filter(f=>/\.epub$/i.test(f.name)||f.type==='application/epub+zip');
+  if(!eps.length) return toast('csak EPUB fájlt tudok kezelni');
+  let ok=0, skip=0;
+  $('bar').style.width='4%';
+  for(let i=0;i<eps.length;i++){
+    const f=eps[i];
+    toast('feldolgozás '+(i+1)+'/'+eps.length+': '+f.name.slice(0,28),1600);
+    try{
+      const m=await epubMeta(f);
+      const id=bookKey(m.title,f.size);
+      const buf=await f.arrayBuffer();
+      const old=await libGet(id).catch(()=>null);
+      await libPut({id,title:m.title,author:m.author,cover:m.cover,chaps:m.spine,
+        size:f.size,name:f.name,added:old?old.added:Date.now(),last:old?old.last:0,data:buf});
+      ok++;
+    }catch(e){ skip++; console.warn('kihagyva',f.name,e) }
+    $('bar').style.width=(4+94*(i+1)/eps.length)+'%';
+    await drawLib();
+  }
+  $('bar').style.width='100%'; setTimeout(()=>$('bar').style.width='0',600);
+  toast(ok+' könyv a könyvtárban'+(skip?', '+skip+' kihagyva':'')+' — koppints rá az olvasáshoz',4000);
+}
+async function go(f,fromLib){
+  try{
+    await loadEpub(f);
+    if(!fromLib){
+      const ok=await libSave(f,book.title,chapters.length);
+      if(ok) drawLib();
+    }else{
+      const rec=await libGet(book.id).catch(()=>null);
+      if(rec&&rec.chaps!==chapters.length){rec.chaps=chapters.length;libPut(rec).catch(()=>{})}
+    }
+  }
   catch(err){ $('bar').style.width='0'; toast('Nem sikerült megnyitni: '+err.message,4200) }
 }
+drawLib();
 $('chapSel').onchange=e=>{renderChapter(+e.target.value);setChrome(false)};
 Object.entries(THEMES).forEach(([k,v])=>{const b=document.createElement('button');
   b.dataset.k=k;b.textContent=v[0];b.onclick=()=>{RD.theme=k;applyRead()};$('segTheme').appendChild(b)});
@@ -1271,7 +1579,9 @@ $('fsUp').onclick=()=>bumpFs(.08);
 $('fsDown').onclick=()=>bumpFs(-.08);
 $('sClose').onclick=()=>$('setts').classList.remove('open');
 document.addEventListener('pointerdown',e=>{
-  const st=$('setts'), vc=$('vocab');
+  const st=$('setts'), vc=$('vocab'), ab=$('about');
+  if(ab.classList.contains('open')&&!ab.contains(e.target)&&!$('aboutBtn').contains(e.target))
+     ab.classList.remove('open');
   if(st.classList.contains('open')&&!st.contains(e.target)&&!$('setBtn').contains(e.target)
      &&!(document.getElementById('setBtn2')&&$('setBtn2').contains(e.target))) st.classList.remove('open');
   if(vc.classList.contains('open')&&!vc.contains(e.target)&&!$('vocabBtn').contains(e.target))
@@ -1315,11 +1625,15 @@ function setChrome(on){document.body.classList.toggle('chrome',on);
   $('dots').title=on?'Fejléc elrejtése (H)':'Fejléc mutatása (H)'}
 $('dots').onclick=()=>setChrome(!document.body.classList.contains('chrome'));
 let lastY=0;
+let posTimer=null;
 $('main').addEventListener('scroll',()=>{
   const y=$('main').scrollTop;
   if(document.body.classList.contains('chrome')&&y>lastY+24) setChrome(false);
   lastY=y;
+  clearTimeout(posTimer); posTimer=setTimeout(savePos,500);
 },{passive:true});
+addEventListener('pagehide',savePos);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) savePos() });
 $('vocabBtn').onclick=()=>{drawVocab();$('setts').classList.remove('open');$('vocab').classList.add('open')};
 $('vClose').onclick=()=>$('vocab').classList.remove('open');
 $('studyBtn').onclick=()=>{$('vocab').classList.remove('open');startStudy()};
@@ -1333,7 +1647,9 @@ $('oSave').onclick=()=>{
   OAI.url=$('oUrl').value.trim()||OAI.url; OAI.model=$('oModel').value.trim()||OAI.model;
   OAI.key=$('oKey').value.trim(); OAI.pin=+$('oPin').value||0; OAI.pout=+$('oPout').value||0;
   store.set('ek_oai',JSON.stringify(OAI)); drawSpend(); toast('egyeb API elmentve: '+OAI.model)};
-$('setBtn2').onclick=()=>$('setts').classList.add('open');
+$('setBtn2').onclick=()=>{$('about').classList.remove('open');$('setts').classList.add('open')};
+$('aboutBtn').onclick=()=>{$('setts').classList.remove('open');$('about').classList.add('open')};
+$('aClose').onclick=()=>$('about').classList.remove('open');
 $('instBtn').onclick=async()=>{
   if(!installEvt) return toast('a böngésző menüjéből: Hozzáadás a kezdőlaphoz');
   installEvt.prompt(); const r=await installEvt.userChoice.catch(()=>null);
@@ -1348,7 +1664,7 @@ document.addEventListener('keydown',e=>{
     if(e.key===' '||e.key==='Enter'){e.preventDefault(); if($('sBack').hidden){reveal()}else{answer(2)} return}
     if(!$('sBack').hidden&&/^[1-4]$/.test(e.key)){answer(+e.key-1);return}
   }
-  if(e.key==='Escape'){setChrome(false);$('vocab').classList.remove('open');$('setts').classList.remove('open');
+  if(e.key==='Escape'){setChrome(false);$('vocab').classList.remove('open');$('setts').classList.remove('open');$('about').classList.remove('open');
     sentList().forEach(s=>{if(s._panel?.isConnected){s._panel.remove();s._panel=null;s.classList.remove('act')}})}
   if(!chapters.length) return;
   if(e.key==='ArrowRight'&&curChap<chapters.length-1) renderChapter(curChap+1);
