@@ -1,8 +1,11 @@
 /* Kétnyelvű olvasó — service worker
-   Cél: a program maga offline is induljon, a fordítókérések viszont
-   soha ne kerüljenek cache-be (mindig friss válasz kell). */
+   Stratégia:
+   - HTML (navigáció, index.html): HÁLÓZAT ELŐSZÖR. Frissítés után azonnal az új változat jön,
+     offline esetben a cache-elt példány.
+   - ikonok, manifest, betűtípusok: cache először (ezek ritkán változnak).
+   - fordítókérések: soha nem cache-elve. */
 
-const VER   = 'olvaso-v19';
+const VER   = 'olvaso-v20';
 const SHELL = [
   './',
   './index.html',
@@ -16,7 +19,7 @@ const SHELL = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(VER)
-      .then(c => c.addAll(SHELL).catch(() => {/* egy-egy fájl hiánya ne blokkolja */}))
+      .then(c => c.addAll(SHELL).catch(() => {}))
       .then(() => self.skipWaiting())
   );
 });
@@ -24,37 +27,58 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(ks.filter(k => k !== VER).map(k => caches.delete(k))))
+      .then(ks => Promise.all(ks.filter(k => k !== VER && k !== VER + '-ext').map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
+
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
+  if (e.data === 'version') e.source && e.source.postMessage({ version: VER });
+});
+
+const isHtml = req =>
+  req.mode === 'navigate' ||
+  req.destination === 'document' ||
+  /\.html($|\?)/.test(new URL(req.url).pathname);
 
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-  const sameOrigin = url.origin === self.location.origin;
 
-  /* Külső hívások: fordítómotorok, szótár API, betűtípusok.
-     A fordítás soha nem cache-elhető, a betűtípus igen. */
-  if (!sameOrigin) {
-    const isFont = /fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com/.test(url.host);
-    if (isFont) {
+  /* külső kérések */
+  if (url.origin !== self.location.origin) {
+    if (/fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com/.test(url.host)) {
       e.respondWith(
         caches.open(VER + '-ext').then(async c => {
           const hit = await c.match(req);
           if (hit) return hit;
           const res = await fetch(req);
-          if (res.ok || res.type === 'opaque') c.put(req, res.clone());
+          if (res && (res.ok || res.type === 'opaque')) c.put(req, res.clone());
           return res;
         }).catch(() => fetch(req))
       );
     }
-    return;   /* minden más külső kérés érintetlenül megy a hálózatra */
+    return;                       /* fordítás, szótár API: érintetlenül a hálózatra */
   }
 
-  /* Saját fájlok: cache először, mellette csendes frissítés */
+  /* saját HTML: hálózat először */
+  if (isHtml(req)) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then(res => {
+          if (res && res.ok) caches.open(VER).then(c => c.put('./index.html', res.clone()));
+          return res;
+        })
+        .catch(() => caches.match('./index.html', { ignoreSearch: true })
+          .then(hit => hit || new Response('Offline', { status: 503 })))
+    );
+    return;
+  }
+
+  /* saját statikus fájlok: cache először, csendes frissítéssel */
   e.respondWith(
     caches.open(VER).then(async c => {
       const hit = await c.match(req, { ignoreSearch: true });
