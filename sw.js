@@ -2,7 +2,7 @@
    Cél: a program maga offline is induljon, a fordítókérések viszont
    soha ne kerüljenek cache-be (mindig friss válasz kell). */
 
-const VER   = 'olvaso-v18';
+const VER   = 'olvaso-v19';
 const SHELL = [
   './',
   './index.html',

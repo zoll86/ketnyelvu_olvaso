@@ -192,8 +192,15 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 .vdel:hover{color:var(--dim)}
 .vdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
 #setts{position:fixed;inset:auto 0 0 0;z-index:41;border-radius:var(--r3) var(--r3) 0 0;
-  padding:var(--sp4) var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
-  transition:transform .42s var(--spring);box-shadow:var(--shadow)}
+  padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
+  transition:transform .42s var(--spring);box-shadow:var(--shadow);
+  max-height:86vh;overflow-y:auto;overscroll-behavior:contain}
+#setts>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);
+  padding-left:var(--sp4);padding-right:var(--sp4);
+  background:rgba(24,19,14,.97);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line2)}
+#setts>.shead .mini{padding:8px 12px}
 #setts.open{transform:translateY(0)}
 #setts h3{font-size:var(--t4);font-weight:600;margin:0;color:var(--txt);letter-spacing:-.01em}
 .ssec{font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
@@ -284,7 +291,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 </main>
 
 <div id="vocab" class="glass">
-  <div style="display:flex;align-items:center;gap:.5rem">
+  <div class="vhead" style="display:flex;align-items:center;gap:var(--sp2);flex-wrap:wrap">
     <h3>Szótár</h3><div class="hspace" style="flex:1"></div>
     <button class="mini" id="studyBtn">gyakorlás</button>
     <button class="mini" id="fixBtn">magyarítás</button>
@@ -295,7 +302,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   <div id="vlist"></div>
 </div>
 <div id="setts" class="glass">
-  <div style="display:flex;align-items:center;gap:.5rem">
+  <div class="shead">
     <h3>Beállítások</h3><div style="flex:1"></div><button class="mini" id="sClose">bezár</button>
   </div>
   <div class="ssec">Olvasás</div>
@@ -1223,6 +1230,13 @@ function bumpFs(d){ RD.fs=Math.min(2.6,Math.max(1,+(RD.fs+d).toFixed(2))); apply
 $('fsUp').onclick=()=>bumpFs(.08);
 $('fsDown').onclick=()=>bumpFs(-.08);
 $('sClose').onclick=()=>$('setts').classList.remove('open');
+document.addEventListener('pointerdown',e=>{
+  const st=$('setts'), vc=$('vocab');
+  if(st.classList.contains('open')&&!st.contains(e.target)&&!$('setBtn').contains(e.target)
+     &&!(document.getElementById('setBtn2')&&$('setBtn2').contains(e.target))) st.classList.remove('open');
+  if(vc.classList.contains('open')&&!vc.contains(e.target)&&!$('vocabBtn').contains(e.target))
+     vc.classList.remove('open');
+},true);
 applyRead();
 function drawLang(){$('langBtn').textContent=(src==='da'?'DA':'EN')+'\u2192HU';
   $('langBtn').classList.toggle('on',src==='da')}
