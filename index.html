@@ -239,6 +239,28 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   transition:color .2s,border-color .2s}
 .vdel:hover{color:var(--dim)}
 .vdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
+#pre{position:fixed;inset:auto 0 0 0;z-index:43;border-radius:var(--r3) var(--r3) 0 0;
+  padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
+  transition:transform .42s var(--spring);box-shadow:var(--shadow);
+  max-height:88vh;overflow-y:auto;overscroll-behavior:contain}
+#pre.open{transform:translateY(0)}
+#pre>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);
+  padding-left:var(--sp4);padding-right:var(--sp4);
+  background:rgba(24,19,14,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+#pre h3{font-size:var(--t4);font-weight:600;margin:0;color:var(--txt);letter-spacing:-.01em}
+.prebody{text-align:left;padding-bottom:var(--sp4)}
+.pstats{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp3);margin:var(--sp4) 0}
+.pstat b{display:block;font-size:22px;font-weight:500;color:var(--gold);line-height:1.1}
+.pstat span{font-size:var(--t1);color:var(--faint);line-height:1.4;display:block;margin-top:2px}
+.plist{display:flex;flex-wrap:wrap;gap:var(--sp2);max-height:38vh;overflow-y:auto;
+  padding:var(--sp2) 0;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.prow{display:inline-flex;align-items:baseline;gap:var(--sp2);border:1px solid var(--line2);
+  background:var(--s1);border-radius:var(--r1);padding:5px 9px;cursor:pointer;
+  font-size:var(--t2);color:var(--txt);transition:all .18s var(--spring)}
+.prow span{font-family:var(--mono);font-size:var(--t1);color:var(--faint)}
+.prow.off{opacity:.4;text-decoration:line-through}
+.prow:hover{border-color:var(--line);background:var(--s2)}
 #about{position:fixed;inset:auto 0 0 0;z-index:42;border-radius:var(--r3) var(--r3) 0 0;
   padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
   transition:transform .42s var(--spring);box-shadow:var(--shadow);
@@ -332,6 +354,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <button class="btn" id="fsUp" title="Nagyobb betű">A+</button>
   </div>
   <div class="grp">
+    <button class="btn" id="preBtn" title="A könyv szókincsének felmérése">előtanulás</button>
     <button class="btn" id="prefBtn" title="Előre lefordítja a következő mondatokat">előtöltés</button>
     <button class="btn" id="vocabBtn">szótár <span id="vcount" class="chip" style="padding:0">0</span></button>
     <button class="btn" id="setBtn" title="Beállítások">⚙</button>
@@ -395,6 +418,19 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p>A könyvek, a szótár és a beállítások a készüléken maradnak, semmi nem kerül fel szerverre. Csak a lefordítandó mondat megy ki a fordítószolgáltatóhoz. Telepítés után offline is elindul; a fordításhoz kell hálózat.</p>
   </div>
 </div>
+<div id="pre" class="glass sheet">
+  <div class="shead">
+    <h3>Előtanulás</h3><div style="flex:1"></div><button class="mini" id="preClose">bezár</button>
+  </div>
+  <div class="prebody">
+    <div id="preStat" class="pstats"></div>
+    <div class="srow"><label>Mennyit</label><div class="seg" id="segTop"></div></div>
+    <p class="note" style="margin:0 0 var(--sp3)">Gyakoriság szerint, a leggyakoribb ismeretlen szavakkal kezdve. Koppints egy szóra, ha kihagynád.</p>
+    <div id="preList" class="plist"></div>
+    <button class="btn pri" id="preAdd" style="width:100%;margin-top:var(--sp4)">hozzáadás a szótárhoz</button>
+    <div id="preProg" class="note" style="text-align:center"></div>
+  </div>
+</div>
 <div id="setts" class="glass sheet">
   <div class="shead">
     <h3>Beállítások</h3><div style="flex:1"></div><button class="mini" id="sClose">bezár</button>
@@ -453,7 +489,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v26';
+const APP_VER='v27';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1448,6 +1484,132 @@ $('expCsv').onclick=()=>{ if(!vocab.length)return toast('a szótár üres');
   dl('szotar.csv','nyelv,szo,magyar,megjegyzes,mondat,konyv\n'+vocab.map(v=>[v.lang||'en',v.en,v.hu,v.note,v.src,v.book].map(q).join(',')).join('\n'),'text/csv');
   toast('CSV letöltve')};
 
+/* ============ előtanulás: a könyv szókincsének felmérése ============ */
+function analyzeBook(){
+  const counts=new Map();
+  const re=/[a-zæøåäöéüïàâçèêëîôùûœ']+/g;
+  chapters.forEach(c=>{
+    const txt=(c.body.textContent||'').toLowerCase();
+    let m; while((m=re.exec(txt))){
+      const w=m[0].replace(/^'+|'+$/g,'');
+      if(w.length<3) continue;
+      counts.set(w,(counts.get(w)||0)+1);
+    }
+  });
+  /* ragozott alakok összevonása, ha az alapalak is szerepel a könyvben */
+  if(src==='en'){
+    for(const [w,n] of [...counts]){
+      let base=null;
+      for(const c of lemmaCandidates(w)){ if(counts.has(c)&&c!==w){ base=c; break } }
+      if(base){ counts.set(base,counts.get(base)+n); counts.delete(w) }
+    }
+  }
+  const stop=src==='da'?STOP_DA:STOP;
+  const known=new Set(vocab.map(v=>(v.en||'').toLowerCase()));
+  const all=[...counts.entries()];
+  const list=all.filter(([w,n])=>!stop.has(w)&&!known.has(w)&&n>=2)
+                .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const knownHere=all.filter(([w])=>known.has(w)).length;
+  return {uniq:all.length, known:knownHere, list,
+          tokens:all.reduce((s,[,n])=>s+n,0)};
+}
+/* kötegelt fordítás: soronként egy szó, egy kérésben több */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function gtxLines(lines){
+  const d=await grab('https://translate.googleapis.com/translate_a/single?client=gtx&sl='+src+
+    '&tl=hu&dt=t&q='+encodeURIComponent(lines.join('\n')),12000);
+  const segs=(d[0]||[]).map(x=>(x[0]||''));
+  const joined=segs.join('');
+  const parts=joined.split('\n').map(x=>x.trim()).filter(x=>x!=='');
+  if(parts.length===lines.length) return parts;
+  if(segs.length===lines.length) return segs.map(x=>x.trim());
+  throw new Error('nem illeszkedő köteg');
+}
+async function batchTranslate(words,onProg){
+  const out={}; const N=12;
+  for(let i=0;i<words.length;i+=N){
+    const chunk=words.slice(i,i+N);
+    let done=false;
+    try{
+      const parts=await gtxLines(chunk);
+      chunk.forEach((w,j)=>{ if(parts[j]) out[w]=parts[j] });
+      done=true; lastEngine='Google';
+    }catch(e){}
+    if(!done){
+      for(const w of chunk){
+        try{ out[w]=await freeTranslate(w) }catch(e){}
+        await sleep(220);
+      }
+    }
+    onProg&&onProg(Math.min(words.length,i+N),words.length);
+    await sleep(260);
+  }
+  return out;
+}
+async function preAddRun(){
+  if(!preData) return;
+  const sel=preData.list.slice(0,preTop).filter(([w])=>!preSkip.has(w)).map(([w])=>w);
+  if(!sel.length) return;
+  $('preAdd').disabled=true;
+  const bookTitle=book?book.title:'';
+  const hu=await batchTranslate(sel,(a,b)=>{
+    $('preProg').textContent='fordítás: '+a+' / '+b;
+  });
+  let added=0;
+  sel.forEach(w=>{
+    if(vocab.some(v=>(v.en||'').toLowerCase()===w)) return;
+    vocab.push({en:w,hu:hu[w]||'',note:'',src:'',srcHu:'',book:bookTitle,lang:src});
+    added++;
+  });
+  saveVocab(); drawVocab();
+  preData.list=preData.list.filter(([w])=>!sel.includes(w));
+  drawPre();
+  $('preProg').innerHTML='';
+  const done=document.createElement('div');
+  done.textContent=added+' szó a szótárban. A magyarázatok és igealakok külön tölthetők be.';
+  $('preProg').appendChild(done);
+  const b=document.createElement('button'); b.className='btn'; b.style.marginTop='var(--sp2)';
+  b.textContent='magyarázatok betöltése';
+  b.onclick=()=>{b.disabled=true;huFix().finally(()=>{b.disabled=false})};
+  $('preProg').appendChild(b);
+  $('preAdd').disabled=false;
+  toast(added+' szó hozzáadva — a gyakorlásban már megjelennek',4000);
+}
+let preData=null, preSkip=new Set(), preTop=50;
+function openPre(){
+  if(!chapters.length) return toast('előbb nyiss meg egy könyvet');
+  $('setts').classList.remove('open'); $('vocab').classList.remove('open');
+  $('pre').classList.add('open');
+  $('preStat').textContent='elemzés…'; $('preList').innerHTML='';
+  requestAnimationFrame(()=>{
+    preData=analyzeBook(); preSkip=new Set();
+    drawPre();
+  });
+}
+function drawPre(){
+  if(!preData) return;
+  const {uniq,known,list,tokens}=preData;
+  $('preStat').innerHTML='';
+  const mk=(a,b)=>{const d=document.createElement('div');d.className='pstat';
+    d.innerHTML='<b></b><span></span>';d.querySelector('b').textContent=a;
+    d.querySelector('span').textContent=b;$('preStat').appendChild(d)};
+  mk(uniq.toLocaleString('hu'),'különböző szó');
+  mk(known.toLocaleString('hu'),'ebből már a szótáradban');
+  mk(list.length.toLocaleString('hu'),'tanulható, legalább kétszer előfordul');
+  mk(Math.round(tokens/1000)+'e','összes szó a könyvben');
+  const sel=list.slice(0,preTop).filter(([w])=>!preSkip.has(w));
+  $('preAdd').textContent='hozzáadás a szótárhoz ('+sel.length+')';
+  $('preAdd').disabled=!sel.length;
+  const box=$('preList'); box.innerHTML='';
+  list.slice(0,preTop).forEach(([w,n])=>{
+    const r=document.createElement('button'); r.className='prow'+(preSkip.has(w)?' off':'');
+    r.innerHTML='<b></b><span></span>';
+    r.querySelector('b').textContent=w;
+    r.querySelector('span').textContent=n+'\u00d7';
+    r.onclick=()=>{ preSkip.has(w)?preSkip.delete(w):preSkip.add(w); drawPre() };
+    box.appendChild(r);
+  });
+}
 /* ============ könyvtár megjelenítése ============ */
 function progOf(id,chaps){
   try{
@@ -1585,6 +1747,14 @@ addEventListener('popstate',()=>{
 /* ============ vezérlők ============ */
 $('openBtn').onclick=()=>$('file').click();
 $('libBtn').onclick=closeBook;
+$('preBtn').onclick=openPre;
+$('preAdd').onclick=preAddRun;
+$('preClose').onclick=()=>$('pre').classList.remove('open');
+[25,50,100,200].forEach(n=>{const b=document.createElement('button');
+  b.dataset.k=String(n); b.textContent=String(n);
+  b.onclick=()=>{preTop=n;[...$('segTop').children].forEach(x=>x.classList.toggle('sel',+x.dataset.k===n));drawPre()};
+  if(n===preTop) b.classList.add('sel');
+  $('segTop').appendChild(b)});
 $('viewBtn').onclick=()=>{libView=libView==='grid'?'list':'grid';store.set('ek_libview',libView);drawLib()};
 $('sortBtn').onclick=async()=>{
   const order=['recent','author','series','title'];
