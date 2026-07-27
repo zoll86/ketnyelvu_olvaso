@@ -184,6 +184,9 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   font-size:var(--t3);line-height:1;cursor:pointer;padding:6px 8px;border-radius:var(--r1)}
 .bdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
 .startrow{display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap;margin-top:var(--sp4)}
+.lgroup{grid-column:1/-1;font-size:var(--t2);color:var(--gold);font-weight:500;
+  margin:var(--sp3) 0 0;padding-bottom:var(--sp1);border-bottom:1px solid var(--line2)}
+.lgroup span{color:var(--faint);font-family:var(--mono);font-size:var(--t1);margin-left:var(--sp2)}
 #libList.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:var(--sp3)}
 #libList.grid .bcard{display:block;padding:0;border:0;background:none;margin:0;position:relative}
 #libList.grid .bcard:hover{background:none}
@@ -343,6 +346,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <div id="lib" hidden>
       <div class="libhead"><span>Könyvtár</span><span class="libcount" id="libCount"></span>
         <span style="flex:1"></span>
+        <button class="mini" id="sortBtn">legutóbbi</button>
         <button class="mini" id="viewBtn">rács</button></div>
       <div id="libList"></div>
     </div>
@@ -449,7 +453,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v25';
+const APP_VER='v26';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -930,6 +934,26 @@ async function epubMeta(file){
   const pick=sel=>{const n=opf.querySelector(sel);return n?n.textContent.replace(/\s+/g,' ').trim():''};
   const title=pick('metadata title')||pick('title')||file.name.replace(/\.epub$/i,'');
   const author=pick('metadata creator')||pick('creator')||'';
+  /* sorozat: EPUB3 belongs-to-collection, illetve Calibre meta */
+  let series='', sidx=null;
+  const metas=[...opf.querySelectorAll('meta')];
+  const coll=metas.find(m=>(m.getAttribute('property')||'')==='belongs-to-collection');
+  if(coll){
+    series=coll.textContent.replace(/\s+/g,' ').trim();
+    const id=coll.getAttribute('id');
+    if(id){
+      const gp=metas.find(m=>(m.getAttribute('refines')||'')==='#'+id&&
+                             (m.getAttribute('property')||'')==='group-position');
+      if(gp) sidx=parseFloat(gp.textContent);
+    }
+  }
+  if(!series){
+    const cs=metas.find(m=>(m.getAttribute('name')||'')==='calibre:series');
+    if(cs) series=(cs.getAttribute('content')||'').trim();
+    const ci=metas.find(m=>(m.getAttribute('name')||'')==='calibre:series_index');
+    if(ci) sidx=parseFloat(ci.getAttribute('content'));
+  }
+  if(!isFinite(sidx)) sidx=null;
   const items=[...opf.querySelectorAll('manifest item')];
   const spine=[...opf.querySelectorAll('spine itemref')].length;
   let href='';
@@ -951,7 +975,7 @@ async function epubMeta(file){
     const e=zfile(zip,resolve(dir,href));
     if(e){ try{ cover=await shrink(await e.async('blob'),220,330) }catch(err){} }
   }
-  return {title,author,spine,cover};
+  return {title,author,series,sidx,spine,cover};
 }
 async function loadEpub(f){
   $('bar').style.width='12%';
@@ -1435,18 +1459,54 @@ function progOf(id,chaps){
   }catch(e){ return 0 }
 }
 let libView=store.get('ek_libview')||'grid';
+let libSort=store.get('ek_libsort')||'recent';
+const SORTN={recent:'legutóbbi',author:'szerző',series:'sorozat',title:'cím'};
+function lastName(a){
+  if(!a) return '';
+  const t=a.replace(/\s+/g,' ').trim();
+  if(t.includes(',')) return t.split(',')[0].trim();
+  const p=t.split(' '); return p[p.length-1];
+}
+function sortLib(list){
+  const cmp=(a,b)=>a.localeCompare(b,'hu');
+  if(libSort==='title') return list.sort((a,b)=>cmp(a.title||'',b.title||''));
+  if(libSort==='author') return list.sort((a,b)=>
+    cmp(lastName(a.author)||'zzz',lastName(b.author)||'zzz')||
+    cmp(a.series||'',b.series||'')||
+    ((a.sidx??999)-(b.sidx??999))||cmp(a.title||'',b.title||''));
+  if(libSort==='series') return list.sort((a,b)=>
+    cmp(a.series||'zzz',b.series||'zzz')||
+    ((a.sidx??999)-(b.sidx??999))||cmp(a.title||'',b.title||''));
+  return list.sort((a,b)=>(b.last||b.added||0)-(a.last||a.added||0));
+}
+function groupOf(b){
+  if(libSort==='author') return b.author||'Ismeretlen szerző';
+  if(libSort==='series') return b.series||'Sorozat nélkül';
+  return '';
+}
 async function drawLib(){
   let list=[];
   try{ list=await libAll() }catch(e){}
   const box=$('libList'), wrap=$('lib');
   if(!list.length){ wrap.hidden=true; return }
-  list.sort((a,b)=>(b.last||b.added||0)-(a.last||a.added||0));
+  sortLib(list);
   wrap.hidden=false;
   $('libCount').textContent=list.length+' könyv';
   box.className=libView==='grid'?'grid':'';
   $('viewBtn').textContent=libView==='grid'?'lista':'rács';
+  $('sortBtn').textContent=SORTN[libSort];
   box.innerHTML='';
+  let lastGrp=null;
   list.forEach(b=>{
+    const grp=groupOf(b);
+    if(grp&&grp!==lastGrp){
+      lastGrp=grp;
+      const h=document.createElement('div'); h.className='lgroup';
+      h.textContent=grp;
+      const n=list.filter(x=>groupOf(x)===grp).length;
+      if(n>1){const sp=document.createElement('span');sp.textContent=n+' kötet';h.appendChild(sp)}
+      box.appendChild(h);
+    }
     const pct=progOf(b.id,b.chaps);
     const c=document.createElement('div'); c.className='bcard';
     c.innerHTML='<div class="bcov"></div><div class="bmain"><div class="btitle"></div>'+
@@ -1462,6 +1522,7 @@ async function drawLib(){
     c.querySelector('.bauth').textContent=b.author||'';
     if(!b.author) c.querySelector('.bauth').style.display='none';
     c.querySelector('.bmeta').textContent=
+      (b.series?b.series+(b.sidx?' #'+(b.sidx%1?b.sidx:Math.round(b.sidx)):'')+' · ':'')+
       (b.chaps?b.chaps+' fejezet · ':'')+Math.round(b.size/1024/1024*10)/10+' MB'+(pct?' · '+pct+'%':'');
     c.querySelector('.bprog i').style.width=pct+'%';
     c.onclick=e=>{ if(e.target.closest('.bdel')) return; openFromLib(b.id) };
@@ -1474,6 +1535,26 @@ async function drawLib(){
     };
     box.appendChild(c);
   });
+}
+async function rescanLib(){
+  let list=[]; try{ list=await libAll() }catch(e){}
+  const todo=list.filter(b=>b.data&&(b.author===undefined||b.series===undefined||!b.cover));
+  if(!todo.length) return toast('minden könyv metaadata megvan');
+  toast(todo.length+' könyv beolvasása…',2500);
+  let n=0;
+  for(const b of todo){
+    try{
+      const f=new File([b.data],b.name||'book.epub',{type:'application/epub+zip'});
+      const m=await epubMeta(f);
+      b.title=b.title||m.title; b.author=m.author; b.series=m.series; b.sidx=m.sidx;
+      if(m.cover) b.cover=m.cover;
+      if(!b.chaps) b.chaps=m.spine;
+      await libPut(b); n++;
+    }catch(e){}
+    if(n%3===0){ await drawLib() }
+  }
+  await drawLib();
+  toast(n+' könyv metaadata frissítve',3000);
 }
 async function openFromLib(id){
   try{
@@ -1505,6 +1586,16 @@ addEventListener('popstate',()=>{
 $('openBtn').onclick=()=>$('file').click();
 $('libBtn').onclick=closeBook;
 $('viewBtn').onclick=()=>{libView=libView==='grid'?'list':'grid';store.set('ek_libview',libView);drawLib()};
+$('sortBtn').onclick=async()=>{
+  const order=['recent','author','series','title'];
+  libSort=order[(order.indexOf(libSort)+1)%order.length];
+  store.set('ek_libsort',libSort);
+  if((libSort==='author'||libSort==='series')){
+    const list=await libAll().catch(()=>[]);
+    if(list.some(b=>b.author===undefined||b.series===undefined)){ await rescanLib(); return }
+  }
+  drawLib();
+};
 $('drop').onclick=()=>$('file').click();
 $('file').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)addBooks(fs)};
 ['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over')}));
@@ -1527,7 +1618,7 @@ async function addBooks(files){
       const id=bookKey(m.title,f.size);
       const buf=await f.arrayBuffer();
       const old=await libGet(id).catch(()=>null);
-      await libPut({id,title:m.title,author:m.author,cover:m.cover,chaps:m.spine,
+      await libPut({id,title:m.title,author:m.author,series:m.series,sidx:m.sidx,cover:m.cover,chaps:m.spine,
         size:f.size,name:f.name,added:old?old.added:Date.now(),last:old?old.last:0,data:buf});
       ok++;
     }catch(e){ skip++; console.warn('kihagyva',f.name,e) }
