@@ -145,6 +145,13 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   transition:transform .2s var(--spring),color .2s,border-color .2s,background .2s}
 .mini:hover{color:var(--txt);background:var(--s2);border-color:var(--line)}
 .mini:active{transform:scale(.94)}
+.why{margin-top:var(--sp3);padding-top:var(--sp3);border-top:1px dashed var(--line2)}
+.witem{margin-bottom:var(--sp3)}
+.witem b{display:block;font-size:var(--t2);color:var(--gold);font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em}
+.witem i{display:block;font-style:normal;font-family:var(--mono);font-size:var(--t1);
+  color:var(--faint);margin:2px 0 4px}
+.witem span,.wtext{display:block;font-size:var(--t2);color:var(--dim);line-height:1.55}
 .gloss{margin-top:.7rem;padding-top:.65rem;border-top:1px dashed var(--line);
   display:flex;flex-wrap:wrap;gap:.35rem}
 .w{border:1px solid var(--line2);border-radius:var(--r1);padding:5px 9px;font-size:var(--t2);
@@ -183,6 +190,10 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 .bdel{flex:0 0 auto;background:none;border:1px solid transparent;color:var(--faint);
   font-size:var(--t3);line-height:1;cursor:pointer;padding:6px 8px;border-radius:var(--r1)}
 .bdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
+.hero{display:flex;gap:var(--sp2);margin-top:var(--sp5)}
+.hero-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:14px 12px;font-size:var(--t3);letter-spacing:.04em;line-height:1.2}
+.hero-btn small{font-size:var(--t1);font-family:var(--mono);opacity:.7;letter-spacing:0}
 .startrow{display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap;margin-top:var(--sp4)}
 .lgroup{grid-column:1/-1;font-size:var(--t2);color:var(--gold);font-weight:500;
   margin:var(--sp3) 0 0;padding-bottom:var(--sp1);border-bottom:1px solid var(--line2)}
@@ -239,6 +250,22 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   transition:color .2s,border-color .2s}
 .vdel:hover{color:var(--dim)}
 .vdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
+#stats{position:fixed;inset:auto 0 0 0;z-index:44;border-radius:var(--r3) var(--r3) 0 0;
+  padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
+  transition:transform .42s var(--spring);box-shadow:var(--shadow);
+  max-height:88vh;overflow-y:auto;overscroll-behavior:contain}
+#stats.open{transform:translateY(0)}
+#stats>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);
+  padding-left:var(--sp4);padding-right:var(--sp4);
+  background:rgba(24,19,14,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+#stats h3{font-size:var(--t4);font-weight:600;margin:0;color:var(--txt);letter-spacing:-.01em}
+.fc{display:flex;align-items:flex-end;gap:var(--sp2);height:96px;margin:var(--sp3) 0}
+.fcb{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%}
+.fcb i{display:block;width:100%;background:linear-gradient(180deg,var(--gold),rgba(232,182,76,.35));
+  border-radius:4px 4px 0 0;min-height:2px}
+.fcb b{font-family:var(--mono);font-size:10px;color:var(--dim);font-weight:400}
+.fcb span{font-size:10px;color:var(--faint);font-family:var(--mono)}
 #pre{position:fixed;inset:auto 0 0 0;z-index:43;border-radius:var(--r3) var(--r3) 0 0;
   padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
   transition:transform .42s var(--spring);box-shadow:var(--shadow);
@@ -303,6 +330,20 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   border-radius:var(--r1);padding:6px 10px;font-size:var(--t2);cursor:pointer;transition:all .2s var(--spring)}
 .seg button:hover{transform:translateY(-1px);color:var(--txt)}
 .seg button.sel{border-color:transparent;color:#1a1206;background:var(--gold);font-weight:500}
+#match{position:fixed;inset:0;z-index:71;display:none;flex-direction:column;
+  background:linear-gradient(170deg,#0e0b08,#17110c 60%,#0b0906);
+  padding:max(var(--sp4),env(safe-area-inset-top)) var(--sp4) max(var(--sp4),env(safe-area-inset-bottom))}
+#match.open{display:flex}
+.mgrid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:var(--sp3);align-content:center;
+  max-width:34rem;margin:0 auto;width:100%}
+.mcol{display:flex;flex-direction:column;gap:var(--sp3)}
+.mitem{padding:15px 10px;border:1px solid var(--line2);background:var(--s1);color:var(--txt);
+  border-radius:var(--r2);font-size:var(--t3);cursor:pointer;text-align:center;line-height:1.25;
+  transition:border-color .18s,background .18s,opacity .3s,transform .18s var(--spring)}
+.mitem.sel{border-color:var(--gold);background:rgba(232,182,76,.15)}
+.mitem.ok{border-color:rgba(87,217,163,.5);color:var(--green);opacity:.35;pointer-events:none}
+.mitem.bad{border-color:var(--red);animation:shk .32s}
+@keyframes shk{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 #study{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;
   background:linear-gradient(170deg,#0e0b08,#17110c 60%,#0b0906);
   padding:max(var(--sp4),env(safe-area-inset-top)) var(--sp4) max(var(--sp4),env(safe-area-inset-bottom))}
@@ -369,6 +410,10 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 <main id="main">
   <section id="start">
     <h1>Kétnyelvű olvasó</h1>
+    <div class="hero">
+      <button class="btn pri hero-btn" id="studyTop">Gyakorlás<small id="studyTopSub">&nbsp;</small></button>
+      <button class="btn hero-btn" id="matchTop">Párosítás<small>négyes játék</small></button>
+    </div>
     <div id="lib" hidden>
       <div class="libhead"><span>Könyvtár</span><span class="libcount" id="libCount"></span>
         <span style="flex:1"></span>
@@ -381,6 +426,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
       <small>vagy húzd ide · a könyv a készüléken marad, a könyvtárba kerül</small>
     </div>
     <div class="startrow">
+      <button class="btn" id="statBtn2">statisztika</button>
       <button class="btn" id="aboutBtn">bemutató</button>
       <button class="btn" id="setBtn2">beállítások</button>
       <button class="btn pri" id="instBtn" hidden>telepítés</button>
@@ -394,6 +440,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   <div class="vhead" style="display:flex;align-items:center;gap:var(--sp2);flex-wrap:wrap">
     <h3>Szótár</h3><div class="hspace" style="flex:1"></div>
     <button class="mini" id="studyBtn">gyakorlás</button>
+    <button class="mini" id="statBtn">statisztika</button>
     <button class="mini" id="fixBtn" title="Magyar magyarázat, igealakok fordítással, példamondat">kártyák bővítése</button>
     <button class="mini" id="expTsv">Anki TSV</button>
     <button class="mini" id="expCsv">CSV</button>
@@ -413,13 +460,26 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p>Ha egy fordítás furcsa, a panelban a <b>↻</b> gomb újrafordítja másik motorral — és rá van írva, melyik jön. Igényesebb fordításhoz a beállításokban Claude vagy bármely OpenAI-kompatibilis API (Kimi, OpenRouter) is bekapcsolható; ez fizetős, a költségmérő valós elszámolásból számol.</p>
     <h4>Szótár</h4>
     <p>A fordítás alatt a <b>szavak</b> gomb szószedetet ad: magyar jelentés, szófaj, magyarázat magyarul, igéknél az összes alak magyar címkével, főneveknél a többesszám. Egy koppintás a szóra, és a szótárba kerül a mondattal együtt. Onnan Anki-barát TSV-ként vagy CSV-ként exportálható.</p>
+    <h4>Előtanulás</h4>
+    <p>Olvasás előtt az <b>előtanulás</b> felméri a könyv szókincsét: hány különböző szó van benne, mennyit tudsz már, és mi a leggyakoribb ismeretlen. A ragozott alakokat összevonja, az egyszer előfordulókat kihagyja. A kiválasztott szavak a szótárba kerülnek, példamondattal a könyvből. Claude-dal a jelentés a mondatbeli értelemben jön, nem a szótári első jelentés.</p>
+    <p>Ugyanitt a <b>kifejezések</b> a nyitott fejezetből vonzatos igéket, idiómákat és állandó fordulatokat gyűjtenek, a nyelvbeli gyakoriság szerint rangsorolva. Ez csak Claude vagy saját API mellett működik, mert gépi fordító nem tudja megítélni, mi hasznos.</p>
     <h4>Gyakorlás</h4>
+    <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót; a jól álló szavak ütemezését nem rontja el.</p>
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
+    <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
+    <h4>Nyelvtan</h4>
+    <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
     <h4>Olvasás</h4>
     <p>A ⋯ gombbal lehozod a sávokat, ott a fejezetválasztó, a betűméret és a szótár. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
     <h4>Adatok</h4>
     <p>A könyvek, a szótár és a beállítások a készüléken maradnak, semmi nem kerül fel szerverre. Csak a lefordítandó mondat megy ki a fordítószolgáltatóhoz. Telepítés után offline is elindul; a fordításhoz kell hálózat.</p>
   </div>
+</div>
+<div id="stats" class="glass sheet">
+  <div class="shead">
+    <h3>Statisztika</h3><div style="flex:1"></div><button class="mini" id="stClose">bezár</button>
+  </div>
+  <div class="prebody" id="stBody"></div>
 </div>
 <div id="pre" class="glass sheet">
   <div class="shead">
@@ -431,7 +491,13 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p class="note" style="margin:0 0 var(--sp3)">Gyakoriság szerint, a leggyakoribb ismeretlen szavakkal kezdve. Koppints egy szóra, ha kihagynád.</p>
     <div id="preList" class="plist"></div>
     <button class="btn pri" id="preAdd" style="width:100%;margin-top:var(--sp4)">hozzáadás a szótárhoz</button>
+    <button class="btn" id="preAddLlm" hidden style="width:100%;margin-top:var(--sp2)">hozzáadás Claude-dal (jobb jelentés)</button>
     <div id="preProg" class="note" style="text-align:center"></div>
+    <div class="ssec">Kifejezések ebben a fejezetben</div>
+    <p class="note" id="exprNote" style="margin:0 0 var(--sp3)"></p>
+    <button class="btn" id="exprBtn" style="width:100%">kifejezések keresése</button>
+    <div id="exprList" class="plist" style="display:none"></div>
+    <button class="btn pri" id="exprAdd" hidden style="width:100%;margin-top:var(--sp3)">kijelöltek a szótárba</button>
   </div>
 </div>
 <div id="setts" class="glass sheet">
@@ -476,6 +542,14 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p class="note" style="margin:var(--sp2) 0 0">Csak a Claude motor számol; az ingyenes fordítás nem kerül semmibe. Claude.ai-ban futtatva sem a te kulcsod fizet, a mérő ott csak tájékoztató.</p>
   </div>
 </div>
+<div id="match">
+  <div class="stop">
+    <span class="scount" id="mCount"></span><div style="flex:1"></div>
+    <button class="mini" id="mClose">kilép</button>
+  </div>
+  <div class="mgrid"><div class="mcol" id="mLeft"></div><div class="mcol" id="mRight"></div></div>
+  <div class="sdone" id="mMsg"></div>
+</div>
 <div id="study">
   <div class="stop">
     <span class="scount" id="sCount"></span>
@@ -499,7 +573,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v31';
+const APP_VER='v35';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -588,12 +662,18 @@ function applyRead(){
 function toast(msg,ms=2200){const t=$('toast');t.textContent=msg;t.classList.add('show');
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
 const saveCache=()=>store.set('ek_cache',JSON.stringify(cache));
+function heroLabel(){
+  const b=$('studyTopSub'); if(!b) return;
+  let d=0; try{ d=dueCount() }catch(e){ d=0 }
+  b.textContent=vocab.length?(d?d+' esedékes':'ma nincs esedékes'):'még üres a szótár';
+}
 function vocabBadge(){
   let d=null;
   try{ d=dueCount() }catch(e){ d=null }        /* induláskor még nem áll az ütemező */
   if(d===null){ $('vcount').textContent=String(vocab.length*2); $('vcount').style.color=''; return }
   $('vcount').textContent=d?String(d):String(vocab.length*2);
   $('vcount').style.color=d?'var(--green)':'';
+  heroLabel();
 }
 const saveVocab=()=>{store.set('ek_vocab',JSON.stringify(vocab));vocabBadge()};
 vocabBadge();
@@ -950,6 +1030,111 @@ async function freeGloss(sent){
   return out;
 }
 
+/* ============ nyelvtani mintafelismerés ============ */
+const PP='(?:\\w+ed|been|had|done|gone|seen|taken|given|written|known|made|said|got|gotten|left|found|told|become|begun|brought|kept|held|put|met|paid|sat|spoken|led|read|grown|lost|fallen|sent|built|understood|drawn|broken|spent|risen|driven|bought|worn|chosen|sought|thrown|caught|dealt|won|forgotten|eaten|drunk|sold|taught|fought|slept|sung|ridden|swum|hidden|hurt|shut|fed|flown|frozen|hung|laid|lit|rung|shaken|shone|shot|shown|sunk|spread|stolen|stuck|struck|sworn|swept|torn|woken|wept|bitten|blown|dug|fled|lent|slid|split|born)';
+const GRAM_EN=[
+ ['(?:must|should|could|would|might|may)\\s+have\\s+'+PP,'Módbeli segédige + befejezett alak',
+  'A must/should/could + have + 3. alak a múltra vonatkozó következtetést vagy szemrehányást fejez ki: „biztosan megtette”, „meg kellett volna tennie”.'],
+ ['\\b(?:have|has)\\s+(?:just\\s+|already\\s+|never\\s+|not\\s+)?'+PP,'Present perfect',
+  'A have/has + 3. alak olyan múltbeli dolgot jelöl, aminek most van jelentősége. Magyarul többnyire egyszerű múlttal fordítjuk, de a hangsúly az eredményen van, nem az időponton.'],
+ ['\\bhad\\s+(?:just\\s+|already\\s+|never\\s+)?'+PP,'Past perfect',
+  'A had + 3. alak a múltnál is korábbi eseményt jelöl: „mire odaért, már elment”. Magyarban gyakran a „már” szócska jelzi.'],
+ ['\\b(?:am|is|are|was|were|be|been|being)\\s+'+PP+'\\b','Szenvedő szerkezet',
+  'A létige + 3. alak szenvedő: nem az alany teszi, hanem vele történik. Magyarban gyakran általános alannyal vagy „-va/-ve” alakkal adjuk vissza.'],
+ ['\\b(?:was|were)\\s+\\w+ing\\b','Folyamatos múlt',
+  'A was/were + -ing egy múltbeli, folyamatban lévő cselekvést fest hátterként, amibe egy másik esemény belevág.'],
+ ['\\b(?:am|is|are)\\s+\\w+ing\\b','Folyamatos jelen',
+  'Az am/is/are + -ing az éppen most vagy átmenetileg zajló cselekvés. Magyarban az „éppen” szócska jelzi.'],
+ ['\\bwill\\s+\\w+','Jövő idő (will)',
+  'A will + alapalak jövőre utal, gyakran döntést vagy jóslatot fejez ki.'],
+ ['\\b(?:is|are|was|were|am)\\s+going\\s+to\\s+\\w+','Tervezett jövő (going to)',
+  'A „going to” előre eltervezett vagy már látható jövőt jelöl, szemben a will spontán jövőjével.'],
+ ['\\bused\\s+to\\s+\\w+','used to',
+  'A „used to + alapalak” múltbeli szokást jelöl, ami már nem tart: „régen szokott…”.'],
+ ['\\bwould\\s+rather\\b|\\bhad\\s+better\\b','would rather / had better',
+  'Állandósult szerkezetek: a „would rather” inkább-t jelent, a „had better” erős tanácsot, majdnem figyelmeztetést.'],
+ ['\\bif\\b[^.?!]{0,60}\\b(?:would|could|might)\\b','Feltételes mondat',
+  'Az if-es tagmondat és a would/could páros feltételes: a valóságtól elszakadó vagy bizonytalan helyzetet fest.'],
+ ['\\bwish\\b[^.?!]{0,40}\\b(?:were|had|would|could)\\b','wish + múlt',
+  'A wish után múlt idő áll, pedig jelenre gondolunk: „bárcsak…”. A távolítás fejezi ki, hogy nem így van.'],
+ ['\\b(?:of|in|on|at|by|for|about|without|after|before|instead\\s+of)\\s+\\w+ing\\b','Prepozíció + -ing',
+  'Elöljáró után az ige -ing alakban áll, nem to-val. Magyarban főnévi igenévvel vagy főnévvel fordítjuk.'],
+ ['\\b(?:so|such)\\b[^.?!]{0,40}\\bthat\\b','so/such … that',
+  'Ok-okozat: „annyira …, hogy”. A so melléknévvel, a such főneves szerkezettel jár.'],
+ ['\\b\\w+er\\s+than\\b|\\bmore\\s+\\w+\\s+than\\b','Középfok',
+  'A -er vagy more + than összehasonlít. Rövid szónál -er, hosszabbnál more.'],
+ ['\\bthe\\s+(?:\\w+est|most\\s+\\w+)\\b','Felsőfok',
+  'A the + -est vagy most a legmagasabb fokot jelöli, ezért kötelező előtte a the.'],
+ ['\\b(?:who|whom|whose|which|that)\\s+\\w+','Vonatkozó tagmondat',
+  'A who/which/that egy előző szóra utal vissza, és hozzá tartozó mellékmondatot kapcsol. Magyarban aki/amely.'],
+ ['\\bthere\\s+(?:is|are|was|were)\\b','there is / there are',
+  'Létezést kifejező szerkezet: „van/vannak”. Az igét az utána álló szó száma határozza meg.'],
+ ['\\b(?:said|told\\s+\\w+|asked)\\s+(?:that\\s+)?','Függő beszéd',
+  'Idézés helyett tartalom szerinti visszamondás. Ilyenkor az igeidő egy fokkal a múltba tolódik.'],
+ ['\\bget(?:s|ting)?\\s+'+PP+'\\b','get + 3. alak',
+  'A get szenvedő értelmű, beszélt nyelvi változata a be helyett: „megcsinálódik”, „elintéződik”.'],
+ ['\\b(?:as\\s+if|as\\s+though)\\b','as if / as though',
+  'Hasonlítás: „mintha”. Utána gyakran múlt idő áll, akkor is, ha jelenre értjük.'],
+ ['\\b(?:despite|in\\s+spite\\s+of)\\b','despite / in spite of',
+  'Megengedő szerkezet: „ellenére”. Utána főnév vagy -ing alak áll, nem tagmondat.'],
+ ['\\b(?:neither|either)\\b[^.?!]{0,30}\\b(?:nor|or)\\b','neither…nor / either…or',
+  'Páros kötőszó: „sem…sem”, illetve „vagy…vagy”. Az angol csak egy tagadást tűr meg a mondatban.'],
+ ['\\b(?!her\\b|him\\b|it\\b|them\\b|me\\b|us\\b|you\\b|the\\b|a\\b|an\\b|his\\b|my\\b|your\\b|their\\b|our\\b|its\\b|this\\b|that\\b|these\\b|those\\b|is\\b|was\\b|are\\b|were\\b|be\\b|been\\b)\\w+\\s+(?:up|out|off|down|on|in|away|back|over|through|along)\\b','Vonzatos ige (phrasal verb)',
+  'Az ige és a kis szócska együtt új jelentést ad, ami a részekből nem jön ki. Ezeket egészben érdemes tanulni.']
+];
+const GRAM_DA=[
+ ['\\b(?:har|havde)\\s+(?:ikke\\s+)?\\w+(?:et|t)\\b','Perfektum (har + kort tillægsform)',
+  'A har/havde + befejezett alak olyan múltat jelöl, aminek most van jelentősége — mint az angol present perfect.'],
+ ['\\b(?:bliver|blev|er\\s+blevet|blevet)\\s+\\w+(?:et|t)\\b','Szenvedő blive-vel',
+  'A blive + befejezett alak szenvedő: valami történik az alannyal. A dánban ez a mozgalmasabb szenvedő.'],
+ ['\\b\\w+es\\b','s-szenvedő',
+  'A dán az ige végére tett -s-sel is kifejezi a szenvedőt. Gyakran általános érvényű mondatokban áll.'],
+ ['\\b(?:skal|vil|kan|må|bør|skulle|ville|kunne|måtte)\\s+\\w+e\\b','Módbeli segédige + infinitívusz',
+  'A segédige után az ige „at” nélküli alapalakja áll. A skal jövőt vagy kötelezettséget, a vil szándékot jelöl.'],
+ ['\\bder\\s+(?:er|var|kommer)\\b','der er / der var',
+  'Létezést kifejező szerkezet, mint az angol „there is”. A der itt nem helyet jelöl.'],
+ ['\\bat\\s+\\w+e\\b','at + infinitívusz',
+  'Az at a főnévi igenév jele, mint a magyar -ni. Segédige után viszont elmarad.'],
+ ['^(?:I\\s+dag|Nu|Så|Derfor|Måske|Heldigvis|I\\s+morgen|Om\\s+\\w+)','Inverzió mondatkezdő határozó után',
+  'A dán fő szabálya, hogy az állítmány a második helyen áll. Ha határozóval kezdesz, az ige megelőzi az alanyt.'],
+ ['\\bikke\\b','ikke szórendje',
+  'A tagadószó az állítmány után, de a tárgy előtt áll a főmondatban. Mellékmondatban az ige előtt.'],
+ ['\\bsig\\b','Visszaható sig',
+  'A harmadik személy visszaható alakja: „magát/magának”. Sok dán ige csak sig-gel él.'],
+ ['\\b\\w+ere\\s+end\\b|\\bmere\\s+\\w+\\s+end\\b','Középfok (end)',
+  'Az -ere végződés vagy a mere + melléknév hasonlít, az „end” a magyar „mint”.']
+];
+function grammarHints(sent){
+  const list=src==='da'?GRAM_DA:GRAM_EN, out=[];
+  for(const [re,name,hu] of list){
+    let m=null; try{ m=sent.match(new RegExp(re,'i')) }catch(e){}
+    if(m) out.push({name,hu,frag:m[0].trim()});
+    if(out.length>=4) break;
+  }
+  const names=out.map(o=>o.name);
+  const drop=[];
+  if(names.includes('Módbeli segédige + befejezett alak')) drop.push('Present perfect');
+  if(names.includes('Past perfect')) drop.push('Present perfect');
+  return out.filter(o=>!drop.includes(o.name)).slice(0,3);
+}
+const SYS_PRE=lang=>'You build vocabulary cards for a Hungarian learner of '+lang+'. '+
+ 'Input lines look like: word :: example sentence from the book (the sentence may be missing). '+
+ 'Return ONLY a JSON array, no markdown fences, no preamble. One object per input line, same order: '+
+ '{"w":"the word exactly as given","hu":"magyar jelentés PONTOSAN abban az értelemben, ahogy a mondatban szerepel",'+
+ '"note":"magyar szófaj; igénél az alakok magyar megfelelőkkel (múlt idő: went - ment), főnévnél a többes szám; '+
+ 'legvégül egy rövid magyar magyarázat","s":"a példamondat magyar fordítása, vagy üres, ha nincs mondat"}. '+
+ (lang==='Danish'?'A note elején add meg a kiejtést szögletes zárójelben, kizárólag magyar betűkkel, IPA nélkül. ':'')+
+ 'Semmi mást ne írj.';
+const SYS_EXPR=lang=>'You mine useful multi-word expressions from a '+lang+' text for a Hungarian learner. '+
+ 'Return ONLY a JSON array, no markdown, max 18 items, most useful first. Each: '+
+ '{"e":"the expression in its dictionary form","hu":"magyar jelentés","k":"vonzatos ige | idióma | állandó szókapcsolat | nyelvtani fordulat",'+
+ '"note":"rövid magyar magyarázat, mikor használjuk"}. '+
+ 'Rank by how frequently the expression occurs in the language in general, not in this text. '+
+ 'Skip plain word combinations that a learner can work out from the parts. Skip proper names.';
+const SYS_WHY=lang=>'You explain grammar to a Hungarian learner of '+lang+'. '+
+ 'Pick the single most instructive grammatical structure in the sentence. Answer in Hungarian, at most three sentences: '+
+ 'first name the structure, then explain what it expresses and how Hungarian handles it differently. '+
+ 'No lists, no markdown, no restating the whole sentence.';
 /* ============ mondatbontás ============ */
 const ABBR=new Set(['mr','mrs','ms','dr','prof','sr','jr','st','vs','etc','inc','ltd','co','capt','lt','sgt','gen','col','rev','hon','ave','blvd','no','vol','pp','fig','approx','mt','messrs','esq','viz','al','ca','cf','ibid','ed','dept','univ','assn','bros','jan','feb','mar','apr','jun','jul','aug','sept','oct','nov','dec','mon','tue','wed','thu','fri','sat','sun']);
 const ABBR_DA=new Set(['bl.a','fx','f.eks','dvs','osv','ca','hr','fru','frk','kl','nr','pga','p.ga','mht','ift','mm','m.m','jf','ang','evt','inkl','ekskl','stk','kr','pct','dr','prof','ph.d','o.s.v','m.fl','vedr','iflg','bl','sml']);
@@ -1256,6 +1441,7 @@ async function showTranslation(sp){
         huEl.style.color='var(--red)'; huEl.textContent=p.name+' nem válaszolt: '+e.message;
       }finally{ again.disabled=false; label() }
     };
+    const wb=mk('miért így?',()=>{wb.disabled=true;whyThis(sent,panel)});
     const gb=mk('szavak',()=>{gb.disabled=true;gloss(sent,panel)});
     mk('szótárba',()=>{addVocab(sent,cur,'mondat')});
     mk('másol',()=>{navigator.clipboard?.writeText(sent+'\n'+cur);toast('vágólapra másolva')});
@@ -1270,6 +1456,32 @@ async function showTranslation(sp){
       ? 'A Claude motorhoz kulcs kell. Váltsd „ingyenes” módra, vagy add meg a kulcsot az Aa panelben.'
       : 'A fordítás nem sikerült: '+err.message+' — koppints újra.';
   }finally{ sp.classList.remove('wait') }
+}
+async function whyThis(sent,panel){
+  const box=document.createElement('div'); box.className='why';
+  box.textContent='nyelvtan…'; panel.appendChild(box);
+  try{
+    if(engine!=='free'){
+      const t=await llm(SYS_WHY(LANG[src].en),sent,400);
+      box.innerHTML=''; const d=document.createElement('div'); d.className='wtext';
+      d.textContent=t; box.appendChild(d);
+      return;
+    }
+    const hints=grammarHints(sent);
+    box.innerHTML='';
+    if(!hints.length){
+      box.innerHTML='<div class="wtext">Ebben a mondatban nem találtam külön magyarázatra érdemes szerkezetet. Claude motorral részletes elemzést is kérhetsz.</div>';
+      return;
+    }
+    hints.forEach(h=>{
+      const d=document.createElement('div'); d.className='witem';
+      d.innerHTML='<b></b><i></i><span></span>';
+      d.querySelector('b').textContent=h.name;
+      d.querySelector('i').textContent=h.frag;
+      d.querySelector('span').textContent=h.hu;
+      box.appendChild(d);
+    });
+  }catch(e){ box.innerHTML='<span class="err">nem sikerült: '+e.message+'</span>' }
 }
 async function gloss(sent,panel){
   const box=document.createElement('div'); box.className='gloss'; box.textContent='szavak…';
@@ -1373,7 +1585,44 @@ function today(){
   if(counts.day!==k){ counts={day:k,new:0,rev:0}; store.set('ek_counts',JSON.stringify(counts)) }
   return counts;
 }
-const saveCounts=()=>store.set('ek_counts',JSON.stringify(counts));
+let hist=JSON.parse(store.get('ek_hist')||'{}');
+function saveCounts(){
+  store.set('ek_counts',JSON.stringify(counts));
+  if(counts.day){
+    hist[counts.day]={n:counts.new,r:counts.rev};
+    const keys=Object.keys(hist).sort();
+    while(keys.length>120) delete hist[keys.shift()];
+    store.set('ek_hist',JSON.stringify(hist));
+  }
+}
+function streak(){
+  let n=0; const d=new Date();
+  const has=k=>hist[k]&&((hist[k].n||0)+(hist[k].r||0))>0;
+  if(!has(dayKey(d))) d.setDate(d.getDate()-1);        /* a mai nap még nem kötelező */
+  while(has(dayKey(d))){ n++; d.setDate(d.getDate()-1) }
+  return n;
+}
+function forecast(days){
+  const out=[]; const now=new Date();
+  for(let i=0;i<days;i++){
+    const d=new Date(now); d.setDate(now.getDate()+i);
+    const k=dayKey(d);
+    let n=0;
+    vocab.forEach(v=>cards(v).forEach(c=>{ if(c.due&&dayKey(c.due)===k&&cardSt(c)!==0) n++ }));
+    if(i===0) vocab.forEach(v=>cards(v).forEach(c=>{ if(c.due&&c.due<Date.now()&&cardSt(c)!==0) n++ }));
+    out.push({k,n,label:i===0?'ma':i===1?'holnap':new Intl.DateTimeFormat('hu',{weekday:'short'}).format(d)});
+  }
+  return out;
+}
+function cardStats(){
+  let nw=0,lr=0,rv=0,leech=0;
+  vocab.forEach(v=>cards(v).forEach(c=>{
+    const st=cardSt(c);
+    if(st===0) nw++; else if(st===1) lr++; else rv++;
+    if((c.lapses||0)>=8) leech++;
+  }));
+  return {nw,lr,rv,leech,words:vocab.length};
+}
 
 /* c[0]: idegen -> magyar, c[1]: magyar -> idegen
    st: 0 = új, 1 = tanulás alatt, 2 = ismétlés */
@@ -1723,6 +1972,94 @@ async function batchTranslate(words,onProg){
   }
   return out;
 }
+let exprData=[], exprSkip=new Set();
+async function exprMine(){
+  if(!chapters.length) return toast('előbb nyiss meg egy könyvet');
+  if(engine==='free') return toast('ehhez Claude vagy saját API kell');
+  const txt=(chapters[curChap].body.textContent||'').replace(/\s+/g,' ').trim().slice(0,7000);
+  if(txt.length<200) return toast('ez a fejezet túl rövid');
+  $('exprBtn').disabled=true; $('exprBtn').textContent='keresés…';
+  try{
+    let raw=await llm(SYS_EXPR(LANG[src].en),txt,2000);
+    raw=raw.replace(/```json|```/g,'').trim();
+    exprData=JSON.parse(raw.slice(raw.indexOf('['),raw.lastIndexOf(']')+1));
+    exprSkip=new Set();
+    drawExpr();
+    toast(exprData.length+' kifejezés a fejezetből',3000);
+  }catch(e){ toast('nem sikerült: '+e.message,4000) }
+  $('exprBtn').disabled=false; $('exprBtn').textContent='kifejezések keresése';
+}
+function drawExpr(){
+  const box=$('exprList');
+  box.style.display=exprData.length?'flex':'none';
+  box.innerHTML='';
+  exprData.forEach((o,i)=>{
+    const r=document.createElement('button');
+    r.className='prow'+(exprSkip.has(i)?' off':'');
+    r.style.width='100%'; r.style.textAlign='left'; r.style.display='block';
+    r.innerHTML='<b></b><span></span><i></i>';
+    r.querySelector('b').textContent=o.e||'';
+    r.querySelector('span').textContent='  \u2014 '+(o.hu||'');
+    const it=r.querySelector('i');
+    it.style.cssText='display:block;font-style:normal;font-size:var(--t1);color:var(--faint);margin-top:2px';
+    it.textContent=[o.k,o.note].filter(Boolean).join(' \u00b7 ');
+    r.onclick=()=>{ exprSkip.has(i)?exprSkip.delete(i):exprSkip.add(i); drawExpr() };
+    box.appendChild(r);
+  });
+  const keep=exprData.filter((_,i)=>!exprSkip.has(i));
+  $('exprAdd').hidden=!keep.length;
+  $('exprAdd').textContent='kijelöltek a szótárba ('+keep.length+')';
+}
+function exprAddRun(){
+  const bookTitle=book?book.title:'';
+  let n=0;
+  exprData.forEach((o,i)=>{
+    if(exprSkip.has(i)||!o.e) return;
+    const e=o.e.trim();
+    if(vocab.some(v=>(v.en||'').toLowerCase()===e.toLowerCase())) return;
+    vocab.push({en:e,hu:o.hu||'',note:[o.k,o.note].filter(Boolean).join(' \u00b7 '),nv:3,
+                src:'',srcHu:'',book:bookTitle,lang:src});
+    n++;
+  });
+  saveVocab(); drawVocab();
+  exprData=[]; exprSkip=new Set(); drawExpr();
+  toast(n+' kifejezés a szótárban — a gyakorlásban is megjelennek',4000);
+}
+async function preAddLlmRun(){
+  if(!preData) return;
+  const sel=preData.list.slice(0,preTop).filter(([w])=>!preSkip.has(w)).map(([w])=>w);
+  if(!sel.length) return;
+  $('preAddLlm').disabled=true; $('preAdd').disabled=true;
+  const bookTitle=book?book.title:'';
+  $('preProg').textContent='példamondatok keresése…';
+  const ex=findExamples(sel);
+  let added=0;
+  for(let i=0;i<sel.length;i+=20){
+    const chunk=sel.slice(i,i+20);
+    $('preProg').textContent='Claude: '+Math.min(sel.length,i+20)+' / '+sel.length;
+    const lines=chunk.map(w=>w+' :: '+(ex[w]||'')).join('\n');
+    try{
+      let raw=await llm(SYS_PRE(LANG[src].en),lines,1600);
+      raw=raw.replace(/```json|```/g,'').trim();
+      const arr=JSON.parse(raw.slice(raw.indexOf('['),raw.lastIndexOf(']')+1));
+      arr.forEach(o=>{
+        const w=(o.w||'').toLowerCase().trim(); if(!w) return;
+        if(vocab.some(v=>(v.en||'').toLowerCase()===w)) return;
+        vocab.push({en:w,hu:o.hu||'',note:o.note||'',nv:3,src:ex[w]||'',srcHu:o.s||'',
+                    book:bookTitle,lang:src});
+        added++;
+      });
+      saveVocab();
+    }catch(e){ $('preProg').textContent='hiba: '+e.message }
+    await sleep(300);
+  }
+  drawVocab();
+  preData.list=preData.list.filter(([w])=>!sel.includes(w));
+  drawPre();
+  $('preProg').textContent=added+' szó bekerült, jelentéssel, alakokkal és lefordított mondattal.';
+  $('preAddLlm').disabled=false; $('preAdd').disabled=false;
+  toast(added+' szó hozzáadva Claude-dal',4000);
+}
 async function preAddRun(){
   if(!preData) return;
   const sel=preData.list.slice(0,preTop).filter(([w])=>!preSkip.has(w)).map(([w])=>w);
@@ -1802,6 +2139,13 @@ function drawPre(){
   const sel=list.slice(0,preTop).filter(([w])=>!preSkip.has(w));
   $('preAdd').textContent='hozzáadás a szótárhoz ('+sel.length+')';
   $('preAdd').disabled=!sel.length;
+  const lb=$('preAddLlm');
+  lb.hidden=engine==='free'||!sel.length;
+  lb.textContent='hozzáadás '+(engine==='claude'?'Claude-dal':'a beállított API-val')+' ('+sel.length+')';
+  $('exprNote').textContent=engine==='free'
+    ? 'A kifejezésbányászat csak Claude vagy saját API mellett működik: a nyelvbeli gyakoriságot gépi fordító nem tudja megítélni. Váltsd át a motort a beállításokban.'
+    : 'A most nyitott fejezet szövegéből keres vonzatos igéket, idiómákat és állandó fordulatokat, hasznosság szerint rangsorolva.';
+  $('exprBtn').disabled=engine==='free';
   const box=$('preList'); box.innerHTML='';
   list.slice(0,preTop).forEach(([w,n])=>{
     const r=document.createElement('button'); r.className='prow'+(preSkip.has(w)?' off':'');
@@ -1812,6 +2156,136 @@ function drawPre(){
     box.appendChild(r);
   });
 }
+/* ============ statisztika ============ */
+function drawStats(){
+  const b=$('stBody'); b.innerHTML='';
+  const tc=today(), cs=cardStats(), st=streak();
+  const sec=t=>{const d=document.createElement('div');d.className='ssec';d.textContent=t;b.appendChild(d)};
+  const grid=rows=>{
+    const g=document.createElement('div'); g.className='pstats';
+    rows.forEach(([a,c])=>{const d=document.createElement('div');d.className='pstat';
+      d.innerHTML='<b></b><span></span>';d.querySelector('b').textContent=a;
+      d.querySelector('span').textContent=c;g.appendChild(d)});
+    b.appendChild(g);
+  };
+  sec('Ma');
+  grid([[tc.new,'új kártya'],[tc.rev,'ismétlés'],[dueCount(),'hátra van'],
+        [st+(st===1?' nap':' nap'),'egyhuzamban']]);
+  sec('Következő hét nap');
+  const fc=forecast(7), max=Math.max(1,...fc.map(x=>x.n));
+  const bar=document.createElement('div'); bar.className='fc';
+  fc.forEach(x=>{
+    const c=document.createElement('div'); c.className='fcb';
+    const n=document.createElement('b'); n.textContent=x.n||'';
+    const i=document.createElement('i'); i.style.height=Math.round(x.n/max*70)+'px';
+    const l=document.createElement('span'); l.textContent=x.label;
+    c.appendChild(n); c.appendChild(i); c.appendChild(l); bar.appendChild(c);
+  });
+  b.appendChild(bar);
+  sec('Szótár');
+  grid([[cs.words,'szó'],[cs.rv,'beállt kártya'],[cs.nw,'még nem látott'],
+        [cs.leech,'makacs (8+ hiba)']]);
+  if(chapters.length&&book){
+    sec('A megnyitott könyv');
+    const p=document.createElement('div'); p.className='note';
+    p.textContent='Számolás…'; b.appendChild(p);
+    setTimeout(()=>{
+      try{
+        const a=analyzeBook();
+        const cov=a.uniq?Math.round(a.known/a.uniq*100):0;
+        p.innerHTML='';
+        const g=document.createElement('div'); g.className='pstats';
+        [[a.uniq.toLocaleString('hu'),'különböző szó'],[a.known.toLocaleString('hu'),'ebből a szótáradban'],
+         [cov+'%','lefedettség'],[a.list.length.toLocaleString('hu'),'tanulható még']]
+        .forEach(([x,y])=>{const d=document.createElement('div');d.className='pstat';
+          d.innerHTML='<b></b><span></span>';d.querySelector('b').textContent=x;
+          d.querySelector('span').textContent=y;g.appendChild(d)});
+        p.replaceWith(g);
+      }catch(e){ p.textContent='a könyv elemzése nem sikerült' }
+    },60);
+  }
+}
+/* ============ párosítós játék ============ */
+let mPool=[], mRound=0, mSelL=null, mWrong=new Set(), mScore=0;
+function startMatch(){
+  const due=buildQueue().filter(o=>o.dir===0&&o.v.hu&&o.v.en);
+  const all=vocab.map((v,i)=>({v,i,dir:0,c:cards(v)[0]})).filter(o=>o.v.hu&&o.v.en);
+  const base=due.length>=4?due:all;
+  if(base.length<4) return toast('legalább négy lefordított szó kell hozzá');
+  mPool=base.slice().sort(()=>Math.random()-.5).slice(0,20);
+  mRound=0; mScore=0; mWrong=new Set(); mSelL=null;
+  $('vocab').classList.remove('open');
+  $('match').classList.add('open');
+  matchRound();
+}
+function matchRound(){
+  const group=mPool.slice(mRound*4,mRound*4+4);
+  if(group.length<4){ matchDone(); return }
+  const L=$('mLeft'), R=$('mRight');
+  L.innerHTML=''; R.innerHTML=''; $('mMsg').textContent='';
+  $('mCount').textContent=(mRound+1)+'. kör  ·  '+mPool.length/4|0;
+  $('mCount').textContent=(mRound+1)+' / '+Math.floor(mPool.length/4)+' kör  ·  '+mScore+' találat';
+  mSelL=null;
+  group.forEach(o=>{
+    const b=document.createElement('button'); b.className='mitem'; b.textContent=o.v.en;
+    b.dataset.i=o.i;
+    b.onclick=()=>{
+      [...L.children].forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel'); mSelL=b;
+      speakLang(o.v.en,o.v.lang||'en');
+    };
+    L.appendChild(b);
+  });
+  group.slice().sort(()=>Math.random()-.5).forEach(o=>{
+    const b=document.createElement('button'); b.className='mitem'; b.textContent=o.v.hu;
+    b.dataset.i=o.i;
+    b.onclick=()=>tryPair(b,group);
+    R.appendChild(b);
+  });
+}
+function tryPair(right,group){
+  if(!mSelL){ $('mMsg').textContent='Előbb válaszd ki bal oldalon a szót.'; return }
+  const i=mSelL.dataset.i;
+  if(right.dataset.i===i){
+    mSelL.classList.remove('sel'); mSelL.classList.add('ok'); right.classList.add('ok');
+    mScore++;
+    const o=group.find(g=>String(g.i)===i);
+    if(o){
+      const first=!mWrong.has(i);
+      const st=cardSt(o.c);
+      if(st!==0&&o.c.due&&o.c.due<=Date.now()){   /* csak esedékes ismétlést ütemez */
+        const tc=today(); tc.rev++; saveCounts();
+        schedule(o.c,first?2:1); o.v.bury=tc.day; saveVocab();
+      }
+    }
+    mSelL=null;
+    $('mCount').textContent=(mRound+1)+' / '+Math.floor(mPool.length/4)+' kör  ·  '+mScore+' találat';
+    if([...$('mRight').children].every(x=>x.classList.contains('ok'))){
+      mRound++; setTimeout(matchRound,520);
+    }
+  } else {
+    right.classList.add('bad'); mWrong.add(i);
+    setTimeout(()=>right.classList.remove('bad'),340);
+    const o=group.find(g=>String(g.i)===right.dataset.i);
+    $('mMsg').textContent=o?('„'+right.textContent+'” ehhez tartozik: '+o.v.en):'Nem ez az.';
+  }
+}
+function matchDone(){
+  $('mLeft').innerHTML=''; $('mRight').innerHTML='';
+  const box=document.createElement('div');
+  box.innerHTML='<b>Kész.</b><br>'+mScore+' párosítás, '+mWrong.size+' elsőre elhibázott szó.';
+  $('mMsg').innerHTML=''; $('mMsg').appendChild(box);
+  const again=document.createElement('button'); again.className='btn';
+  again.textContent='új kör'; again.style.margin='var(--sp3) var(--sp2) 0';
+  again.onclick=startMatch;
+  const out=document.createElement('button'); out.className='btn pri';
+  out.textContent='kilép'; out.style.margin='var(--sp3) 0 0';
+  out.onclick=closeMatch;
+  $('mMsg').appendChild(again); $('mMsg').appendChild(out);
+  $('mCount').textContent='vége';
+  vocabBadge();
+}
+function closeMatch(){ $('match').classList.remove('open'); vocabBadge(); drawVocab() }
 /* ============ könyvtár megjelenítése ============ */
 function progOf(id,chaps){
   try{
@@ -1951,6 +2425,9 @@ $('openBtn').onclick=()=>$('file').click();
 $('libBtn').onclick=closeBook;
 $('preBtn').onclick=openPre;
 $('preAdd').onclick=preAddRun;
+$('preAddLlm').onclick=preAddLlmRun;
+$('exprBtn').onclick=exprMine;
+$('exprAdd').onclick=exprAddRun;
 $('preClose').onclick=()=>$('pre').classList.remove('open');
 [25,50,100,200].forEach(n=>{const b=document.createElement('button');
   b.dataset.k=String(n); b.textContent=String(n);
@@ -2112,6 +2589,15 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) savePos()
 $('vocabBtn').onclick=()=>{drawVocab();$('setts').classList.remove('open');$('vocab').classList.add('open')};
 $('vClose').onclick=()=>$('vocab').classList.remove('open');
 $('studyBtn').onclick=()=>{$('vocab').classList.remove('open');startStudy()};
+$('studyTop').onclick=()=>{ if(!vocab.length) return toast('előbb ments szavakat a szótárba'); startStudy() };
+$('matchTop').onclick=()=>startMatch();
+$('mClose').onclick=closeMatch;
+const openStats=()=>{$('vocab').classList.remove('open');$('setts').classList.remove('open');
+  $('about').classList.remove('open');drawStats();$('stats').classList.add('open')};
+$('statBtn').onclick=openStats;
+$('statBtn2').onclick=openStats;
+$('stClose').onclick=()=>$('stats').classList.remove('open');
+heroLabel();
 $('fixBtn').onclick=()=>{$('fixBtn').disabled=true;huFix().finally(()=>$('fixBtn').disabled=false)};
 $('sClose2').onclick=closeStudy;
 $('sCard').onclick=()=>{ if($('sBack').hidden&&sCur) reveal() };

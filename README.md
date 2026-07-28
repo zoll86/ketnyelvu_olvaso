@@ -12,7 +12,12 @@ Egyetlen HTML fájl, szerver nélkül működik. A könyvek nem hagyják el a k�
 - **Claude vagy bármely OpenAI-kompatibilis API** (Kimi, OpenRouter, DeepSeek) igényesebb fordításhoz, élő költségmérővel
 - **Angol és dán** forrásnyelv, automatikus felismeréssel, saját felolvasással
 - **Szótár magyarul**: szófaj, magyarázat, igealakok magyar címkékkel, többesszám
-- **Beépített ismétlés** kétirányú kártyákkal (idegen→magyar és magyar→idegen), külön ütemezéssel
+- **Beépített ismétlés** kétirányú kártyákkal (idegen→magyar és magyar→idegen), külön ütemezéssel, napi adagolással, tanulási lépcsővel, testvér-elrejtéssel, visszavonással
+- **Párosítós játék** négy szó és négy jelentés összepárosításával
+- **Előtanulás**: a könyv szókincsének felmérése gyakoriság szerint, példamondatokkal a szövegből
+- **Kifejezésbányászat** fejezetenként (vonzatos igék, idiómák) — LLM motorral
+- **Nyelvtani magyarázat** mondatonként („miért így?"), ingyenes mintafelismeréssel vagy LLM-mel
+- **Statisztika**: napi sorozat, hétnapos előrejelzés, könyv-lefedettség
 - **Anki TSV / CSV export**
 - Olvasófelület: fekete/grafit/meleg/szépia háttér, négy betűtípus, méret és sortávolság állítható
 
