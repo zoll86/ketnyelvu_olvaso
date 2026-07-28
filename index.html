@@ -77,6 +77,7 @@ body.reading #hTools{display:flex}
   body.reading #hTools .grp .btn{text-align:center}
 }
 body.reading .brand{display:none}
+body:not(.reading) header{display:none}   /* kezdőoldalon a h1 a cím — a fejléc ott üres és redundáns */
 #libBtn{display:none}
 body.reading #libBtn{display:inline-block}
 body.reading select#chapSel{max-width:none;flex:1 1 auto;text-overflow:ellipsis}
@@ -238,8 +239,10 @@ body.reading.rlight .tr .err{color:#a8352a}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
 #libList.grid .bauth,#libList.grid .bmeta{display:none}
 #libList.grid .bprog{margin-top:var(--sp1)}
-#libList.grid .bdel{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.6);
-  border-radius:var(--r1);padding:2px 5px;font-size:var(--t1);opacity:.55}
+#libList.grid .bdel{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.45);
+  border-radius:var(--r1);padding:1px 4px;font-size:var(--t1);opacity:.25;
+  transition:opacity .2s}
+#libList.grid .bcard:hover .bdel{opacity:.7}
 #libList.grid .bdel.arm{opacity:1;background:rgba(0,0,0,.85)}
 .bpct{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.72);color:var(--gold);
   font-family:var(--mono);font-size:10px;padding:2px 4px;border-radius:5px;letter-spacing:0}
@@ -460,6 +463,10 @@ body.reading.rlight .tr .err{color:#a8352a}
       <button class="btn pri hero-btn" id="studyTop">Gyakorlás<small id="studyTopSub">&nbsp;</small></button>
       <button class="btn hero-btn" id="matchTop">Párosítás<small>végig a szótáradon</small></button>
     </div>
+    <div class="startrow">
+      <button class="mini" id="vocabTop">szótár</button>
+      <button class="mini" id="setTop">⚙ beállítások</button>
+    </div>
     <div id="lib" hidden>
       <div class="libhead"><span>Könyvtár</span><span class="libcount" id="libCount"></span>
         <span style="flex:1"></span>
@@ -654,7 +661,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v50';
+const APP_VER='v51';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3115,6 +3122,8 @@ function drawFixNote(){
 $('studyBtn').onclick=()=>{$('vocab').classList.remove('open');startStudy()};
 $('studyTop').onclick=()=>{ if(!vocab.length) return toast('előbb ments szavakat a szótárba'); startStudy() };
 $('matchTop').onclick=()=>startMatch();
+$('vocabTop').onclick=()=>$('vocabBtn').onclick();
+$('setTop').onclick=()=>$('setBtn').onclick();
 $('mClose').onclick=closeMatch;
 const openStats=()=>{$('vocab').classList.remove('open');$('setts').classList.remove('open');
   $('about').classList.remove('open');drawStats();$('stats').classList.add('open')};
