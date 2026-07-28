@@ -14,7 +14,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Barlow+Semi+Condensed:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400;1,700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,700;1,7..72,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Barlow+Semi+Condensed:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400;1,700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,700;1,7..72,400&family=Bitter:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
@@ -60,28 +60,37 @@ header{
   color:var(--txt);white-space:nowrap}
 .brand small{display:block;font-size:var(--t1);font-weight:400;letter-spacing:.16em;color:var(--faint)}
 .hspace{flex:1 1 auto}
-#tools{position:fixed;left:0;right:0;bottom:0;z-index:22;display:none;
-  gap:var(--sp5);justify-content:center;align-items:center;flex-wrap:wrap;
-  padding:var(--sp3) var(--sp4) max(var(--sp3),env(safe-area-inset-bottom));
-  background:var(--panel);backdrop-filter:blur(16px) saturate(1.1);
-  border-top:1px solid var(--line2);
-  transform:translateY(102%);transition:transform .4s var(--spring)}
-body.reading #tools{display:flex}
-body.reading.chrome #tools{transform:translateY(0)}
+#hTools{display:none;align-items:center;gap:var(--sp2);flex-wrap:wrap}
+body.reading #hTools{display:flex}
+#hamb{display:none;font-size:var(--t3);line-height:1;padding:7px 12px}
 .grp{display:flex;gap:var(--sp1)}
+@media(max-width:640px){
+  body.reading #hamb{display:inline-block}
+  body.reading #hTools{display:none;position:absolute;top:calc(100% + 6px);right:var(--sp3);
+    flex-direction:column;align-items:stretch;gap:var(--sp2);padding:var(--sp3);
+    background:rgba(24,19,13,.96);backdrop-filter:blur(18px) saturate(1.1);
+    border:1px solid var(--line);border-radius:var(--r2);
+    box-shadow:0 16px 44px rgba(0,0,0,.55);min-width:11.5rem;z-index:30}
+  body.reading header.menu #hTools{display:flex}
+  body.reading #hTools .grp .btn{flex:1}
+  body.reading #hTools .btn{text-align:left;padding:10px 12px}
+  body.reading #hTools .grp .btn{text-align:center}
+}
 body.reading .brand{display:none}
 #libBtn{display:none}
 body.reading #libBtn{display:inline-block}
 body.reading #openBtn{display:none}
 body.reading select#chapSel{max-width:none;flex:1 1 auto;text-overflow:ellipsis}
 body.reading header{position:fixed;top:0;left:0;right:0;padding-right:3.3rem;
+  background:rgba(22,17,12,.94);border-bottom:1px solid var(--line);
+  box-shadow:0 8px 28px rgba(0,0,0,.45);
   transform:translateY(-102%);opacity:0;pointer-events:none;
   transition:transform .4s var(--spring),opacity .22s ease}
 body.reading.chrome header{transform:translateY(0);opacity:1;pointer-events:auto}
 #dots{position:fixed;z-index:45;top:max(.45rem,env(safe-area-inset-top));right:.5rem;
   width:2.4rem;height:2.4rem;display:none;place-items:center;border-radius:50%;
-  border:1px solid rgba(255,255,255,.12);background:rgba(20,20,20,.55);backdrop-filter:blur(8px);
-  color:#8d8d8d;font-size:1.15rem;line-height:1;cursor:pointer;opacity:.42;
+  border:1px solid rgba(255,255,255,.14);background:rgba(20,20,20,.62);backdrop-filter:blur(8px);
+  color:#a9a9a9;font-size:1.15rem;line-height:1;cursor:pointer;opacity:.6;
   transition:opacity .25s,transform .3s var(--spring),color .2s}
 body.reading #dots{display:grid}
 #dots:hover,#dots:focus-visible{opacity:1;color:var(--gold)}
@@ -104,7 +113,29 @@ select.btn{padding-right:var(--sp1);max-width:44vw;color:var(--txt)}
 
 /* ---------- olvasó ---------- */
 main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
-  -webkit-overflow-scrolling:touch;background:var(--rbg,transparent);transition:background .3s}
+  -webkit-overflow-scrolling:touch;background:transparent;transition:background .3s}
+body.reading main{background:var(--rbg,transparent)}
+/* ---------- világos olvasótéma (szépia): a fordításpanel és a vonalak sötét tintát kapnak ---------- */
+body.reading.rlight #reader blockquote{border-left-color:rgba(0,0,0,.28)}
+body.reading.rlight #reader hr{background:rgba(0,0,0,.22)}
+body.reading.rlight .s:hover{background:rgba(0,0,0,.06)}
+body.reading.rlight .s.seen{text-decoration-color:rgba(0,0,0,.3)}
+body.reading.rlight .s.act{background:rgba(170,110,20,.2)}
+body.reading.rlight .tr{background:rgba(255,255,255,.6);border-color:rgba(0,0,0,.15);
+  border-left-color:#9a6414;box-shadow:0 4px 18px rgba(60,45,20,.12)}
+body.reading.rlight .tr .hu{color:#241c10}
+body.reading.rlight .tr .mini{background:rgba(0,0,0,.05);color:#4a3d2a;border-color:rgba(0,0,0,.17)}
+body.reading.rlight .tr .mini:hover{color:#241c10;background:rgba(0,0,0,.1);border-color:rgba(0,0,0,.28)}
+body.reading.rlight .tr .w{background:rgba(0,0,0,.045);border-color:rgba(0,0,0,.15)}
+body.reading.rlight .tr .w b{color:#241c10}
+body.reading.rlight .tr .w span{color:#4a3d2a}
+body.reading.rlight .tr .w.saved{border-color:#2f7d54;background:rgba(47,125,84,.14)}
+body.reading.rlight .tr .witem b{color:#8a5a12}
+body.reading.rlight .tr .witem i{color:#7a6a50}
+body.reading.rlight .tr .witem span,body.reading.rlight .tr .wtext{color:#3d3226}
+body.reading.rlight .tr .why{border-top-color:rgba(0,0,0,.22)}
+body.reading.rlight .tr .gloss{border-top-color:rgba(0,0,0,.22)}
+body.reading.rlight .tr .err{color:#a8352a}
 #reader{max-width:var(--rw,42rem);margin:0 auto;padding:1.4rem var(--rpad,1.05rem) 46vh;
   font-family:var(--rff,'Barlow Semi Condensed',sans-serif);color:var(--rcol,#b6b6b6);
   font-size:var(--rfs,1.55rem);line-height:var(--rlh,1.34);font-weight:400}
@@ -408,21 +439,19 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   <select id="chapSel" class="btn" style="display:none"></select>
   <span class="chip" id="progTxt"></span>
   <div class="hspace"></div>
-  <button class="btn pri" id="libBtn">← könyvtár</button>
-  <button class="btn pri" id="openBtn">könyv</button>
-</header>
-
-<nav id="tools">
-  <div class="grp">
-    <button class="btn" id="fsDown" title="Kisebb betű">A−</button>
-    <button class="btn" id="fsUp" title="Nagyobb betű">A+</button>
-  </div>
-  <div class="grp">
+  <div id="hTools">
+    <div class="grp">
+      <button class="btn" id="fsDown" title="Kisebb betű">A−</button>
+      <button class="btn" id="fsUp" title="Nagyobb betű">A+</button>
+    </div>
     <button class="btn" id="preBtn" title="A könyv szókincse és kifejezései">szókincs</button>
     <button class="btn" id="vocabBtn">szótár <span id="vcount" class="chip" style="padding:0">0</span></button>
     <button class="btn" id="setBtn" title="Beállítások">⚙</button>
   </div>
-</nav>
+  <button class="btn" id="hamb" title="Menü" aria-label="Menü">☰</button>
+  <button class="btn pri" id="libBtn">← könyvtár</button>
+  <button class="btn pri" id="openBtn">könyv</button>
+</header>
 
 <button id="dots" title="Fejléc mutatása (H)" aria-label="Fejléc mutatása">⋯</button>
 
@@ -431,7 +460,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <h1>Kétnyelvű olvasó</h1>
     <div class="hero">
       <button class="btn pri hero-btn" id="studyTop">Gyakorlás<small id="studyTopSub">&nbsp;</small></button>
-      <button class="btn hero-btn" id="matchTop">Párosítás<small>négyes játék</small></button>
+      <button class="btn hero-btn" id="matchTop">Párosítás<small>végig a szótáradon</small></button>
     </div>
     <div id="lib" hidden>
       <div class="libhead"><span>Könyvtár</span><span class="libcount" id="libCount"></span>
@@ -491,13 +520,13 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p>Olvasás előtt a <b>szókincs</b> gomb felméri a könyv szókincsét: hány különböző szó van benne, mennyit tudsz már, és mi a leggyakoribb ismeretlen. A ragozott alakokat összevonja, az egyszer előfordulókat kihagyja. A kiválasztott szavak a szótárba kerülnek, példamondattal a könyvből. Claude-dal a jelentés a mondatbeli értelemben jön, nem a szótári első jelentés.</p>
     <p>Ugyanitt a <b>kifejezések</b> a nyitott fejezetből vonzatos igéket, idiómákat és állandó fordulatokat gyűjtenek, a nyelvbeli gyakoriság szerint rangsorolva. Ez csak Claude vagy saját API mellett működik, mert gépi fordító nem tudja megítélni, mi hasznos.</p>
     <h4>Gyakorlás</h4>
-    <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót; a jól álló szavak ütemezését nem rontja el.</p>
+    <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban körönként négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót. A játék a teljes szótáradon végigmegy — elöl az esedékes szavakkal —, de bármikor kiléphetsz; a jól álló szavak ütemezését nem rontja el.</p>
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
     <h4>Olvasás</h4>
-    <p>A ⋯ gombbal lehozod a sávokat: felül a fejezetválasztó és a kilépés a könyvtárba, alul a betűméret, a <b>szókincs</b>, a <b>szótár</b> és a ⚙. Minden tartós beállítás — forrásnyelv, fordítómotor, előtöltés, napi adagok — a ⚙ panelben van, szakaszokra bontva. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
+    <p>A ⋯ gombbal lehozod a menüsávot: egyetlen felső sávban van a kilépés a könyvtárba, a fejezetválasztó, a haladás, a betűméret, a <b>szókincs</b>, a <b>szótár</b> és a ⚙ — keskeny kijelzőn az eszközök a ☰ gomb mögé kerülnek. Minden tartós beállítás — forrásnyelv, fordítómotor, előtöltés, napi adagok — a ⚙ panelben van, szakaszokra bontva. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
     <h4>Adatok</h4>
     <p>A könyvek, a szótár és a beállítások a készüléken maradnak, semmi nem kerül fel szerverre. Csak a lefordítandó mondat megy ki a fordítószolgáltatóhoz. Telepítés után offline is elindul; a fordításhoz kell hálózat.</p>
   </div>
@@ -627,7 +656,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v47';
+const APP_VER='v48';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -688,17 +717,20 @@ let book=null, chapters=[], curChap=0, bookId='', prefetch=true, totalSent=0;
 const FONTS={bsc:["kondenzált","'Barlow Semi Condensed',sans-serif"],
              rc:["Roboto Cond.","'Roboto Condensed',sans-serif"],
              lit:["talpas","'Literata',Georgia,serif"],
+             bit:["Bitter","'Bitter',Georgia,serif"],
+             atk:["Hyperlegible","'Atkinson Hyperlegible',system-ui,sans-serif"],
              dm:["DM Sans","'DM Sans',system-ui,sans-serif"]};
-const THEMES={black:["fekete","#000000","#b6b6b6"],
-              grey:["grafit","#121212","#c9c5be"],
-              warm:["meleg","#100c08","#eee2d0"],
-              sepia:["szépia","#2b2620","#dccfb6"]};
+const THEMES={black:["fekete","#000000","#a9a9a9"],
+              grey:["grafit","#22262c","#ccd4dc"],
+              warm:["meleg","#191006","#f3ddae"],
+              sepia:["szépia","#e9dcc3","#3f331f",1]};   /* 4. elem: világos téma */
 const RD=Object.assign({theme:'black',font:'bsc',fs:1.55,lh:1.34,w:42},
   JSON.parse(store.get('ek_read')||'{}'));
 function applyRead(){
   const r=document.documentElement.style;
   r.setProperty('--rff',FONTS[RD.font]?FONTS[RD.font][1]:FONTS.bsc[1]);
   const th=THEMES[RD.theme]||THEMES.black;
+  document.body.classList.toggle('rlight',!!th[3]);   /* világos olvasótéma */
   r.setProperty('--rbg',th[1]); r.setProperty('--rcol',th[2]);
   r.setProperty('--rfs',RD.fs.toFixed(2)+'rem');
   r.setProperty('--rlh',RD.lh.toFixed(2));
@@ -2526,21 +2558,29 @@ let mPool=[], mRound=0, mSelL=null, mWrong=new Set(), mScore=0;
 function startMatch(){
   const due=buildQueue().filter(o=>o.dir===0&&o.v.hu&&o.v.en);
   const all=vocab.map((v,i)=>({v,i,dir:0,c:cards(v)[0]})).filter(o=>o.v.hu&&o.v.en);
-  const base=due.length>=4?due:all;
-  if(base.length<4) return toast('legalább négy lefordított szó kell hozzá');
-  mPool=base.slice().sort(()=>Math.random()-.5).slice(0,20);
+  if(all.length<4) return toast('legalább négy lefordított szó kell hozzá');
+  /* a teljes szótár lepörög: elöl az esedékesek, utánuk a többi, mind megkeverve */
+  const dueIds=new Set(due.map(o=>o.i));
+  const rest=all.filter(o=>!dueIds.has(o.i));
+  mPool=due.slice().sort(()=>Math.random()-.5)
+        .concat(rest.sort(()=>Math.random()-.5));
   mRound=0; mScore=0; mWrong=new Set(); mSelL=null;
   $('vocab').classList.remove('open');
   $('match').classList.add('open');
   matchRound();
 }
 function matchRound(){
-  const group=mPool.slice(mRound*4,mRound*4+4);
-  if(group.length<4){ matchDone(); return }
+  let group=mPool.slice(mRound*4,mRound*4+4);
+  if(!group.length){ matchDone(); return }
+  if(group.length<4){                       /* csonka utolsó kör: feltöltjük már látott szavakkal */
+    const used=new Set(group.map(o=>o.i));
+    const extra=mPool.filter(o=>!used.has(o.i)).sort(()=>Math.random()-.5);
+    while(group.length<4&&extra.length){ const e=extra.pop(); used.add(e.i); group.push(e) }
+    if(group.length<4){ matchDone(); return }
+  }
   const L=$('mLeft'), R=$('mRight');
   L.innerHTML=''; R.innerHTML=''; $('mMsg').textContent='';
-  $('mCount').textContent=(mRound+1)+'. kör  ·  '+mPool.length/4|0;
-  $('mCount').textContent=(mRound+1)+' / '+Math.floor(mPool.length/4)+' kör  ·  '+mScore+' találat';
+  $('mCount').textContent=(mRound+1)+' / '+Math.ceil(mPool.length/4)+' kör  ·  '+mScore+' találat';
   mSelL=null;
   group.forEach(o=>{
     const b=document.createElement('button'); b.className='mitem'; b.textContent=o.v.en;
@@ -2575,7 +2615,7 @@ function tryPair(right,group){
       }
     }
     mSelL=null;
-    $('mCount').textContent=(mRound+1)+' / '+Math.floor(mPool.length/4)+' kör  ·  '+mScore+' találat';
+    $('mCount').textContent=(mRound+1)+' / '+Math.ceil(mPool.length/4)+' kör  ·  '+mScore+' találat';
     if([...$('mRight').children].every(x=>x.classList.contains('ok'))){
       mRound++; setTimeout(matchRound,520);
     }
@@ -2982,9 +3022,14 @@ $('prefBtn').onclick=()=>{prefetch=!prefetch;
   $('prefBtn').textContent=prefetch?'bekapcsolva':'kikapcsolva';
   toast(prefetch?'előtöltés be':'előtöltés ki')};
 function setChrome(on){document.body.classList.toggle('chrome',on);
+  if(!on) document.querySelector('header').classList.remove('menu');
   $('dots').textContent=on?'\u00d7':'\u22ef';
   $('dots').title=on?'Fejléc elrejtése (H)':'Fejléc mutatása (H)'}
 $('dots').onclick=()=>setChrome(!document.body.classList.contains('chrome'));
+$('hamb').onclick=e=>{e.stopPropagation();
+  document.querySelector('header').classList.toggle('menu')};
+$('hTools').addEventListener('click',()=>{      /* menüpont után csukódjon */
+  document.querySelector('header').classList.remove('menu')});
 let lastY=0;
 let posTimer=null;
 $('main').addEventListener('scroll',()=>{
