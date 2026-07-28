@@ -250,6 +250,18 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   transition:color .2s,border-color .2s}
 .vdel:hover{color:var(--dim)}
 .vdel.arm{color:var(--red);border-color:var(--red);font-size:var(--t1)}
+#bmenu{position:fixed;inset:auto 0 0 0;z-index:45;border-radius:var(--r3) var(--r3) 0 0;
+  padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
+  transition:transform .42s var(--spring);box-shadow:var(--shadow);max-height:86vh;overflow-y:auto}
+#bmenu.open{transform:translateY(0)}
+#bmenu>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);
+  padding-left:var(--sp4);padding-right:var(--sp4);
+  background:rgba(24,19,14,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+#bmenu h3{font-size:var(--t4);font-weight:600;margin:0;color:var(--txt);letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bmacts{display:flex;flex-direction:column;gap:var(--sp2)}
+.bmacts .btn{width:100%;text-align:left;padding:12px 14px;font-size:var(--t3)}
 #stats{position:fixed;inset:auto 0 0 0;z-index:44;border-radius:var(--r3) var(--r3) 0 0;
   padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
   transition:transform .42s var(--spring);box-shadow:var(--shadow);
@@ -390,16 +402,11 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <nav id="tools">
   <div class="grp">
-    <button class="btn" id="langBtn" title="Forrásnyelv váltása">EN→HU</button>
-    <button class="btn on" id="engBtn" title="Fordítómotor váltása">ingyenes</button>
-  </div>
-  <div class="grp">
     <button class="btn" id="fsDown" title="Kisebb betű">A−</button>
     <button class="btn" id="fsUp" title="Nagyobb betű">A+</button>
   </div>
   <div class="grp">
-    <button class="btn" id="preBtn" title="A könyv szókincsének felmérése">előtanulás</button>
-    <button class="btn" id="prefBtn" title="Előre lefordítja a következő mondatokat">előtöltés</button>
+    <button class="btn" id="preBtn" title="A könyv szókincse és kifejezései">szókincs</button>
     <button class="btn" id="vocabBtn">szótár <span id="vcount" class="chip" style="padding:0">0</span></button>
     <button class="btn" id="setBtn" title="Beállítások">⚙</button>
   </div>
@@ -441,18 +448,26 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <h3>Szótár</h3><div class="hspace" style="flex:1"></div>
     <button class="mini" id="studyBtn">gyakorlás</button>
     <button class="mini" id="statBtn">statisztika</button>
-    <button class="mini" id="fixBtn" title="Magyar magyarázat, igealakok fordítással, példamondat">kártyák bővítése</button>
-    <button class="mini" id="expTsv">Anki TSV</button>
-    <button class="mini" id="expCsv">CSV</button>
+    <button class="mini" id="expBtn">export</button>
     <button class="mini" id="vClose">bezár</button>
   </div>
+  <div id="expRow" hidden style="display:flex;gap:var(--sp2);margin-top:var(--sp3)">
+    <button class="mini" id="expTsv">Anki TSV</button>
+    <button class="mini" id="expCsv">CSV (táblázat)</button>
+  </div>
   <div id="vlist"></div>
+  <div style="flex:0 0 auto;border-top:1px solid var(--line2);padding-top:var(--sp3)">
+    <button class="btn" id="fixBtn" style="width:100%">kártyák bővítése</button>
+    <p class="note" id="fixNote" style="margin:var(--sp2) 0 0"></p>
+  </div>
 </div>
 <div id="about" class="glass sheet">
   <div class="shead">
     <h3>Bemutató</h3><div style="flex:1"></div><button class="mini" id="aClose">bezár</button>
   </div>
   <div class="abody">
+    <h4>Könyvtár</h4>
+    <p>Egyszerre több EPUB is behúzható, és a könyvtárban maradnak — offline is. A borító melletti <b>⋯</b> gombban van a folytatás, a szókincsfelmérés, a haladás nullázása és a befejezettnek jelölés. A lista rács- és listanézetben is áll, rendezhető legutóbbi, szerző, sorozat és cím szerint.</p>
     <h4>Mire jó</h4>
     <p>Angol vagy dán EPUB könyvet olvasol az eredeti nyelven, és amelyik mondatot nem érted, arra koppintasz: a magyar fordítás közvetlenül a mondat alatt nyílik ki. Nem kell kiszótárazni, nem kell átváltani másik alkalmazásra.</p>
     <h4>Fordítás</h4>
@@ -460,8 +475,8 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p>Ha egy fordítás furcsa, a panelban a <b>↻</b> gomb újrafordítja másik motorral — és rá van írva, melyik jön. Igényesebb fordításhoz a beállításokban Claude vagy bármely OpenAI-kompatibilis API (Kimi, OpenRouter) is bekapcsolható; ez fizetős, a költségmérő valós elszámolásból számol.</p>
     <h4>Szótár</h4>
     <p>A fordítás alatt a <b>szavak</b> gomb szószedetet ad: magyar jelentés, szófaj, magyarázat magyarul, igéknél az összes alak magyar címkével, főneveknél a többesszám. Egy koppintás a szóra, és a szótárba kerül a mondattal együtt. Onnan Anki-barát TSV-ként vagy CSV-ként exportálható.</p>
-    <h4>Előtanulás</h4>
-    <p>Olvasás előtt az <b>előtanulás</b> felméri a könyv szókincsét: hány különböző szó van benne, mennyit tudsz már, és mi a leggyakoribb ismeretlen. A ragozott alakokat összevonja, az egyszer előfordulókat kihagyja. A kiválasztott szavak a szótárba kerülnek, példamondattal a könyvből. Claude-dal a jelentés a mondatbeli értelemben jön, nem a szótári első jelentés.</p>
+    <h4>Felkészülés a könyvre</h4>
+    <p>Olvasás előtt a <b>szókincs</b> gomb felméri a könyv szókincsét: hány különböző szó van benne, mennyit tudsz már, és mi a leggyakoribb ismeretlen. A ragozott alakokat összevonja, az egyszer előfordulókat kihagyja. A kiválasztott szavak a szótárba kerülnek, példamondattal a könyvből. Claude-dal a jelentés a mondatbeli értelemben jön, nem a szótári első jelentés.</p>
     <p>Ugyanitt a <b>kifejezések</b> a nyitott fejezetből vonzatos igéket, idiómákat és állandó fordulatokat gyűjtenek, a nyelvbeli gyakoriság szerint rangsorolva. Ez csak Claude vagy saját API mellett működik, mert gépi fordító nem tudja megítélni, mi hasznos.</p>
     <h4>Gyakorlás</h4>
     <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót; a jól álló szavak ütemezését nem rontja el.</p>
@@ -470,9 +485,18 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <h4>Nyelvtan</h4>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
     <h4>Olvasás</h4>
-    <p>A ⋯ gombbal lehozod a sávokat, ott a fejezetválasztó, a betűméret és a szótár. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
+    <p>A ⋯ gombbal lehozod a sávokat: felül a fejezetválasztó és a kilépés a könyvtárba, alul a betűméret, a <b>szókincs</b>, a <b>szótár</b> és a ⚙. Minden tartós beállítás — forrásnyelv, fordítómotor, előtöltés, napi adagok — a ⚙ panelben van, szakaszokra bontva. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
     <h4>Adatok</h4>
     <p>A könyvek, a szótár és a beállítások a készüléken maradnak, semmi nem kerül fel szerverre. Csak a lefordítandó mondat megy ki a fordítószolgáltatóhoz. Telepítés után offline is elindul; a fordításhoz kell hálózat.</p>
+  </div>
+</div>
+<div id="bmenu" class="glass sheet">
+  <div class="shead">
+    <h3 id="bmTitle">Könyv</h3><div style="flex:1"></div><button class="mini" id="bmClose">bezár</button>
+  </div>
+  <div class="prebody">
+    <p class="note" id="bmMeta" style="margin:0 0 var(--sp4)"></p>
+    <div class="bmacts" id="bmActs"></div>
   </div>
 </div>
 <div id="stats" class="glass sheet">
@@ -483,9 +507,10 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 </div>
 <div id="pre" class="glass sheet">
   <div class="shead">
-    <h3>Előtanulás</h3><div style="flex:1"></div><button class="mini" id="preClose">bezár</button>
+    <h3>Felkészülés</h3><div style="flex:1"></div><button class="mini" id="preClose">bezár</button>
   </div>
   <div class="prebody">
+    <div class="ssec" style="margin-top:0">Szavak</div>
     <div id="preStat" class="pstats"></div>
     <div class="srow"><label>Mennyit</label><div class="seg" id="segTop"></div></div>
     <p class="note" style="margin:0 0 var(--sp3)">Gyakoriság szerint, a leggyakoribb ismeretlen szavakkal kezdve. Koppints egy szóra, ha kihagynád.</p>
@@ -493,7 +518,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <button class="btn pri" id="preAdd" style="width:100%;margin-top:var(--sp4)">hozzáadás a szótárhoz</button>
     <button class="btn" id="preAddLlm" hidden style="width:100%;margin-top:var(--sp2)">hozzáadás Claude-dal (jobb jelentés)</button>
     <div id="preProg" class="note" style="text-align:center"></div>
-    <div class="ssec">Kifejezések ebben a fejezetben</div>
+    <div class="ssec">Kifejezések a nyitott fejezetből</div>
     <p class="note" id="exprNote" style="margin:0 0 var(--sp3)"></p>
     <button class="btn" id="exprBtn" style="width:100%">kifejezések keresése</button>
     <div id="exprList" class="plist" style="display:none"></div>
@@ -519,6 +544,9 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
       <button class="mini" id="dueReset">mai számláló nullázása</button></div>
     <div class="ssec">Fordítás</div>
+    <div class="srow"><label>Forrásnyelv</label>
+      <button class="btn" id="langBtn" title="A könyv nyelve">EN→HU</button>
+      <span class="note" style="margin:0;flex:1">betöltéskor magától felismeri</span></div>
     <div class="srow"><label>Fordítómotor</label><div class="seg" id="segEng"></div></div>
     <div id="cfgClaude" hidden>
       <div class="srow"><label>Claude modell</label><div class="seg" id="segModel"></div></div>
@@ -530,13 +558,19 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
       <div class="srow"><label>Modell</label><input id="oModel" class="inp" placeholder="kimi-k2.6"></div>
       <div class="srow"><label>Kulcs</label><input id="oKey" type="password" class="inp" placeholder="sk-..." autocomplete="off"></div>
       <div class="srow"><label>Ar $/M be-ki</label><input id="oPin" class="inp" type="number" step=".05" style="max-width:5rem"><input id="oPout" class="inp" type="number" step=".05" style="max-width:5rem"><button class="mini" id="oSave">ment</button></div>
-      <p class="note" style="margin:var(--sp2) 0 0">Barmelyik OpenAI-kompatibilis szolgaltato: Moonshot (Kimi), OpenRouter, DeepSeek, helyi Ollama. Csak akkor mukodik, ha a szolgaltato engedi a bongeszobol erkezo hivast - az OpenRouter engedi, sok masik nem.</p>
+      <p class="note" style="margin:var(--sp2) 0 var(--sp3)">Barmelyik OpenAI-kompatibilis szolgaltato: Moonshot (Kimi), OpenRouter, DeepSeek, helyi Ollama. Csak akkor mukodik, ha a szolgaltato engedi a bongeszobol erkezo hivast - az OpenRouter engedi, sok masik nem.</p>
     </div>
+    <div class="srow"><label>Előtöltés</label>
+      <button class="btn on" id="prefBtn" title="Előre lefordítja a következő mondatokat">bekapcsolva</button>
+      <span class="note" style="margin:0;flex:1">a következő 3 mondat előre elkészül</span></div>
     <div class="srow"><label>Eddigi költség</label><span id="spendTxt" class="mono"></span>
       <button class="mini" id="spendReset">nulláz</button></div>
-    <div class="srow"><label>Könyv becslése</label><span id="estTxt" class="mono"></span></div>
+  </div>
+  <div>
+    <div class="ssec">Alkalmazás</div>
     <div class="srow"><label>Verzió</label><span class="mono" id="verTxt"></span>
       <button class="mini" id="updChk">frissítés keresése</button></div>
+    <div class="srow"><label>Tárhely</label><span class="mono" id="stoTxt">—</span></div>
     <div class="srow" style="justify-content:center">
       <button class="btn pri" id="updBtn" hidden>újratöltés</button></div>
     <p class="note" style="margin:var(--sp2) 0 0">Csak a Claude motor számol; az ingyenes fordítás nem kerül semmibe. Claude.ai-ban futtatva sem a te kulcsod fizet, a mérő ott csak tájékoztató.</p>
@@ -573,7 +607,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v35';
+const APP_VER='v39';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -674,6 +708,10 @@ function vocabBadge(){
   $('vcount').textContent=d?String(d):String(vocab.length*2);
   $('vcount').style.color=d?'var(--green)':'';
   heroLabel();
+if(!store.get('ek_seen')){
+  store.set('ek_seen','1');
+  setTimeout(()=>{ if(!document.body.classList.contains('reading')) $('about').classList.add('open') },900);
+}
 }
 const saveVocab=()=>{store.set('ek_vocab',JSON.stringify(vocab));vocabBadge()};
 vocabBadge();
@@ -728,9 +766,9 @@ function drawSpend(){
   const el=$('spendTxt'); if(!el) return;
   const u=spendUsd();
   el.textContent=spend.calls?('$'+u.toFixed(4)+'  ·  ~'+Math.round(u*HUF)+' Ft  ·  '+spend.calls+' hívás'):'még nincs Claude-hívás';
-  const est=$('estTxt');
-  if(est){const [pi,po]=prices(), per=(200/1e6*pi)+(32/1e6*po);
-    est.textContent=book?('kb. $'+(totalSent*per).toFixed(2)+' (~'+Math.round(totalSent*per*HUF)+' Ft) / teljes könyv, '+totalSent.toLocaleString('hu')+' mondat'):'töltsd be a könyvet a becsléshez'}
+  const est=document.getElementById('estTxt');
+  if(est&&book){const [pi,po]=prices(), per=(200/1e6*pi)+(32/1e6*po);
+    est.textContent='kb. $'+(totalSent*per).toFixed(2)+' / teljes könyv'}
 }
 async function oaiCall(system,user,maxTokens=900){
   if(!OAI.key) throw new Error('nincs megadva kulcs az egyeb API-hoz');
@@ -2201,6 +2239,13 @@ function drawStats(){
           d.innerHTML='<b></b><span></span>';d.querySelector('b').textContent=x;
           d.querySelector('span').textContent=y;g.appendChild(d)});
         p.replaceWith(g);
+        const [pi,po]=prices(), per=(200/1e6*pi)+(32/1e6*po);
+        const c=document.createElement('p'); c.className='note';
+        c.textContent='A teljes könyv mondatonkénti fordítása '+ENGN[engine]+' motorral: '+
+          (engine==='free'?'ingyenes.':'kb. $'+(totalSent*per).toFixed(2)+' (~'+
+           Math.round(totalSent*per*HUF)+' Ft), '+totalSent.toLocaleString('hu')+' mondat. '+
+           'A gyakorlatban csak a mondatok kis részére koppintasz.');
+        g.after(c);
       }catch(e){ p.textContent='a könyv elemzése nem sikerült' }
     },60);
   }
@@ -2349,13 +2394,17 @@ async function drawLib(){
     const c=document.createElement('div'); c.className='bcard';
     c.innerHTML='<div class="bcov"></div><div class="bmain"><div class="btitle"></div>'+
       '<div class="bauth"></div><div class="bmeta"></div>'+
-      '<div class="bprog"><i></i></div></div><button class="bdel" title="törlés">\u2715</button>';
+      '<div class="bprog"><i></i></div></div><button class="bdel" title="további lehetőségek">\u22ef</button>';
     const cov=c.querySelector('.bcov');
     if(b.cover){ const im=document.createElement('img'); im.src=b.cover; im.alt=''; cov.appendChild(im) }
     else { cov.classList.add('empty'); cov.textContent=(b.title||'?').trim().charAt(0).toUpperCase() }
     if(pct){ const pb=document.createElement('span'); pb.className='bpct'; pb.textContent=pct+'%';
              cov.appendChild(pb) }
     c.title=(b.title||'')+(b.author?' — '+b.author:'');
+    if(b.done){ c.style.opacity='.55';
+      const dn=document.createElement('span'); dn.className='bpct';
+      dn.style.cssText='left:3px;right:auto;color:var(--green)'; dn.textContent='kész';
+      cov.appendChild(dn) }
     c.querySelector('.btitle').textContent=b.title||b.name;
     c.querySelector('.bauth').textContent=b.author||'';
     if(!b.author) c.querySelector('.bauth').style.display='none';
@@ -2364,13 +2413,7 @@ async function drawLib(){
       (b.chaps?b.chaps+' fejezet · ':'')+Math.round(b.size/1024/1024*10)/10+' MB'+(pct?' · '+pct+'%':'');
     c.querySelector('.bprog i').style.width=pct+'%';
     c.onclick=e=>{ if(e.target.closest('.bdel')) return; openFromLib(b.id) };
-    const del=c.querySelector('.bdel'); let armed=false;
-    del.onclick=async e=>{
-      e.stopPropagation();
-      if(!armed){armed=true;del.classList.add('arm');del.textContent='törlöm?';
-        setTimeout(()=>{if(armed){armed=false;del.classList.remove('arm');del.textContent='\u2715'}},2600);return}
-      await libDel(b.id).catch(()=>{}); drawLib(); toast('könyv törölve');
-    };
+    c.querySelector('.bdel').onclick=e=>{ e.stopPropagation(); openBookMenu(b) };
     box.appendChild(c);
   });
 }
@@ -2394,6 +2437,47 @@ async function rescanLib(){
   await drawLib();
   toast(n+' könyv metaadata frissítve',3000);
 }
+function fmtDate(t){
+  if(!t) return 'még nem olvastad';
+  const d=Math.floor((Date.now()-t)/86400000);
+  if(d<=0) return 'ma';
+  if(d===1) return 'tegnap';
+  if(d<30) return d+' napja';
+  return new Intl.DateTimeFormat('hu',{year:'numeric',month:'short',day:'numeric'}).format(new Date(t));
+}
+function openBookMenu(b){
+  $('bmTitle').textContent=b.title||b.name;
+  const pct=progOf(b.id,b.chaps);
+  $('bmMeta').textContent=[b.author,(b.series?b.series+(b.sidx?' #'+Math.round(b.sidx):''):''),
+    (b.chaps?b.chaps+' fejezet':''),Math.round(b.size/1048576*10)/10+' MB',
+    'utolsó olvasás: '+fmtDate(b.last),(pct?pct+'% olvasva':'')]
+    .filter(Boolean).join(' · ');
+  const box=$('bmActs'); box.innerHTML='';
+  const act=(label,cls,fn)=>{const x=document.createElement('button');
+    x.className='btn'+(cls?' '+cls:'');x.textContent=label;x.onclick=fn;box.appendChild(x);return x};
+  act('olvasás'+(pct?' — folytatás '+pct+'%-tól':''),'pri',()=>{closeBookMenu();openFromLib(b.id)});
+  act('szókincs felmérése',null,async()=>{
+    closeBookMenu(); toast('könyv megnyitása a felméréshez…',2000);
+    await openFromLib(b.id); setTimeout(openPre,300);
+  });
+  if(pct) act('haladás nullázása',null,()=>{
+    store.set('ek_pos_'+b.id,JSON.stringify({c:0,s:0,r:0,t:Date.now()}));
+    closeBookMenu(); drawLib(); toast('a könyv az elejére állt');
+  });
+  act(b.done?'befejezett jelölés visszavonása':'befejezettnek jelölés',null,async()=>{
+    const rec=await libGet(b.id).catch(()=>null); if(!rec) return;
+    rec.done=!rec.done; await libPut(rec).catch(()=>{});
+    closeBookMenu(); drawLib(); toast(rec.done?'befejezettnek jelölve':'jelölés visszavonva');
+  });
+  const del=act('törlés a könyvtárból',null,async()=>{
+    if(del.dataset.arm!=='1'){ del.dataset.arm='1'; del.textContent='biztosan törlöd?';
+      del.style.color='var(--red)'; del.style.borderColor='var(--red)'; return }
+    await libDel(b.id).catch(()=>{});
+    store.set('ek_pos_'+b.id,''); closeBookMenu(); drawLib(); toast('könyv törölve');
+  });
+  $('bmenu').classList.add('open');
+}
+function closeBookMenu(){ $('bmenu').classList.remove('open') }
 async function openFromLib(id){
   try{
     const rec=await libGet(id);
@@ -2514,6 +2598,18 @@ $('dueReset').onclick=()=>{counts={day:dayKey(),new:0,rev:0};saveCounts();drawSr
 drawSrs();
 $('verTxt').textContent=APP_VER+(navigator.serviceWorker&&navigator.serviceWorker.controller?' · offline kész':' · nincs service worker');
 $('updChk').onclick=checkUpdate;
+async function drawStorage(){
+  const el=$('stoTxt'); if(!el) return;
+  try{
+    const books=(await libAll().catch(()=>[])).length;
+    let mb='';
+    if(navigator.storage&&navigator.storage.estimate){
+      const e=await navigator.storage.estimate();
+      if(e&&e.usage) mb=' · '+(Math.round(e.usage/1048576*10)/10)+' MB';
+    }
+    el.textContent=books+' könyv · '+vocab.length+' szó'+mb;
+  }catch(e){ el.textContent='—' }
+}
 $('updBtn').onclick=()=>{
   if(swReg&&swReg.waiting) swReg.waiting.postMessage('skipWaiting');
   setTimeout(()=>location.reload(),300);
@@ -2524,7 +2620,7 @@ $('rFs').oninput=e=>{RD.fs=+e.target.value;applyRead()};
 $('rLh').oninput=e=>{RD.lh=+e.target.value;applyRead()};
 $('rW').oninput=e=>{RD.w=+e.target.value;applyRead()};
 $('setBtn').onclick=()=>{$('vocab').classList.remove('open');$('setts').classList.toggle('open');
-  if($('setts').classList.contains('open')) drawSrs()};
+  if($('setts').classList.contains('open')){ drawSrs(); drawStorage() }};
 function bumpFs(d){ RD.fs=Math.min(2.6,Math.max(1,+(RD.fs+d).toFixed(2))); applyRead();
   toast(Math.round(RD.fs*16)+' px',900) }
 $('fsUp').onclick=()=>bumpFs(.08);
@@ -2556,8 +2652,8 @@ function sniffLang(text){
   return da>en*1.2?'da':'en';
 }
 function drawEngine(){
-  $('engBtn').textContent=ENGN[engine];
-  $('engBtn').classList.toggle('on',engine!=='free');
+  const eb=document.getElementById('engBtn');
+  if(eb){ eb.textContent=ENGN[engine]; eb.classList.toggle('on',engine!=='free') }
   $('cfgClaude').hidden=engine!=='claude'; $('cfgOai').hidden=engine!=='oai';
   [...$('segEng').children].forEach(b=>b.classList.toggle('sel',b.dataset.k===engine));
   drawSpend();
@@ -2568,10 +2664,12 @@ function setEngine(k){engine=k;store.set('ek_engine',engine);drawEngine();
        :'egyeb API - '+OAI.model+' @ '+OAI.url)}
 Object.entries(ENGN).forEach(([k,v])=>{const b=document.createElement('button');
   b.dataset.k=k;b.textContent=v;b.onclick=()=>setEngine(k);$('segEng').appendChild(b)});
-$('engBtn').onclick=()=>setEngine(engine==='free'?'claude':engine==='claude'?'oai':'free');
+
 $('prefBtn').classList.add('on');
-$('prefBtn').onclick=()=>{prefetch=!prefetch;$('prefBtn').classList.toggle('on',prefetch);
-  toast(prefetch?'előtöltés be — a következő 3 mondat előre elkészül':'előtöltés ki')};
+$('prefBtn').onclick=()=>{prefetch=!prefetch;
+  $('prefBtn').classList.toggle('on',prefetch);
+  $('prefBtn').textContent=prefetch?'bekapcsolva':'kikapcsolva';
+  toast(prefetch?'előtöltés be':'előtöltés ki')};
 function setChrome(on){document.body.classList.toggle('chrome',on);
   $('dots').textContent=on?'\u00d7':'\u22ef';
   $('dots').title=on?'Fejléc elrejtése (H)':'Fejléc mutatása (H)'}
@@ -2586,8 +2684,16 @@ $('main').addEventListener('scroll',()=>{
 },{passive:true});
 addEventListener('pagehide',savePos);
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) savePos() });
-$('vocabBtn').onclick=()=>{drawVocab();$('setts').classList.remove('open');$('vocab').classList.add('open')};
+$('vocabBtn').onclick=()=>{drawVocab();drawFixNote();$('setts').classList.remove('open');$('vocab').classList.add('open')};
 $('vClose').onclick=()=>$('vocab').classList.remove('open');
+$('expBtn').onclick=()=>{const r=$('expRow');r.hidden=!r.hidden};
+function drawFixNote(){
+  const n=$('fixNote'); if(!n) return;
+  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&((v.nv||0)<NOTE_VER||!v.note)).length;
+  n.textContent=(todo?todo+' kártya bővíthető: ':'Minden kártya kész. ')+
+    'magyar szófaj, magyarázat, igealakok magyar megfelelőkkel, többesszám'+
+    (chapters.length?' — és példamondat a most nyitott könyvből.':'. Példamondat pótláshoz nyisd meg azt a könyvet, amiből a szavak vannak.');
+}
 $('studyBtn').onclick=()=>{$('vocab').classList.remove('open');startStudy()};
 $('studyTop').onclick=()=>{ if(!vocab.length) return toast('előbb ments szavakat a szótárba'); startStudy() };
 $('matchTop').onclick=()=>startMatch();
@@ -2597,6 +2703,7 @@ const openStats=()=>{$('vocab').classList.remove('open');$('setts').classList.re
 $('statBtn').onclick=openStats;
 $('statBtn2').onclick=openStats;
 $('stClose').onclick=()=>$('stats').classList.remove('open');
+$('bmClose').onclick=closeBookMenu;
 heroLabel();
 $('fixBtn').onclick=()=>{$('fixBtn').disabled=true;huFix().finally(()=>$('fixBtn').disabled=false)};
 $('sClose2').onclick=closeStudy;
