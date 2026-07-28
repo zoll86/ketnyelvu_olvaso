@@ -319,7 +319,10 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 .smeta{margin-top:var(--sp4);font-size:var(--t3);color:var(--dim);line-height:1.6;text-align:left}
 .smeta div{padding:var(--sp1) 0;border-bottom:1px solid var(--line2)}
 .sbtns{flex:0 0 auto;display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap}
-.sbtns .btn{min-width:5rem;padding:11px 14px;font-size:var(--t3)}
+.sbtns .btn{min-width:5.2rem;padding:9px 12px;font-size:var(--t3);
+  display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15}
+.sbtns .btn small{font-size:10px;font-family:var(--mono);opacity:.62;letter-spacing:0}
+.sdone b{color:var(--txt);font-size:var(--t4);font-weight:600;display:block;margin-bottom:var(--sp2)}
 .sdone{text-align:center;color:var(--dim);font-size:var(--t3);line-height:1.7}
 #toast{position:fixed;left:50%;bottom:1.4rem;transform:translate(-50%,2rem);opacity:0;
   background:rgba(20,14,9,.96);border:1px solid var(--line2);border-radius:var(--r2);
@@ -442,7 +445,14 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   <div class="srow"><label>Sortávolság</label><input type="range" id="rLh" min="1.05" max="2" step=".02"><span class="val" id="vLh"></span></div>
   <div class="srow"><label>Hasábszélesség</label><input type="range" id="rW" min="26" max="60" step="1"><span class="val" id="vW"></span></div>
   <div style="margin-top:var(--sp5);padding-top:var(--sp4);border-top:1px solid var(--line2)">
-    <div class="ssec" style="margin-top:0">Fordítás</div>
+    <div class="ssec">Gyakorlás</div>
+    <div class="srow"><label>Új szó naponta</label>
+      <input type="range" id="rNew" min="0" max="60" step="5"><span class="val" id="vNew"></span></div>
+    <div class="srow"><label>Ismétlés naponta</label>
+      <input type="range" id="rRev" min="20" max="400" step="20"><span class="val" id="vRev"></span></div>
+    <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
+      <button class="mini" id="dueReset">mai számláló nullázása</button></div>
+    <div class="ssec">Fordítás</div>
     <div class="srow"><label>Fordítómotor</label><div class="seg" id="segEng"></div></div>
     <div id="cfgClaude" hidden>
       <div class="srow"><label>Claude modell</label><div class="seg" id="segModel"></div></div>
@@ -489,7 +499,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v27';
+const APP_VER='v30';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -579,8 +589,10 @@ function toast(msg,ms=2200){const t=$('toast');t.textContent=msg;t.classList.add
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
 const saveCache=()=>store.set('ek_cache',JSON.stringify(cache));
 function vocabBadge(){
-  const d=dueCount();
-  $('vcount').textContent=d?d+'/'+(vocab.length*2):String(vocab.length*2);
+  let d=null;
+  try{ d=dueCount() }catch(e){ d=null }        /* induláskor még nem áll az ütemező */
+  if(d===null){ $('vcount').textContent=String(vocab.length*2); $('vcount').style.color=''; return }
+  $('vcount').textContent=d?String(d):String(vocab.length*2);
   $('vcount').style.color=d?'var(--green)':'';
 }
 const saveVocab=()=>{store.set('ek_vocab',JSON.stringify(vocab));vocabBadge()};
@@ -870,6 +882,23 @@ async function defHu(txt){
   cache[k]=hu; saveCache(); return hu;
 }
 /* egy szó teljes leírása: alapalak, szófaj, alakok, magyar magyarázat */
+/* az alakokat egy kérésben fordítja le, és elmenti */
+async function formsHu(key,forms){
+  const k='forms|'+key;
+  if(cache[k]!==undefined){ try{ return JSON.parse(cache[k]) }catch(e){} }
+  let hu=[];
+  try{
+    hu=await gtxLines(forms);
+    if(hu.length!==forms.length) hu=[];
+  }catch(e){ hu=[] }
+  if(!hu.length){
+    for(const f of forms){
+      try{ hu.push(await freeTranslate(f,'en')) }catch(e){ hu.push('') }
+      await sleep(180);
+    }
+  }
+  cache[k]=JSON.stringify(hu); saveCache(); return hu;
+}
 async function wordInfo(w){
   let d=await dictLookup(w), base=w;
   if(!d.ok){
@@ -884,15 +913,22 @@ async function wordInfo(w){
   parts.push(d.poss.map(x=>POS[x]||x).join(', '));
   if(d.poss.includes('verb')){
     const f=verbForms(base);
-    parts.push('jelen (alapalak): '+f.base);
-    parts.push('jelen, ő/az: '+f.s);
-    parts.push('múlt idő: '+f.past);
-    parts.push('3. alak (befejezett): '+f.pp);
-    parts.push('folyamatos (-ing): '+f.ing);
+    const forms=[f.base,f.s,f.past,f.pp,f.ing];
+    const lab=['jelen (alapalak)','jelen, ő/az','múlt idő','3. alak (befejezett)','folyamatos (-ing)'];
+    const hu=await formsHu(base,forms);
+    if(d.poss.length>1) parts.push('igeként:');
+    forms.forEach((x,i)=>{
+      const t=hu[i]&&hu[i].toLowerCase()!==x.toLowerCase()?' \u2013 '+hu[i]:'';
+      parts.push(lab[i]+': '+x+t);
+    });
   }
   if(d.poss.includes('noun')&&!/s$/.test(base)){
     const pl=pluralOf(base);
-    if(pl!==base) parts.push('többes szám: '+pl);
+    if(pl!==base){
+      const hu=await formsHu('pl:'+base,[pl]);
+      const t=hu[0]&&hu[0].toLowerCase()!==pl.toLowerCase()?' \u2013 '+hu[0]:'';
+      parts.push('többes szám: '+pl+t);
+    }
   }
   const hu=await defHu(d.def);
   if(hu) parts.push(hu);
@@ -1310,42 +1346,107 @@ async function huFix(){
   }
   drawVocab(); toast('kész: '+n+' kártya magyarítva',3000);
 }
-/* ============ beépített ismétlés (SM-2 könnyített) ============ */
-const DAY=86400000;
-/* c[0]: idegen -> magyar, c[1]: magyar -> idegen */
+/* ============ beépített ismétlés ============ */
+const DAY=86400000, MIN=60000;
+const SRS=Object.assign({newPerDay:20,revPerDay:120},JSON.parse(store.get('ek_srs')||'{}'));
+const saveSrs=()=>store.set('ek_srs',JSON.stringify(SRS));
+function dayKey(t){const d=t?new Date(t):new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+let counts=JSON.parse(store.get('ek_counts')||'{}');
+function today(){
+  const k=dayKey();
+  if(counts.day!==k){ counts={day:k,new:0,rev:0}; store.set('ek_counts',JSON.stringify(counts)) }
+  return counts;
+}
+const saveCounts=()=>store.set('ek_counts',JSON.stringify(counts));
+
+/* c[0]: idegen -> magyar, c[1]: magyar -> idegen
+   st: 0 = új, 1 = tanulás alatt, 2 = ismétlés */
 function cards(v){
   if(!v.c){
     v.c=[{},{}];
-    if(v.due){ v.c[0]={due:v.due,ivl:v.ivl,ease:v.ease,reps:v.reps,lapses:v.lapses} }
+    if(v.due){ v.c[0]={due:v.due,ivl:v.ivl,ease:v.ease,reps:v.reps,lapses:v.lapses,st:2} }
     delete v.due; delete v.ivl; delete v.ease; delete v.reps; delete v.lapses;
   }
   return v.c;
 }
-function dueList(){
-  const now=Date.now(), out=[];
-  vocab.forEach((v,i)=>cards(v).forEach((c,dir)=>{
-    if(!c.due||c.due<=now) out.push({v,i,dir,c});
-  }));
-  /* ugyanaz a szó ne jöjjön kétszer közvetlenül egymás után */
-  out.sort((a,b)=>(a.c.due||0)-(b.c.due||0)||a.dir-b.dir);
-  const A=out.filter(o=>o.dir===0), B=out.filter(o=>o.dir===1), mix=[];
-  while(A.length||B.length){ if(A.length)mix.push(A.shift()); if(B.length)mix.push(B.shift()) }
-  return mix;
+const cardSt=c=>c.st!==undefined?c.st:(c.due?2:0);
+
+function buildQueue(){
+  const now=Date.now(), tc=today(), k=tc.day;
+  const learn=[], rev=[], nw=[];
+  vocab.forEach((v,i)=>{
+    const buried=v.bury===k;
+    cards(v).forEach((c,dir)=>{
+      const st=cardSt(c), o={v,i,dir,c};
+      if(st===1&&c.due<=now) learn.push(o);
+      else if(buried) return;                    /* testvér-elrejtés aznapra */
+      else if(st===2&&c.due&&c.due<=now) rev.push(o);
+      else if(st===0) nw.push(o);
+    });
+  });
+  rev.sort((a,b)=>(a.c.due||0)-(b.c.due||0));
+  const revCap=Math.max(0,SRS.revPerDay-tc.rev), newCap=Math.max(0,SRS.newPerDay-tc.new);
+  const used=new Set(learn.map(o=>o.i));
+  const pick=(arr,cap)=>{
+    const out=[];
+    for(const o of arr){ if(out.length>=cap) break; if(used.has(o.i)) continue; used.add(o.i); out.push(o) }
+    return out;
+  };
+  const R=pick(rev,revCap), N=pick(nw,newCap);
+  /* az új kártyák egyenletesen szóródjanak az ismétlések közé */
+  const mix=[];
+  if(N.length&&R.length){
+    const step=R.length/N.length;
+    let ni=0;
+    R.forEach((o,idx)=>{ mix.push(o); while(ni<N.length&&idx+1>=step*(ni+1)) mix.push(N[ni++]) });
+    while(ni<N.length) mix.push(N[ni++]);
+  } else { mix.push(...R,...N) }
+  return [...learn,...mix];
 }
-function dueCount(){return dueList().length}
-function schedule(v,q){          /* q: 0 újra, 1 nehéz, 2 jó, 3 könnyű */
-  v.ease=v.ease||2.5; v.reps=v.reps||0; v.ivl=v.ivl||0;
-  if(q===0){
-    v.reps=0; v.ivl=0; v.lapses=(v.lapses||0)+1;
-    v.ease=Math.max(1.3,v.ease-0.2); v.due=Date.now()+10*60000; return;
+function dueCount(){ return buildQueue().length }
+function futureCount(){
+  const now=Date.now();
+  return vocab.reduce((n,v)=>n+cards(v).filter(c=>cardSt(c)===0||(c.due&&c.due>now)).length,0);
+}
+function schedule(c,q){                 /* q: 0 újra, 1 nehéz, 2 jó, 3 könnyű */
+  const st=cardSt(c), now=Date.now();
+  c.ease=c.ease||2.5;
+  if(st===0){                           /* új: rövid tanulási lépcső */
+    c.st=1; c.reps=0; c.ivl=0;
+    c.due=now+(q===0?1:q===1?5:10)*MIN;
+    if(q===3){ c.st=2; c.reps=1; c.ivl=3; c.due=now+3*DAY }
+    return;
   }
-  if(q===1) v.ease=Math.max(1.3,v.ease-0.15);
-  if(q===3) v.ease=Math.min(3.2,v.ease+0.15);
-  v.reps++;
-  v.ivl = v.reps===1 ? (q===1?1:q===3?4:2)
-        : v.reps===2 ? (q===1?3:q===3?9:6)
-        : Math.max(1,Math.round(v.ivl*v.ease*(q===1?.7:q===3?1.3:1)));
-  v.due=Date.now()+v.ivl*DAY;
+  if(st===1){                           /* tanulás alatt */
+    if(q===0){ c.due=now+MIN; return }
+    if(q===1){ c.due=now+10*MIN; return }
+    c.st=2; c.reps=1; c.ivl=(q===3?4:1); c.due=now+c.ivl*DAY; return;
+  }
+  if(q===0){                            /* elfelejtett ismétlés */
+    c.lapses=(c.lapses||0)+1; c.ease=Math.max(1.3,c.ease-0.2);
+    c.st=1; c.ivl=Math.max(1,Math.round((c.ivl||1)*.4)); c.due=now+10*MIN; return;
+  }
+  if(q===1) c.ease=Math.max(1.3,c.ease-0.15);
+  if(q===3) c.ease=Math.min(3.2,c.ease+0.15);
+  c.reps=(c.reps||1)+1;
+  const mult=q===1?1.2:q===3?c.ease*1.3:c.ease;
+  c.ivl=Math.max(1,Math.round((c.ivl||1)*mult));
+  c.due=now+c.ivl*DAY;
+}
+function fmtWait(ms){
+  if(ms<0) ms=0;
+  if(ms<55*MIN) return Math.max(1,Math.round(ms/MIN))+' perc';
+  if(ms<20*3600000) return Math.round(ms/3600000)+' óra';
+  const d=Math.round(ms/DAY);
+  if(d<31) return d+' nap';
+  if(d<365) return Math.round(d/30)+' hó';
+  return (Math.round(d/36.5)/10)+' év';
+}
+function previewIvl(c,q){
+  const cl=JSON.parse(JSON.stringify(c));
+  schedule(cl,q);
+  return fmtWait(cl.due-Date.now());
 }
 function clozeOf(sent,word){
   const w=word.trim(); if(!sent||!w||w.split(/\s+/).length>3) return '';
@@ -1362,40 +1463,59 @@ function clozeOf(sent,word){
   }
   return '';
 }
-let sQueue=[], sCur=null, sSeen=0;
+let sQueue=[], sCur=null, sSeen=0, sExtra=false, sUndo=null;
 function startStudy(){
-  sQueue=dueList(); sSeen=0;
-  if(!sQueue.length){
-    $('study').classList.add('open');
-    $('sFront').innerHTML='<div class="sdone">Ma nincs esedékes szó.<br>A következő ismétlés '+nextDueText()+'.</div>';
-    $('sBack').hidden=true; $('sBtns').innerHTML='';
-    const b=document.createElement('button'); b.className='btn'; b.textContent='mégis tanulok';
-    b.onclick=()=>{sQueue=vocab.flatMap((v,i)=>cards(v).map((c,dir)=>({v,i,dir,c})))
-      .sort(()=>Math.random()-.5).slice(0,20);
-      if(sQueue.length) nextCard(); else toast('a szótár üres')};
-    $('sBtns').appendChild(b);
-    $('sCount').textContent='0 hátra';
-    return;
+  sExtra=false; sSeen=0; sUndo=null;
+  sQueue=buildQueue();
+  $('study').classList.add('open');
+  if(!sQueue.length){ studyDone(true); return }
+  nextCard();
+}
+function studyDone(nothingDue){
+  const tc=today();
+  $('sFront').innerHTML='';
+  $('sCloze').hidden=true; $('sBack').hidden=true;
+  const box=document.createElement('div'); box.className='sdone';
+  if(nothingDue){
+    const rest=futureCount();
+    box.innerHTML='<b>Mára megvagy.</b><br>'+
+      'Ma '+tc.new+' új és '+tc.rev+' ismételt kártya volt.<br>'+
+      (rest?('Beütemezve: '+rest+' kártya, a következő '+nextDueText()+'.'):'A szótár üres.');
+  } else {
+    box.innerHTML='<b>Kész, '+sSeen+' kártya.</b><br>'+
+      'Ma összesen '+tc.new+' új és '+tc.rev+' ismételt.<br>'+
+      'A következő ismétlés '+nextDueText()+'.';
   }
-  $('study').classList.add('open'); nextCard();
+  $('sFront').appendChild(box);
+  $('sBtns').innerHTML='';
+  const ex=document.createElement('button'); ex.className='btn'; ex.textContent='szabad gyakorlás';
+  ex.onclick=startExtra; $('sBtns').appendChild(ex);
+  const b=document.createElement('button'); b.className='btn pri'; b.textContent='kilép';
+  b.onclick=closeStudy; $('sBtns').appendChild(b);
+  $('sCount').textContent='0 hátra';
+  saveVocab();
+}
+/* szabad gyakorlás: nem ütemez, csak átpörget */
+function startExtra(){
+  const all=vocab.flatMap((v,i)=>cards(v).map((c,dir)=>({v,i,dir,c})));
+  if(!all.length) return toast('a szótár üres');
+  sExtra=true; sSeen=0; sUndo=null;
+  sQueue=all.sort(()=>Math.random()-.5).slice(0,20);
+  nextCard();
 }
 function nextDueText(){
-  const ds=vocab.flatMap(v=>cards(v).map(c=>c.due)).filter(Boolean).sort((a,b)=>a-b);
+  const now=Date.now();
+  const ds=vocab.flatMap(v=>cards(v).map(c=>c.due)).filter(d=>d&&d>now).sort((a,b)=>a-b);
   if(!ds.length) return 'nincs beütemezve';
-  const d=Math.ceil((ds[0]-Date.now())/DAY);
-  return d<=0?'most':d===1?'holnap':d+' nap múlva';
+  return fmtWait(ds[0]-now)+' múlva';
 }
 function nextCard(){
-  if(!sQueue.length){
-    $('sFront').innerHTML='<div class="sdone">Kész, '+sSeen+' szó megismételve.</div>';
-    $('sBack').hidden=true; $('sBtns').innerHTML='';
-    const b=document.createElement('button'); b.className='btn pri'; b.textContent='kilép';
-    b.onclick=closeStudy; $('sBtns').appendChild(b);
-    $('sCount').textContent='0 hátra'; saveVocab(); return;
-  }
+  if(!sQueue.length){ studyDone(false); return }
   sCur=sQueue[0];
   const lg=(sCur.v.lang||'en').toUpperCase(), rev=sCur.dir===1;
-  $('sCount').textContent=sQueue.length+' hátra  ·  '+(rev?'HU \u2192 '+lg:lg+' \u2192 HU');
+  const st=cardSt(sCur.c);
+  const tag=sExtra?'szabad':st===0?'új':st===1?'tanulás':'ismétlés';
+  $('sCount').textContent=sQueue.length+' hátra  ·  '+tag+'  ·  '+(rev?'HU \u2192 '+lg:lg+' \u2192 HU');
   $('sFront').textContent=rev?(sCur.v.hu||sCur.v.en):sCur.v.en;
   const cl=$('sCloze'); cl.textContent=''; cl.hidden=true;
   if(rev&&sCur.v.src&&sCur.v.src!=='mondat'){
@@ -1415,19 +1535,37 @@ function nextCard(){
       h.textContent=sCur.v.srcHu; meta.appendChild(h);
     }
   }
+  if((sCur.v.lapses||0)>=8||(sCur.c.lapses||0)>=8){
+    const d=document.createElement('div'); d.style.color='var(--red)';
+    d.textContent='Ezt a kártyát sokszor elfelejtetted — érdemes átírni vagy félretenni.';
+    meta.appendChild(d);
+  }
   $('sBack').hidden=true;
   $('sBtns').innerHTML='';
   const show=document.createElement('button'); show.className='btn pri'; show.textContent='mutasd';
   show.onclick=reveal; $('sBtns').appendChild(show);
-  const sp=document.createElement('button'); sp.className='btn'; sp.textContent='\u25b6';
-  sp.onclick=e=>{e.stopPropagation();speakLang(sCur.v.en,sCur.v.lang||'en')};
-  if(!rev) $('sBtns').appendChild(sp);
+  if(!rev){
+    const sp=document.createElement('button'); sp.className='btn'; sp.textContent='\u25b6';
+    sp.onclick=e=>{e.stopPropagation();speakLang(sCur.v.en,sCur.v.lang||'en')};
+    $('sBtns').appendChild(sp);
+  }
+  if(sUndo){
+    const u=document.createElement('button'); u.className='btn'; u.textContent='\u21b6 vissza';
+    u.title='utolsó válasz visszavonása'; u.onclick=undoAnswer; $('sBtns').appendChild(u);
+  }
 }
 function reveal(){
   $('sBack').hidden=false;
   $('sBtns').innerHTML='';
-  [['újra',0],['nehéz',1],['jó',2],['könnyű',3]].forEach(([t,q])=>{
-    const b=document.createElement('button'); b.className='btn'+(q===2?' pri':''); b.textContent=t;
+  const L=[['újra',0],['nehéz',1],['jó',2],['könnyű',3]];
+  L.forEach(([t,q])=>{
+    const b=document.createElement('button'); b.className='btn'+(q===2?' pri':'');
+    b.innerHTML='<span></span>';
+    b.querySelector('span').textContent=t;
+    if(!sExtra){
+      const s2=document.createElement('small'); s2.textContent=previewIvl(sCur.c,q);
+      b.appendChild(s2);
+    }
     b.onclick=()=>answer(q); $('sBtns').appendChild(b);
   });
   const sp=document.createElement('button'); sp.className='btn'; sp.textContent='\u25b6';
@@ -1435,9 +1573,33 @@ function reveal(){
   $('sBtns').appendChild(sp);
 }
 function answer(q){
-  schedule(sCur.c,q); sSeen++; saveVocab();
-  if(q===0) sQueue.push(sQueue.shift()); else sQueue.shift();
+  const o=sCur;
+  if(sExtra){ sSeen++; sQueue.shift(); if(q===0) sQueue.push(o); nextCard(); return }
+  const st=cardSt(o.c);
+  sUndo={o,card:JSON.parse(JSON.stringify(o.c)),bury:o.v.bury,
+         counts:{new:counts.new,rev:counts.rev},queue:sQueue.slice()};
+  const tc=today();
+  if(st===0) tc.new++;
+  if(st===2) tc.rev++;
+  saveCounts();
+  schedule(o.c,q);
+  o.v.bury=tc.day;                       /* a testvérkártya ma már ne jöjjön */
+  sSeen++;
+  saveVocab();
+  sQueue.shift();
+  /* ha tanulás alatt van és perceken belül visszajön, a kör végére kerül */
+  if(cardSt(o.c)===1&&o.c.due-Date.now()<12*MIN) sQueue.push(o);
   nextCard();
+}
+function undoAnswer(){
+  if(!sUndo) return;
+  const u=sUndo;
+  Object.keys(u.o.c).forEach(k=>delete u.o.c[k]);
+  Object.assign(u.o.c,u.card);
+  if(u.bury===undefined) delete u.o.v.bury; else u.o.v.bury=u.bury;
+  counts.new=u.counts.new; counts.rev=u.counts.rev; saveCounts();
+  sQueue=u.queue; sSeen=Math.max(0,sSeen-1); sUndo=null;
+  saveVocab(); nextCard();
 }
 function closeStudy(){ $('study').classList.remove('open'); saveVocab(); drawVocab() }
 function speakLang(t,lg){
@@ -1552,13 +1714,15 @@ async function preAddRun(){
   if(!sel.length) return;
   $('preAdd').disabled=true;
   const bookTitle=book?book.title:'';
+  $('preProg').textContent='példamondatok keresése…';
+  const ex=findExamples(sel);
   const hu=await batchTranslate(sel,(a,b)=>{
     $('preProg').textContent='fordítás: '+a+' / '+b;
   });
   let added=0;
   sel.forEach(w=>{
     if(vocab.some(v=>(v.en||'').toLowerCase()===w)) return;
-    vocab.push({en:w,hu:hu[w]||'',note:'',src:'',srcHu:'',book:bookTitle,lang:src});
+    vocab.push({en:w,hu:hu[w]||'',note:'',src:ex[w]||'',srcHu:'',book:bookTitle,lang:src});
     added++;
   });
   saveVocab(); drawVocab();
@@ -1566,7 +1730,9 @@ async function preAddRun(){
   drawPre();
   $('preProg').innerHTML='';
   const done=document.createElement('div');
-  done.textContent=added+' szó a szótárban. A magyarázatok és igealakok külön tölthetők be.';
+  const withEx=sel.filter(w=>ex[w]).length;
+  done.textContent=added+' szó a szótárban, '+withEx+' példamondattal. '+
+    'A magyarázatok, igealakok és a mondatok fordítása külön tölthető be.';
   $('preProg').appendChild(done);
   const b=document.createElement('button'); b.className='btn'; b.style.marginTop='var(--sp2)';
   b.textContent='magyarázatok betöltése';
@@ -1574,6 +1740,27 @@ async function preAddRun(){
   $('preProg').appendChild(b);
   $('preAdd').disabled=false;
   toast(added+' szó hozzáadva — a gyakorlásban már megjelennek',4000);
+}
+/* minden kért szóhoz az első alkalmas mondat a könyvből */
+function findExamples(words){
+  const want=new Set(words), out={};
+  const re=/[a-zæøåäöéüïàâçèêëîôùûœ']+/g;
+  for(const ch of chapters){
+    const sents=splitSentences((ch.body.textContent||'').replace(/\s+/g,' '));
+    for(const sn of sents){
+      if(sn.length<25||sn.length>190) continue;
+      const low=sn.toLowerCase(); const seen=new Set();
+      let m; re.lastIndex=0;
+      while((m=re.exec(low))) seen.add(m[0]);
+      for(const w of seen){
+        let t=want.has(w)?w:null;
+        if(!t&&src==='en'){ for(const c of lemmaCandidates(w)){ if(want.has(c)){ t=c; break } } }
+        if(t&&!out[t]){ out[t]=sn.trim(); want.delete(t) }
+      }
+      if(!want.size) return out;
+    }
+  }
+  return out;
 }
 let preData=null, preSkip=new Set(), preTop=50;
 function openPre(){
@@ -1822,6 +2009,17 @@ Object.entries(MODELS).forEach(([k,v])=>{const b=document.createElement('button'
   b.onclick=()=>{model=k;store.set('ek_model',model);
     [...$('segModel').children].forEach(x=>x.classList.toggle('sel',x.dataset.k===model));drawSpend()};
   if(k===model)b.classList.add('sel');$('segModel').appendChild(b)});
+function drawSrs(){
+  $('rNew').value=SRS.newPerDay; $('rRev').value=SRS.revPerDay;
+  $('vNew').textContent=SRS.newPerDay; $('vRev').textContent=SRS.revPerDay;
+  const tc=today();
+  $('todayTxt').textContent=tc.new+' új · '+tc.rev+' ismétlés · '+dueCount()+' hátra';
+  vocabBadge();
+}
+$('rNew').oninput=e=>{SRS.newPerDay=+e.target.value;saveSrs();drawSrs()};
+$('rRev').oninput=e=>{SRS.revPerDay=+e.target.value;saveSrs();drawSrs()};
+$('dueReset').onclick=()=>{counts={day:dayKey(),new:0,rev:0};saveCounts();drawSrs();toast('mai számláló nullázva')};
+drawSrs();
 $('verTxt').textContent=APP_VER+(navigator.serviceWorker&&navigator.serviceWorker.controller?' · offline kész':' · nincs service worker');
 $('updChk').onclick=checkUpdate;
 $('updBtn').onclick=()=>{
@@ -1833,7 +2031,8 @@ drawEngine();
 $('rFs').oninput=e=>{RD.fs=+e.target.value;applyRead()};
 $('rLh').oninput=e=>{RD.lh=+e.target.value;applyRead()};
 $('rW').oninput=e=>{RD.w=+e.target.value;applyRead()};
-$('setBtn').onclick=()=>{$('vocab').classList.remove('open');$('setts').classList.toggle('open')};
+$('setBtn').onclick=()=>{$('vocab').classList.remove('open');$('setts').classList.toggle('open');
+  if($('setts').classList.contains('open')) drawSrs()};
 function bumpFs(d){ RD.fs=Math.min(2.6,Math.max(1,+(RD.fs+d).toFixed(2))); applyRead();
   toast(Math.round(RD.fs*16)+' px',900) }
 $('fsUp').onclick=()=>bumpFs(.08);
