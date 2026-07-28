@@ -86,12 +86,22 @@ body.reading .brand{display:none}
 body:not(.reading) header{display:none}   /* kezdőoldalon a h1 a cím — a fejléc ott üres és redundáns */
 #libBtn{display:none}
 body.reading #libBtn{display:inline-block}
-body.reading select#chapSel{max-width:none;flex:1 1 auto;text-overflow:ellipsis}
-body.reading header{position:fixed;top:0;left:0;right:0;padding-right:3.3rem;
+body.reading select#chapSel{max-width:none;flex:1 1 auto;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+body.reading header{position:fixed;top:0;left:0;right:0;
+  flex-wrap:nowrap;gap:var(--sp2);padding-right:var(--sp3);
   background:rgba(22,17,12,.94);border-bottom:1px solid var(--line);
   box-shadow:0 8px 28px rgba(0,0,0,.45);
   transform:translateY(-102%);opacity:0;pointer-events:none;
   transition:transform .4s var(--spring),opacity .22s ease}
+body.reading.chrome #dots{display:none}  /* amíg a fejléc nyitva van, a lebegő gomb nem úszhat rá */
+#hdrX{display:none;font-size:var(--t3);line-height:1;padding:7px 12px}
+body.reading #hdrX{display:inline-block}
+body.reading #libBtn{flex:0 0 auto}
+body.reading select#chapSel{min-width:0}
+@media(max-width:640px){
+  body.reading #libBtn .lbl{display:none}          /* mobilon csak a nyíl */
+  body.reading #progTxt{padding:2px 3px}
+}
 body.reading.chrome header{transform:translateY(0);opacity:1;pointer-events:auto}
 #dots{position:fixed;z-index:45;top:max(.45rem,env(safe-area-inset-top));right:.5rem;
   width:2.4rem;height:2.4rem;display:none;place-items:center;border-radius:50%;
@@ -445,6 +455,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <header>
   <div class="brand">KÉTNYELVŰ OLVASÓ<small>EPUB · EN → HU</small></div>
+  <button class="btn" id="libBtn" title="Vissza a könyvtárba">←<span class="lbl"> könyvtár</span></button>
   <select id="chapSel" class="btn" style="display:none"></select>
   <span class="chip" id="progTxt"></span>
   <div class="hspace"></div>
@@ -458,7 +469,7 @@ body.reading.rlight .tr .err{color:#a8352a}
     <button class="btn" id="setBtn" title="Beállítások">⚙</button>
   </div>
   <button class="btn" id="hamb" title="Menü" aria-label="Menü">☰</button>
-  <button class="btn pri" id="libBtn">← könyvtár</button>
+  <button class="btn" id="hdrX" title="Fejléc elrejtése (H)" aria-label="Fejléc elrejtése">×</button>
 </header>
 
 <button id="dots" title="Fejléc mutatása (H)" aria-label="Fejléc mutatása">⋯</button>
@@ -669,7 +680,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v53';
+const APP_VER='v54';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3125,6 +3136,7 @@ function setChrome(on){document.body.classList.toggle('chrome',on);
 $('dots').onclick=()=>setChrome(!document.body.classList.contains('chrome'));
 $('hamb').onclick=e=>{e.stopPropagation();
   document.querySelector('header').classList.toggle('menu')};
+$('hdrX').onclick=()=>setChrome(false);
 $('hTools').addEventListener('click',()=>{      /* menüpont után csukódjon */
   document.querySelector('header').classList.remove('menu')});
 let lastY=0;
