@@ -55,6 +55,15 @@ button,select,input{font-family:inherit;color:inherit}
   .mini{padding:9px 12px}
   select.btn{min-height:44px}
 }
+/* ---------- felolvasó ---------- */
+#player{position:fixed;left:50%;transform:translateX(-50%);z-index:46;
+  bottom:max(var(--sp3),env(safe-area-inset-bottom));
+  display:flex;gap:var(--sp1);padding:var(--sp2);border-radius:999px;
+  background:rgba(24,19,13,.94);backdrop-filter:blur(16px);
+  border:1px solid var(--line);box-shadow:0 10px 34px rgba(0,0,0,.5)}
+#player[hidden]{display:none}
+.s.rdnow{background:rgba(232,182,76,.2);border-radius:5px}
+body.reading.rlight .s.rdnow{background:rgba(170,110,20,.24)}
 /* ---------- fejléc ---------- */
 header{
   flex:0 0 auto; display:flex; align-items:center; gap:var(--sp2); flex-wrap:wrap;
@@ -464,6 +473,7 @@ body.reading.rlight .tr .err{color:#a8352a}
       <button class="btn" id="fsDown" title="Kisebb betű">A−</button>
       <button class="btn" id="fsUp" title="Nagyobb betű">A+</button>
     </div>
+    <button class="btn" id="readBtn" title="A könyv felolvasása mondatonként">▶ felolvasás</button>
     <button class="btn" id="preBtn" title="A könyv szókincse és kifejezései">szókincs</button>
     <button class="btn" id="vocabBtn">szótár <span id="vcount" class="chip" style="padding:0">0</span></button>
     <button class="btn" id="setBtn" title="Beállítások">⚙</button>
@@ -473,6 +483,14 @@ body.reading.rlight .tr .err{color:#a8352a}
 </header>
 
 <button id="dots" title="Fejléc mutatása (H)" aria-label="Fejléc mutatása">⋯</button>
+
+<div id="player" hidden>
+  <button class="btn pri" id="plPause" title="Szünet / folytatás">⏸</button>
+  <button class="btn" id="plSkip" title="Következő mondat">⏭</button>
+  <button class="btn" id="plSpeed" title="Tempó"></button>
+  <button class="btn" id="plHu" title="Magyar fordítás felolvasása"></button>
+  <button class="btn" id="plStop" title="Felolvasás leállítása">×</button>
+</div>
 
 <main id="main">
   <section id="start">
@@ -661,6 +679,7 @@ body.reading.rlight .tr .err{color:#a8352a}
   <div class="stop">
     <span class="scount" id="sCount"></span>
     <div style="flex:1"></div>
+    <button class="mini" id="sTts" title="Automatikus felolvasás">🔇</button>
     <button class="mini" id="sClose2">kilép</button>
   </div>
   <div class="scard" id="sCard">
@@ -680,7 +699,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v54';
+const APP_VER='v56';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1752,7 +1771,11 @@ async function showTranslation(sp){
     const huEl=panel.querySelector('.hu'), row=panel.querySelector('.row');
     huEl.textContent=cur;
     const mk=(t,fn)=>{const b=document.createElement('button');b.className='mini';b.textContent=t;b.onclick=fn;row.appendChild(b);return b};
+    /* sorrend a természetes munkamenet szerint: hallgat → szavak → szótárba, hátul az alkalmi műveletek */
     mk('\u25b6 hallgat',()=>speak(sent));
+    const gb=mk('szavak',()=>{gb.disabled=true;gloss(sent,panel)});
+    mk('szótárba',()=>{addVocab(sent,cur,'mondat')});
+    const wb=mk('miért így?',()=>{wb.disabled=true;whyThis(sent,panel)});
     /* újrafordítás a következő motorral */
     const list=provList();
     let pi=Math.max(0,list.findIndex(p=>p.name===engName));
@@ -1770,9 +1793,6 @@ async function showTranslation(sp){
         huEl.style.color='var(--red)'; huEl.textContent=p.name+' nem válaszolt: '+e.message;
       }finally{ again.disabled=false; label() }
     };
-    const wb=mk('miért így?',()=>{wb.disabled=true;whyThis(sent,panel)});
-    const gb=mk('szavak',()=>{gb.disabled=true;gloss(sent,panel)});
-    mk('szótárba',()=>{addVocab(sent,cur,'mondat')});
     mk('másol',()=>{navigator.clipboard?.writeText(sent+'\n'+cur);toast('vágólapra másolva')});
     const chip=document.createElement('span');
     chip.className='chip'; chip.style.marginLeft='auto'; chip.textContent=engName;
@@ -2069,6 +2089,7 @@ let sQueue=[], sCur=null, sSeen=0, sExtra=false, sUndo=null;
 function startStudy(){
   sExtra=false; sSeen=0; sUndo=null;
   sQueue=buildQueue();
+  drawTtsBtn();
   $('study').classList.add('open');
   if(!sQueue.length){ studyDone(true); return }
   nextCard();
@@ -2149,6 +2170,7 @@ function nextCard(){
       meta.appendChild(seg);
     }
     meta.appendChild(body); paint();
+    speakCardFront();
     if(D.base&&D.base!==sCur.v.en){
       const d=document.createElement('div'); d.style.color='var(--faint)';
       d.textContent='alapalak: '+D.base; meta.appendChild(d);
@@ -2174,6 +2196,7 @@ function nextCard(){
   }
   addExample(meta);
   finishCard(rev);
+  speakCardFront();
 }
 function addExample(meta){
   if(sCur.v.src&&sCur.v.src!=='mondat'){
@@ -2207,6 +2230,7 @@ function finishCard(rev){
 }
 function reveal(){
   $('sBack').hidden=false;
+  speakCardBack();
   $('sCloze').hidden=true;          /* a teljes mondat a válaszban látszik, ne legyen kétszer */
   $('sBtns').innerHTML='';
   const L=[['újra',0],['nehéz',1],['jó',2],['könnyű',3]];
@@ -2254,10 +2278,126 @@ function undoAnswer(){
   saveVocab(); nextCard();
 }
 function closeStudy(){ $('study').classList.remove('open'); saveVocab(); drawVocab() }
+$('sTts').onclick=e=>{e.stopPropagation(); autoTts=!autoTts;
+  store.set('ek_autotts',autoTts?'1':'0'); drawTtsBtn();
+  if(autoTts) speakCardFront(); else try{speechSynthesis.cancel()}catch(x){} };
 function speakLang(t,lg){
+  if(!t) return;
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);
-    u.lang=lg==='da'?'da-DK':'en-US';u.rate=lg==='da'?.85:.9;speechSynthesis.speak(u)}catch(e){}
+    u.lang=lg==='hu'?'hu-HU':lg==='da'?'da-DK':'en-US';
+    u.rate=lg==='hu'?.95:lg==='da'?.85:.9;speechSynthesis.speak(u)}catch(e){}
 }
+/* automatikus felolvasás a gyakorlásban: elöl a kérdés, felfedéskor a válasz nyelvén */
+let autoTts=store.get('ek_autotts')==='1';
+function drawTtsBtn(){ const b=$('sTts'); if(b){ b.textContent=autoTts?'🔊 auto':'🔇';
+  b.classList.toggle('sel',autoTts) } }
+function speakCardFront(){
+  if(!autoTts||!sCur) return;
+  const rev=sCur.dir===1;
+  rev?speakLang(sCur.v.hu,'hu'):speakLang(sCur.v.en,sCur.v.lang||'en');
+}
+function speakCardBack(){
+  if(!autoTts||!sCur) return;
+  const rev=sCur.dir===1;
+  rev?speakLang(sCur.v.en,sCur.v.lang||'en'):speakLang(sCur.v.hu,'hu');
+}
+/* ============ könyv-felolvasó ============ */
+let rdOn=false, rdPtr=0, rdEpoch=0, rdLoop=false, rdWl=null;
+let rdSpeed=+(store.get('ek_rdspeed')||1);
+let rdHu=store.get('ek_rdhu')!=='0';
+const RD_SPEEDS=[1,.9,.75,1.25];
+function speakAsync(t,lang,rate){
+  return new Promise(res=>{
+    if(!t){res();return}
+    try{
+      const u=new SpeechSynthesisUtterance(t);
+      u.lang=lang; u.rate=rate;
+      u.onend=res; u.onerror=res;
+      speechSynthesis.speak(u);
+    }catch(e){res()}
+  });
+}
+async function rdWake(on){
+  try{
+    if(on){ rdWl=await navigator.wakeLock.request('screen') }
+    else if(rdWl){ rdWl.release(); rdWl=null }
+  }catch(e){}
+}
+function drawPlayer(){
+  $('plPause').textContent=rdOn?'⏸':'▶';
+  $('plSpeed').textContent=String(rdSpeed).replace('.',',')+'×';
+  $('plHu').textContent=rdHu?'HU: be':'HU: ki';
+}
+function startReading(){
+  if(!document.body.classList.contains('reading')) return;
+  const all=sentList();
+  if(!all.length) return toast('ebben a fejezetben nincs felolvasható szöveg');
+  /* a képernyőn látható első mondattól indul */
+  const top=$('main').scrollTop+70;
+  let i=all.findIndex(s=>s.offsetTop>=top);
+  rdPtr=i<0?0:i;
+  rdOn=true; rdEpoch++;
+  $('player').hidden=false; drawPlayer();
+  setChrome(false); rdWake(true);
+  loopRead();
+}
+function stopReading(){
+  rdOn=false; rdEpoch++;
+  try{speechSynthesis.cancel()}catch(e){}
+  sentList().forEach(s=>s.classList.remove('rdnow'));
+  $('player').hidden=true; rdWake(false);
+}
+async function loopRead(){
+  if(rdLoop) return; rdLoop=true;
+  try{
+    while(rdOn){
+      let all=sentList();
+      if(rdPtr>=all.length){
+        if(curChap<chapters.length-1){       /* fejezet vége: megy tovább magától */
+          renderChapter(curChap+1); await sleep(500); rdPtr=0; continue;
+        }
+        stopReading(); toast('a könyv vége'); break;
+      }
+      const sp=all[rdPtr], sent=sp.textContent.trim(), e=rdEpoch;
+      if(!sent){ rdPtr++; continue }
+      all.forEach(s=>s.classList.remove('rdnow'));
+      sp.classList.add('rdnow');
+      try{ sp.scrollIntoView({block:'center',behavior:'smooth'}) }catch(x){}
+      try{speechSynthesis.cancel()}catch(x){}
+      await speakAsync(sent, src==='da'?'da-DK':'en-US', rdSpeed);
+      if(!rdOn) break;
+      if(e!==rdEpoch) continue;              /* ⏭: a magyar rész kimarad */
+      if(rdHu){
+        /* a fordítás a meglévő gyorsítótárból jön; ha nincs, az ingyenes motorral
+           készül, hogy egy egész könyv meghallgatása ne költsön API-pénzt */
+        let hu=cache[ck(sent)];
+        if(!hu){ try{ hu=await freeTranslate(sent) }catch(x){ hu='' }
+                 if(hu){ cache[ck(sent)]=hu; saveCache() } }
+        if(!rdOn) break;
+        if(e===rdEpoch&&hu) await speakAsync(hu,'hu-HU',rdSpeed);
+      }
+      sp.classList.remove('rdnow');
+      if(!rdOn) break;
+      if(e===rdEpoch) rdPtr++;
+    }
+  } finally { rdLoop=false }
+}
+$('readBtn').onclick=()=>startReading();
+$('plPause').onclick=()=>{
+  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} }
+  else { rdOn=true; rdEpoch++; loopRead(); rdWake(true) }
+  drawPlayer();
+};
+$('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} };
+$('plSpeed').onclick=()=>{
+  rdSpeed=RD_SPEEDS[(RD_SPEEDS.indexOf(rdSpeed)+1)%RD_SPEEDS.length];
+  store.set('ek_rdspeed',String(rdSpeed)); drawPlayer();
+};
+$('plHu').onclick=()=>{ rdHu=!rdHu; store.set('ek_rdhu',rdHu?'1':'0'); drawPlayer() };
+$('plStop').onclick=()=>stopReading();
+document.addEventListener('visibilitychange',()=>{      /* háttérbe téve elnémulna: inkább szünetel */
+  if(document.hidden&&rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} drawPlayer() }
+});
 /* ============ szótár panel + export ============ */
 function drawVocab(){
   const l=$('vlist'); l.innerHTML='';
@@ -2908,6 +3048,7 @@ async function openFromLib(id){
 }
 /* ============ kilépés a könyvből ============ */
 function closeBook(){
+  stopReading();
   savePos();
   sentList().forEach(sp=>{ if(sp._panel&&sp._panel.isConnected) sp._panel.remove() });
   document.body.classList.remove('reading','chrome');
@@ -2931,7 +3072,7 @@ $('preAddLlm').onclick=preAddLlmRun;
 $('exprBtn').onclick=exprMine;
 $('exprAdd').onclick=exprAddRun;
 $('preClose').onclick=()=>$('pre').classList.remove('open');
-[25,50,100,200].forEach(n=>{const b=document.createElement('button');
+[25,50,100,200,500,1000].forEach(n=>{const b=document.createElement('button');
   b.dataset.k=String(n); b.textContent=String(n);
   b.onclick=()=>{preTop=n;[...$('segTop').children].forEach(x=>x.classList.toggle('sel',+x.dataset.k===n));drawPre()};
   if(n===preTop) b.classList.add('sel');
@@ -2993,7 +3134,7 @@ async function go(f,fromLib){
   catch(err){ $('bar').style.width='0'; toast('Nem sikerült megnyitni: '+err.message,4200) }
 }
 drawLib();
-$('chapSel').onchange=e=>{renderChapter(+e.target.value);setChrome(false)};
+$('chapSel').onchange=e=>{stopReading();renderChapter(+e.target.value);setChrome(false)};
 Object.entries(THEMES).forEach(([k,v])=>{const b=document.createElement('button');
   b.dataset.k=k;b.textContent=v[0];b.onclick=()=>{RD.theme=k;applyRead()};$('segTheme').appendChild(b)});
 Object.entries(FONTS).forEach(([k,v])=>{const b=document.createElement('button');
