@@ -969,6 +969,7 @@ function verbForms(b){
           ing:sp.ing||ing(b), s:sp.s||thirdS(b)};
 }
 function pluralOf(n){
+  if(UNCOUNT.has(n)) return n;               /* megszámlálhatatlan: nincs többesszám */
   if(NOUN_IRREG[n]) return NOUN_IRREG[n];
   if(/(s|x|z|ch|sh)$/.test(n)) return n+'es';
   if(/[^aeiou]y$/.test(n)) return n.slice(0,-1)+'ies';
@@ -995,8 +996,49 @@ function lemmaCandidates(w){
 
 
 const POS={noun:'főnév',verb:'ige',adjective:'melléknév',adverb:'határozószó',pronoun:'névmás',
-  preposition:'prepozíció',conjunction:'kötőszó',interjection:'indulatszó',numeral:'számnév',
-  exclamation:'felkiáltás',determiner:'determináns',article:'szócikk'};
+  preposition:'elöljárószó',conjunction:'kötőszó',interjection:'indulatszó',numeral:'számnév',
+  exclamation:'felkiáltás',determiner:'mennyiségjelző',article:'névelő'};
+/* funkciószavak: mennyiségjelzők, névmások — ezekből soha nem lehet főnév- vagy ige-kártya.
+   A szótári API-ban van ugyan archaikus főnévi olvasatuk (many = "the common herd"),
+   de tanulásra az félrevezető, a naiv többesszám (manies) pedig nem létezik. */
+const FUNC_W=new Set(['many','much','few','little','several','some','any','all','both','each',
+  'every','either','neither','more','most','less','least','other','another','such','same','own',
+  'enough','certain','various','this','that','these','those','which','what','whose','none']);
+/* megszámlálhatatlan főnevek: nincs többesszámuk, ne gyártsunk "informations"-t */
+const UNCOUNT=new Set(['information','advice','furniture','news','money','music','weather',
+  'knowledge','luggage','baggage','bread','butter','homework','progress','traffic','equipment',
+  'evidence','research','fun','luck','happiness','sadness','anger','courage','patience','honesty',
+  'water','milk','rice','sugar','salt','flour','meat','blood','rain','snow','air','oxygen',
+  'electricity','gravity','software','hardware','feedback','laughter','poetry','vocabulary',
+  'grammar','slang','jewelry','jewellery','clothing','stuff','garbage','trash','rubbish']);
+/* egyszeri takarítás: a korábban elmentett funkciószó-kártyákból kikerül a hamis
+   főnévi/igei olvasat és a nemlétező többesszám (many → manies), a gyorsítótárból
+   pedig a rossz szótári bejegyzés, hogy újra jól épüljön fel */
+(function fixFuncCards(){
+  if(store.get('ek_funcfix1')) return;
+  let changed=false;
+  vocab.forEach(v=>{
+    const w=((v.d&&v.d.base)||v.en||'').toLowerCase().trim();
+    if(!FUNC_W.has(w)) return;
+    if(v.d){
+      const kept=(v.d.poss||[]).filter(p=>p!=='noun'&&p!=='verb');
+      if(kept.length){
+        v.d.poss=kept;
+        if(v.d.sense){ delete v.d.sense.noun; delete v.d.sense.verb }
+        if(!kept.includes(v.d.primary)) v.d.primary=kept[0];
+      } else v.d=null;
+      /* a jegyzet a heurisztikából épült: a tisztított adatból építjük újra,
+         így a hamis definíció ("a közös csorda") is kikerül */
+      v.note=v.d?dataToNote(v.d):'';
+      changed=true;
+    }
+    ['dict|'+w,'forms|n2:'+w,'forms|v2:'+w].forEach(k=>{
+      if(cache[k]!==undefined){ delete cache[k]; changed=true }
+    });
+  });
+  if(changed){ saveVocab(); saveCache() }
+  store.set('ek_funcfix1','1');
+})();
 async function dictLookup(w){
   const k='dict|'+w;
   if(cache[k]!==undefined){ try{return JSON.parse(cache[k])}catch(e){} }
@@ -1139,11 +1181,21 @@ async function buildWordData(w,sent){
     }
   }
   if(!d.ok) return null;
-  const poss=d.poss.filter(p=>['noun','verb','adjective','adverb'].includes(p)).slice(0,3);
-  if(!poss.length) poss.push(d.poss[0]||'noun');
+  let poss;
+  if(FUNC_W.has(base)){
+    /* mennyiségjelző / névmás: az archaikus főnévi és ál-igei olvasat tanulásra félrevezető */
+    poss=d.poss.filter(p=>['determiner','pronoun','adjective','adverb'].includes(p)).slice(0,2);
+    if(!poss.length) poss=['determiner'];
+  } else {
+    poss=d.poss.filter(p=>['noun','verb','adjective','adverb'].includes(p)).slice(0,3);
+    if(!poss.length) poss.push(d.poss[0]||'noun');
+  }
   const sense={};
   for(const p of poss) sense[p]=await senseOf(p,base,d.defs||{});
-  const role=roleInSentence(base,sent);
+  let role=roleInSentence(base,sent);
+  /* jelzői helyzet ("the many reprintings"): melléknévi olvasat, ha van; főnévi csak ha nincs más */
+  if(role==='attr') role=poss.includes('adjective')?'adjective':(poss.includes('noun')?'noun':null);
+  if(role&&!poss.includes(role)) role=null;
   const kept=pruneSenses(poss,sense,role);
   const sense2={};
   for(const p of kept){ sense2[p]=sense[p];
@@ -1167,11 +1219,12 @@ function dataToNote(D){
 /* a szó szerepe a mondatban: ige vagy főnév */
 /* a szó szerepe a mondatban: ige vagy főnév */
 const DET_W=new Set(['a','an','the','this','that','these','those','his','her','my','your','their','our','its',
-  'of','with','in','on','at','for','from','into','onto','one','two','three','some','any','no','every','each','another']);
+  'of','with','in','on','at','for','from','into','onto','one','two','three','some','any','no','every','each','another',
+  'many','much','few','several','all','both','more','most','such','own','other']);
 const VRB_W=new Set(['to','will','would','can','could','must','should','may','might','shall','do','does','did',
   'have','has','had','is','are','was','were','be','been','being','i','you','he','she','it','we','they','never','always','often']);
 function roleInSentence(w,sent){
-  if(!sent) return null;
+  if(!sent||FUNC_W.has(w)) return null;      /* funkciószó szerepét nem találgatjuk */
   const toks=sent.toLowerCase().match(/[a-z'’-]+/g)||[];
   const forms=new Set([w]);
   try{ const f=verbForms(w); [f.s,f.past,f.pp,f.ing].forEach(x=>forms.add(x)); forms.add(pluralOf(w)) }catch(e){}
@@ -1179,9 +1232,14 @@ function roleInSentence(w,sent){
     if(!forms.has(toks[i])) continue;
     const prev=toks[i-1];
     if(!prev) continue;
-    if(DET_W.has(prev)) return 'noun';
+    if(DET_W.has(prev)){
+      const nxt=toks[i+1];
+      /* "the many reprintings": determináns után, tartalmas szó előtt → jelzői helyzet */
+      if(nxt&&!DET_W.has(nxt)&&!VRB_W.has(nxt)) return 'attr';
+      return 'noun';
+    }
     if(VRB_W.has(prev)) return 'verb';
-    if(/ing$/.test(toks[i])) return 'verb';
+    if(/ing$/.test(toks[i])&&!/ings$/.test(toks[i])) return 'verb';  /* reprintings ≠ ige */
   }
   return null;
 }
