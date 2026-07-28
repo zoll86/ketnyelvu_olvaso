@@ -394,7 +394,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
   <div class="vhead" style="display:flex;align-items:center;gap:var(--sp2);flex-wrap:wrap">
     <h3>Szótár</h3><div class="hspace" style="flex:1"></div>
     <button class="mini" id="studyBtn">gyakorlás</button>
-    <button class="mini" id="fixBtn">magyarítás</button>
+    <button class="mini" id="fixBtn" title="Magyar magyarázat, igealakok fordítással, példamondat">kártyák bővítése</button>
     <button class="mini" id="expTsv">Anki TSV</button>
     <button class="mini" id="expCsv">CSV</button>
     <button class="mini" id="vClose">bezár</button>
@@ -499,7 +499,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v30';
+const APP_VER='v31';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1296,7 +1296,8 @@ async function gloss(sent,panel){
 }
 function addVocab(en,hu,note,sr,srHu){
   if(vocab.some(v=>v.en===en&&v.hu===hu)){toast('már a szótárban van');return}
-  vocab.push({en,hu,note:note||'',src:sr||'',srcHu:srHu||'',book:book?.title||'',lang:src}); saveVocab(); drawVocab();
+  vocab.push({en,hu,note:note||'',nv:note?NOTE_VER:0,src:sr||'',srcHu:srHu||'',
+              book:book?.title||'',lang:src}); saveVocab(); drawVocab();
   toast('«'+en.slice(0,28)+'» a szótárba került');
 }
 function speak(t){
@@ -1321,19 +1322,33 @@ async function runQueue(){
 }
 
 /* régi, angol magyarázatú kártyák magyarítása */
-const HU_MARK=['főnév','ige','melléknév','határozószó','névmás','múlt idő','többes szám','alap:'];
+const NOTE_VER=2;      /* 2 = magyar alakok fordítással */
 async function huFix(){
-  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&
-    (!v.note||!HU_MARK.some(m=>v.note.includes(m))||(v.src&&v.src!=='mondat'&&!v.srcHu)));
+  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&(
+      (v.nv||0)<NOTE_VER || !v.note ||
+      (v.src&&v.src!=='mondat'&&!v.srcHu) ||
+      (!v.src&&chapters.length)
+  ));
   if(!todo.length){toast('minden kártya rendben van');return}
   toast(todo.length+' kártya frissítése…',3000);
+  /* példamondat pótlása a most nyitott könyvből */
+  let ex={};
+  if(chapters.length){
+    const need=todo.filter(v=>!v.src&&(v.lang||'en')===src&&!/\s/.test(v.en.trim()))
+                   .map(v=>v.en.trim().toLowerCase());
+    if(need.length){ try{ ex=findExamples(need) }catch(e){} }
+  }
   let n=0;
   for(const v of todo){
     const prevSrc=src; src='en';
     try{
       const w=v.en.trim();
-      if(!/\s/.test(w)){ const inf=await wordInfo(w.toLowerCase()); if(inf) v.note=inf }
+      if(!/\s/.test(w)){
+        const inf=await wordInfo(w.toLowerCase());
+        if(inf){ v.note=inf; v.nv=NOTE_VER }
+      }
       if(!v.hu){ try{ v.hu=await freeTranslate(v.en,'en') }catch(e){} }
+      if(!v.src&&ex[w.toLowerCase()]) v.src=ex[w.toLowerCase()];
       if(v.src&&v.src!=='mondat'&&!v.srcHu){
         v.srcHu=cache['en|'+v.src]||await freeTranslate(v.src,'en').catch(()=>'');
       }
@@ -1722,7 +1737,7 @@ async function preAddRun(){
   let added=0;
   sel.forEach(w=>{
     if(vocab.some(v=>(v.en||'').toLowerCase()===w)) return;
-    vocab.push({en:w,hu:hu[w]||'',note:'',src:ex[w]||'',srcHu:'',book:bookTitle,lang:src});
+    vocab.push({en:w,hu:hu[w]||'',note:'',nv:0,src:ex[w]||'',srcHu:'',book:bookTitle,lang:src});
     added++;
   });
   saveVocab(); drawVocab();
