@@ -79,7 +79,6 @@ body.reading #hTools{display:flex}
 body.reading .brand{display:none}
 #libBtn{display:none}
 body.reading #libBtn{display:inline-block}
-body.reading #openBtn{display:none}
 body.reading select#chapSel{max-width:none;flex:1 1 auto;text-overflow:ellipsis}
 body.reading header{position:fixed;top:0;left:0;right:0;padding-right:3.3rem;
   background:rgba(22,17,12,.94);border-bottom:1px solid var(--line);
@@ -450,7 +449,6 @@ body.reading.rlight .tr .err{color:#a8352a}
   </div>
   <button class="btn" id="hamb" title="Menü" aria-label="Menü">☰</button>
   <button class="btn pri" id="libBtn">← könyvtár</button>
-  <button class="btn pri" id="openBtn">könyv</button>
 </header>
 
 <button id="dots" title="Fejléc mutatása (H)" aria-label="Fejléc mutatása">⋯</button>
@@ -656,7 +654,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v49';
+const APP_VER='v50';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1409,8 +1407,11 @@ function grammarHints(sent){
 }
 const SYS_PRE=lang=>'You build vocabulary cards for a Hungarian learner of '+lang+'. '+
  'Input lines look like: word :: example sentence from the book (the sentence may be missing). '+
- 'Return ONLY a JSON array, no markdown fences, no preamble. One object per input line, same order: '+
+ 'Return ONLY a JSON array, no markdown fences, no preamble. One object per input line, same order. '+
+ 'If the word is a proper noun (person, place, brand, fictional name) or otherwise not worth learning '+
+ 'as vocabulary, return {"w":"the word","skip":true} and nothing else for that line. Otherwise: '+
  '{"w":"the word exactly as given","hu":"magyar jelentés PONTOSAN abban az értelemben, ahogy a mondatban szerepel",'+
+ '"b":"a szó szótári alapalakja (ha ragozott; különben ugyanaz)","bh":"az alapalak általános szótári jelentése magyarul",'+
  '"note":"magyar szófaj; igénél az alakok magyar megfelelőkkel (múlt idő: went - ment), főnévnél a többes szám; '+
  'legvégül egy rövid magyar magyarázat","s":"a példamondat magyar fordítása, vagy üres, ha nincs mondat"}. '+
  (lang==='Danish'?'A note elején add meg a kiejtést szögletes zárójelben, kizárólag magyar betűkkel, IPA nélkül. ':'')+
@@ -2261,14 +2262,22 @@ $('expCsv').onclick=()=>{ if(!vocab.length)return toast('a szótár üres');
 
 /* ============ előtanulás: a könyv szókincsének felmérése ============ */
 function analyzeBook(){
-  const counts=new Map();
-  const re=/[a-zæøåäöéüïàâçèêëîôùûœ']+/g;
+  const counts=new Map(), midCaps=new Map(), lows=new Map();
+  const re=/[A-Za-zÆØÅæøåÄÖäöÉéÜüÏïÀàÂâÇçÈèÊêËëÎîÔôÙùÛûŒœ']+/g;
   chapters.forEach(c=>{
-    const txt=(c.body.textContent||'').toLowerCase();
-    let m; while((m=re.exec(txt))){
-      const w=m[0].replace(/^'+|'+$/g,'');
-      if(w.length<3) continue;
+    const raw=(c.body.textContent||'');
+    let m; while((m=re.exec(raw))){
+      const t=m[0].replace(/^'+|'+$/g,'');
+      if(t.length<3) continue;
+      const w=t.toLowerCase();
       counts.set(w,(counts.get(w)||0)+1);
+      if(/^[a-zæøåäöéü]/.test(t)) lows.set(w,(lows.get(w)||0)+1);
+      else{
+        /* mondat közben is nagybetűs → tulajdonnév-gyanús */
+        const pre=raw.slice(Math.max(0,m.index-2),m.index);
+        const sentStart=m.index===0||/[.!?\n\r]["'“”‘’]?\s*$/.test(pre);
+        if(!sentStart) midCaps.set(w,(midCaps.get(w)||0)+1);
+      }
     }
   });
   /* ragozott alakok összevonása, ha az alapalak is szerepel a könyvben */
@@ -2276,16 +2285,25 @@ function analyzeBook(){
     for(const [w,n] of [...counts]){
       let base=null;
       for(const c of lemmaCandidates(w)){ if(counts.has(c)&&c!==w){ base=c; break } }
-      if(base){ counts.set(base,counts.get(base)+n); counts.delete(w) }
+      if(base){ counts.set(base,counts.get(base)+n);
+        if(midCaps.has(w)) midCaps.set(base,(midCaps.get(base)||0)+midCaps.get(w));
+        if(lows.has(w)) lows.set(base,(lows.get(base)||0)+lows.get(w));
+        counts.delete(w); midCaps.delete(w); lows.delete(w) }
     }
+  }
+  /* tulajdonnév: mondat közben nagybetűs, és sehol sem fordul elő kisbetűvel —
+     a mondatkezdő nagybetű nem bizonyít semmit, a kisbetűs előfordulás viszont felment */
+  const proper=new Set();
+  for(const [w,n] of counts){
+    if(n>=2&&(midCaps.get(w)||0)>=1&&!(lows.get(w)||0)) proper.add(w);
   }
   const stop=src==='da'?STOP_DA:STOP;
   const known=new Set(vocab.map(v=>(v.en||'').toLowerCase()));
   const all=[...counts.entries()];
-  const list=all.filter(([w,n])=>!stop.has(w)&&!known.has(w)&&n>=2)
+  const list=all.filter(([w,n])=>!stop.has(w)&&!known.has(w)&&!proper.has(w)&&n>=2)
                 .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
   const knownHere=all.filter(([w])=>known.has(w)).length;
-  return {uniq:all.length, known:knownHere, list,
+  return {uniq:all.length, known:knownHere, list, proper:proper.size,
           tokens:all.reduce((s,[,n])=>s+n,0)};
 }
 /* kötegelt fordítás: soronként egy szó, egy kérésben több */
@@ -2382,7 +2400,7 @@ async function preAddLlmRun(){
   const bookTitle=book?book.title:'';
   $('preProg').textContent='példamondatok keresése…';
   const ex=findExamples(sel);
-  let added=0;
+  let added=0, skipped=0;
   for(let i=0;i<sel.length;i+=20){
     const chunk=sel.slice(i,i+20);
     $('preProg').textContent='Claude: '+Math.min(sel.length,i+20)+' / '+sel.length;
@@ -2393,8 +2411,10 @@ async function preAddLlmRun(){
       const arr=JSON.parse(raw.slice(raw.indexOf('['),raw.lastIndexOf(']')+1));
       arr.forEach(o=>{
         const w=(o.w||'').toLowerCase().trim(); if(!w) return;
+        if(o.skip){ skipped++; return }                 /* tulajdonnév: nem kártya */
         if(vocab.some(v=>(v.en||'').toLowerCase()===w)) return;
-        vocab.push({en:w,hu:o.hu||'',note:o.note||'',nv:3,src:ex[w]||'',srcHu:o.s||'',
+        vocab.push({en:w,hu:o.hu||'',base:(o.b||'').toLowerCase().trim()||'',baseHu:o.bh||'',
+                    note:o.note||'',nv:3,src:ex[w]||'',srcHu:o.s||'',
                     book:bookTitle,lang:src});
         added++;
       });
@@ -2405,7 +2425,8 @@ async function preAddLlmRun(){
   drawVocab();
   preData.list=preData.list.filter(([w])=>!sel.includes(w));
   drawPre();
-  $('preProg').textContent=added+' szó bekerült, jelentéssel, alakokkal és lefordított mondattal.';
+  $('preProg').textContent=added+' szó bekerült, jelentéssel, alakokkal és lefordított mondattal'+
+    (skipped?', '+skipped+' tulajdonnév kihagyva':'')+'.';
   $('preAddLlm').disabled=false; $('preAdd').disabled=false;
   toast(added+' szó hozzáadva Claude-dal',4000);
 }
@@ -2491,7 +2512,7 @@ function openPre(){
 }
 function drawPre(){
   if(!preData) return;
-  const {uniq,known,list,tokens}=preData;
+  const {uniq,known,list,tokens,proper}=preData;
   $('preStat').innerHTML='';
   const mk=(a,b)=>{const d=document.createElement('div');d.className='pstat';
     d.innerHTML='<b></b><span></span>';d.querySelector('b').textContent=a;
@@ -2499,6 +2520,7 @@ function drawPre(){
   mk(uniq.toLocaleString('hu'),'különböző szó');
   mk(known.toLocaleString('hu'),'ebből már a szótáradban');
   mk(list.length.toLocaleString('hu'),'tanulható, legalább kétszer előfordul');
+  if(proper) mk(proper.toLocaleString('hu'),'tulajdonnév kiszűrve');
   mk(Math.round(tokens/1000)+'e','összes szó a könyvben');
   const sel=list.slice(0,preTop).filter(([w])=>!preSkip.has(w));
   $('preAdd').textContent='hozzáadás a szótárhoz ('+sel.length+')';
@@ -2577,7 +2599,7 @@ function drawStats(){
   }
 }
 /* ============ párosítós játék ============ */
-let mPool=[], mRound=0, mSelL=null, mWrong=new Set(), mScore=0;
+let mPool=[], mRound=0, mSelL=null, mWrong=new Set(), mScore=0, mEnOf={};
 function startMatch(){
   const due=buildQueue().filter(o=>o.dir===0&&o.v.hu&&o.v.en);
   const all=vocab.map((v,i)=>({v,i,dir:0,c:cards(v)[0]})).filter(o=>o.v.hu&&o.v.en);
@@ -2605,18 +2627,36 @@ function matchRound(){
   L.innerHTML=''; R.innerHTML=''; $('mMsg').textContent='';
   $('mCount').textContent=(mRound+1)+' / '+Math.ceil(mPool.length/4)+' kör  ·  '+mScore+' találat';
   mSelL=null;
-  group.forEach(o=>{
-    const b=document.createElement('button'); b.className='mitem'; b.textContent=o.v.en;
+  /* alapalak + alapjelentés: Claude-tól (base/baseHu), régi kártyáknál a heurisztika
+     szótöve és elsődleges jelentése, végső esetben a nyers en/hu */
+  const labs=group.map(o=>{
+    const en=o.v.base||(o.v.d&&o.v.d.base)||o.v.en;
+    let hu=o.v.baseHu||'';
+    if(!hu&&o.v.d&&o.v.d.sense&&o.v.d.sense[o.v.d.primary]&&o.v.d.sense[o.v.d.primary].hu)
+      hu=o.v.d.sense[o.v.d.primary].hu;
+    return {en,hu:hu||o.v.hu};
+  });
+  /* ha két kártya alapalakja/jelentése a körben egybeesne, ott a nyers alak marad */
+  const seenE={},seenH={};
+  labs.forEach((l,ix)=>{
+    if(seenE[l.en]!==undefined) l.en=group[ix].v.en; else seenE[l.en]=ix;
+    if(seenH[l.hu]!==undefined) l.hu=group[ix].v.hu; else seenH[l.hu]=ix;
+  });
+  const enOf={},huOf={};
+  group.forEach((o,ix)=>{enOf[o.i]=labs[ix].en; huOf[o.i]=labs[ix].hu});
+  mEnOf=enOf;
+  group.forEach((o,ix)=>{
+    const b=document.createElement('button'); b.className='mitem'; b.textContent=labs[ix].en;
     b.dataset.i=o.i;
     b.onclick=()=>{
       [...L.children].forEach(x=>x.classList.remove('sel'));
       b.classList.add('sel'); mSelL=b;
-      speakLang(o.v.en,o.v.lang||'en');
+      speakLang(labs[ix].en,o.v.lang||'en');
     };
     L.appendChild(b);
   });
   group.slice().sort(()=>Math.random()-.5).forEach(o=>{
-    const b=document.createElement('button'); b.className='mitem'; b.textContent=o.v.hu;
+    const b=document.createElement('button'); b.className='mitem'; b.textContent=huOf[o.i];
     b.dataset.i=o.i;
     b.onclick=()=>tryPair(b,group);
     R.appendChild(b);
@@ -2646,7 +2686,7 @@ function tryPair(right,group){
     right.classList.add('bad'); mWrong.add(i);
     setTimeout(()=>right.classList.remove('bad'),340);
     const o=group.find(g=>String(g.i)===right.dataset.i);
-    $('mMsg').textContent=o?('„'+right.textContent+'” ehhez tartozik: '+o.v.en):'Nem ez az.';
+    $('mMsg').textContent=o?('„'+right.textContent+'” ehhez tartozik: '+(mEnOf[o.i]||o.v.en)):'Nem ez az.';
   }
 }
 function matchDone(){
@@ -2839,7 +2879,6 @@ addEventListener('popstate',()=>{
   if(document.body.classList.contains('reading')) closeBook();
 });
 /* ============ vezérlők ============ */
-$('openBtn').onclick=()=>$('file').click();
 $('libBtn').onclick=closeBook;
 $('preBtn').onclick=openPre;
 $('preAdd').onclick=preAddRun;
