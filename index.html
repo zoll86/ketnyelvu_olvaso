@@ -486,7 +486,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <p>Alapból ingyenes, kulcs nélküli motorokkal megy — Google, Lingva, MyMemory —, és magától azt használja, amelyik éppen válaszol. A fordítás az előző két mondatot is megkapja szövegkörnyezetként, hogy a névmások és az igeidő stimmeljen. Minden lefordított mondat elmentődik, tehát másodszorra hálózat nélkül is előjön.</p>
     <p>Ha egy fordítás furcsa, a panelban a <b>↻</b> gomb újrafordítja másik motorral — és rá van írva, melyik jön. Igényesebb fordításhoz a beállításokban Claude vagy bármely OpenAI-kompatibilis API (Kimi, OpenRouter) is bekapcsolható; ez fizetős, a költségmérő valós elszámolásból számol.</p>
     <h4>Szótár</h4>
-    <p>A fordítás alatt a <b>szavak</b> gomb szószedetet ad: magyar jelentés, szófaj, magyarázat magyarul, igéknél az összes alak magyar megfelelővel, főneveknél a többesszám. Ha egy szónak több szófaja van — mint a <i>ring</i>, ami gyűrű és csengetés is —, a kártyán fülekkel váltasz köztük, és mindegyik a saját jelentésével és alakjaival jelenik meg. Egy koppintás a szóra, és a szótárba kerül a mondattal együtt. Onnan Anki-barát TSV-ként vagy CSV-ként exportálható.</p>
+    <p>A fordítás alatt a <b>szavak</b> gomb szószedetet ad: magyar jelentés, szófaj, magyarázat magyarul, igéknél az összes alak magyar megfelelővel, főneveknél a többesszám. Ha egy szónak több szófaja van — mint a <i>ring</i>, ami gyűrű és csengetés is —, a kártyán fülekkel váltasz köztük, és mindegyik a saját jelentésével és alakjaival jelenik meg. A jelentéseket hordozó kifejezésben kérdezi meg a program (<i>to ring</i>, <i>the ring</i>, <i>he rang</i>), ezért a magyar alak a címkéhez illően jön. A látszat-jelentéseket kiszűri: a <i>think</i> szótári főnévi alakjából nem csinál kártyát. Egy koppintás a szóra, és a szótárba kerül a mondattal együtt. Onnan Anki-barát TSV-ként vagy CSV-ként exportálható.</p>
     <h4>Felkészülés a könyvre</h4>
     <p>Olvasás előtt a <b>szókincs</b> gomb felméri a könyv szókincsét: hány különböző szó van benne, mennyit tudsz már, és mi a leggyakoribb ismeretlen. A ragozott alakokat összevonja, az egyszer előfordulókat kihagyja. A kiválasztott szavak a szótárba kerülnek, példamondattal a könyvből. Claude-dal a jelentés a mondatbeli értelemben jön, nem a szótári első jelentés.</p>
     <p>Ugyanitt a <b>kifejezések</b> a nyitott fejezetből vonzatos igéket, idiómákat és állandó fordulatokat gyűjtenek, a nyelvbeli gyakoriság szerint rangsorolva. Ez csak Claude vagy saját API mellett működik, mert gépi fordító nem tudja megítélni, mi hasznos.</p>
@@ -627,7 +627,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v43';
+const APP_VER='v46';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1048,38 +1048,86 @@ function huClean(t){
     .replace(/\.$/,'')
     .trim();
 }
+const isInfin=t=>/ni$/i.test((t||'').trim());
+function huNorm(t){ return (t||'').toLowerCase().replace(/[^a-záéíóöőúüű]/g,'') }
+function huCollide(a,b){
+  const x=huNorm(a), y=huNorm(b);
+  if(!x||!y) return false;
+  if(x===y) return true;
+  const s=x.length<y.length?x:y, l=x.length<y.length?y:x;
+  return s.length>=4&&l.startsWith(s.slice(0,Math.max(4,Math.floor(s.length*0.8))));
+}
 async function senseOf(pos,base,defs){
-  const out={hu:'',def:defs[pos]||'',extra:[]};
+  const out={hu:'',def:defs[pos]||'',extra:[],en:''};
   if(pos==='verb'){
     const f=verbForms(base);
-    const rows=[['jelen','to '+f.base,f.base],
+    /* hordozó kifejezések: a magyar alak is a címkéhez illően jön vissza */
+    const rows=[['__base','to '+f.base,f.base],
                 ['ő/az','he '+f.s,f.s],
                 ['múlt idő','he '+f.past,f.past],
-                ['3. alak','he has '+f.pp,f.pp],
-                ['folyamatos','he is '+f.ing,f.ing]];
-    const hu=await formsHu('v:'+base,rows.map(r=>r[1]));
-    out.hu=huClean(hu[0]);
+                ['befejezett (has)','he has '+f.pp,f.pp],
+                ['folyamatos (éppen)','he is '+f.ing,f.ing]];
+    const hu=await formsHu('v2:'+base,rows.map(r=>r[1]));
+    out.hu=huClean(hu[0]); out.en='to '+f.base;
+    const same=f.past===f.pp;
+    const seen=[];
     rows.forEach((r,i)=>{
-      const h=huClean(hu[i]);
-      if(i===3&&rows[2][2]===r[2]) return;              /* múlt és 3. alak azonos */
-      out.extra.push([r[0],r[2],h&&h.toLowerCase()!==r[2].toLowerCase()?h:'']);
+      if(i===0) return;
+      if(same&&i===3) return;
+      let h=huClean(hu[i]);
+      const lab=(same&&i===2)?'múlt idő és befejezett':r[0];
+      if(h&&h.toLowerCase()===r[2].toLowerCase()) h='';
+      if(h&&i===4&&seen.some(x=>huNorm(x)===huNorm(h))) h='magyarul ugyanaz';
+      if(h&&h!=='magyarul ugyanaz') seen.push(h);
+      out.extra.push([lab,r[2],h]);
     });
   } else if(pos==='noun'){
     const pl=pluralOf(base);
-    const rows=[['egyes','the '+base,base]];
+    const rows=[['__base','the '+base,base]];
     if(pl!==base) rows.push(['többes szám','the '+pl,pl]);
-    const hu=await formsHu('n:'+base,rows.map(r=>r[1]));
-    out.hu=huClean(hu[0]);
-    rows.slice(1).forEach((r,i)=>{
-      const h=huClean(hu[i+1]);
-      out.extra.push([r[0],r[2],h&&h.toLowerCase()!==r[2].toLowerCase()?h:'']);
-    });
+    const hu=await formsHu('n2:'+base,rows.map(r=>r[1]));
+    out.hu=huClean(hu[0]); out.en=base;
+    if(rows.length>1){
+      const h=huClean(hu[1]);
+      const distinct=h&&huNorm(h)!==huNorm(out.hu);
+      const ok=distinct&&h.toLowerCase()!==pl.toLowerCase()&&!isInfin(h);
+      out.plHu=ok?h:'';
+      out.plSame=!distinct;              /* a fordító nem tudta ragozni: kétséges főnév */
+      out.extra.push(['többes szám',pl,ok?h:'']);
+    }
   } else {
     const carrier=pos==='adjective'?('very '+base):pos==='adverb'?('quite '+base):base;
-    const hu=await formsHu(pos+':'+base,[carrier]);
-    out.hu=huClean((hu[0]||'').replace(/^(?:nagyon|egészen)\s+/i,''));
+    const hu=await formsHu(pos+'2:'+base,[carrier]);
+    out.hu=huClean((hu[0]||'').replace(/^(?:nagyon|egészen|meglehetősen)\s+/i,''));
+    out.en=base;
   }
   return out;
+}
+/* a gépi fordítás alapján kiszűri a látszat-jelentéseket */
+function pruneSenses(poss,sense,role){
+  const keep=poss.filter(p=>sense[p]&&sense[p].hu);
+  /* főnévi jelentés nem lehet -ni végű: az főnévi igenév, tehát ige */
+  const bad=new Set(keep.filter(p=>(p==='noun'||p==='adjective'||p==='adverb')&&isInfin(sense[p].hu)));
+  /* ige jelentés legyen főnévi igenév alakú, különben nem ige-olvasat */
+  if(keep.includes('verb')&&!isInfin(sense.verb.hu)&&keep.length>1) bad.add('verb');
+  /* ha a főnév többesszáma magyarul ugyanaz, a főnévi olvasat látszat — az ige a valódi */
+  if(keep.includes('noun')&&keep.includes('verb')&&sense.noun.plSame&&isInfin(sense.verb.hu)
+     &&role!=='noun') bad.add('noun');
+  let left=keep.filter(p=>!bad.has(p));
+  if(!left.length) left=keep.slice(0,1);
+  /* ha két jelentés magyarul ugyanaz, a fordító nem tud különbséget tenni */
+  for(let i=0;i<left.length;i++){
+    for(let j=i+1;j<left.length;j++){
+      if(huCollide(sense[left[i]].hu,sense[left[j]].hu)){
+        const win = (role&&left.includes(role)) ? role
+                  : isInfin(sense[left[i]].hu) ? left[i]
+                  : isInfin(sense[left[j]].hu) ? left[j] : left[i];
+        left=left.filter(p=>p===win||(p!==left[i]&&p!==left[j]));
+        i=-1; break;
+      }
+    }
+  }
+  return left;
 }
 /* teljes leírás: szerkezet + lapos jegyzet a kártyához és az exporthoz */
 async function buildWordData(w,sent){
@@ -1095,21 +1143,22 @@ async function buildWordData(w,sent){
   if(!poss.length) poss.push(d.poss[0]||'noun');
   const sense={};
   for(const p of poss) sense[p]=await senseOf(p,base,d.defs||{});
-  for(const p of poss){
-    if(sense[p].def){ sense[p].defHu=await defHu(sense[p].def) }
-  }
   const role=roleInSentence(base,sent);
-  const primary=(role&&sense[role])?role:poss[0];
-  return {base, w, poss, sense, primary};
+  const kept=pruneSenses(poss,sense,role);
+  const sense2={};
+  for(const p of kept){ sense2[p]=sense[p];
+    if(sense2[p].def) sense2[p].defHu=await defHu(sense2[p].def) }
+  const primary=(role&&sense2[role])?role:kept[0];
+  return {base, w, poss:kept, sense:sense2, primary};
 }
 function dataToNote(D){
   if(!D) return '';
   const p=[];
   if(D.base!==D.w) p.push('alap: '+D.base);
-  p.push(D.poss.map(x=>POS[x]||x).join(', '));
+  if(D.poss.length>1) p.push(D.poss.map(x=>POS[x]||x).join(', '));
   const s=D.sense[D.primary];
   if(s){
-    if(s.hu) p.push((POS[D.primary]||D.primary)+'ként: '+s.hu);
+    if(s.hu) p.push((POS[D.primary]||D.primary)+'ként: '+(D.primary==='verb'&&s.en?s.en+' \u2013 ':'')+s.hu);
     s.extra.forEach(([lab,en,hu])=>p.push(lab+': '+en+(hu?' \u2013 '+hu:'')));
     if(s.defHu) p.push(s.defHu);
   }
@@ -1936,7 +1985,7 @@ function nextCard(){
       const sn=D.sense[cur]||{};
       const add=(t,cls)=>{const d=document.createElement('div'); if(cls)d.className=cls;
         d.textContent=t; body.appendChild(d)};
-      if(sn.hu) add((POS[cur]||cur)+': '+sn.hu,'sprim');
+      if(sn.hu) add((POS[cur]||cur)+': '+(cur==='verb'&&sn.en?sn.en+' \u2013 ':'')+sn.hu,'sprim');
       (sn.extra||[]).forEach(([lab,en,hu])=>add(lab+': '+en+(hu?' \u2013 '+hu:'')));
       if(sn.defHu) add(sn.defHu);
     };
