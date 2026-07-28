@@ -539,7 +539,7 @@ body.reading.rlight .tr .err{color:#a8352a}
   </div>
   <div id="vlist"></div>
   <div style="flex:0 0 auto;border-top:1px solid var(--line2);padding-top:var(--sp3)">
-    <button class="btn" id="fixBtn" style="width:100%">kártyák bővítése</button>
+    <button class="btn" id="fixBtn" style="width:100%">bővítés Claude-dal</button>
     <p class="note" id="fixNote" style="margin:var(--sp2) 0 0"></p>
   </div>
 </div>
@@ -699,7 +699,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v56';
+const APP_VER='v57';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1368,9 +1368,9 @@ async function freeGloss(sent){
   for(const w of words){
     let hu='',note='';
     try{ hu=await freeTranslate(w) }catch(e){ hu='—' }
-    let dat=null;
-    if(LANG[src].dict){ note=await wordInfo(w,sent); dat=lastWordData }
-    out.push({en:w,hu,note,_d:dat});
+    /* a heurisztikus jegyzetgyártás ki van kötve: ingyenes módban csak szó + fordítás,
+       a bővítést a szótárban a Claude-os gomb végzi */
+    out.push({en:w,hu,note:'',_d:null});
   }
   return out;
 }
@@ -1885,15 +1885,22 @@ async function runQueue(){
 /* régi, angol magyarázatú kártyák magyarítása */
 const NOTE_VER=3;      /* 3 = szófajonkénti adatok, hordozó kifejezéssel fordítva */
 const D_VER=2;         /* 2 = "this is the X" főnév-hordozó + funkciószó-szűrés */
-async function huFix(){
-  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&(
-      (v.nv||0)<NOTE_VER || !v.note ||
-      (v.d&&(v.dv||0)<D_VER) ||          /* heurisztikus kártya: újraépítés a javított logikával */
-      (v.src&&v.src!=='mondat'&&!v.srcHu) ||
-      (!v.src&&chapters.length)
+function fixTodo(){
+  return vocab.filter(v=>(
+    (v.nv||0)<NOTE_VER || !v.note || v.d ||        /* v.d = régi heurisztikus adat → cserére szorul */
+    (v.src&&v.src!=='mondat'&&!v.srcHu)
   ));
+}
+async function huFix(){
+  /* A kártyabővítést kizárólag Claude végzi. A régi heurisztikus út (szótári API +
+     gépi fordítás) megbízhatatlan jegyzeteket adott, ezért ki van kötve. */
+  if(engine==='free'){
+    toast('A bővítést csak Claude végzi — kapcsold be a ⚙-ban. Ingyenes motorral értelmetlen jegyzetek születnének.',5000);
+    return;
+  }
+  const todo=fixTodo();
   if(!todo.length){toast('minden kártya rendben van');return}
-  toast(todo.length+' kártya frissítése…',3000);
+  toast(todo.length+' kártya bővítése Claude-dal…',3000);
   /* példamondat pótlása a most nyitott könyvből */
   let ex={};
   if(chapters.length){
@@ -1901,35 +1908,50 @@ async function huFix(){
                    .map(v=>v.en.trim().toLowerCase());
     if(need.length){ try{ ex=findExamples(need) }catch(e){} }
   }
-  let n=0;
-  for(const v of todo){
-    const prevSrc=src; src='en';
-    try{
-      const w=v.en.trim();
-      if(!/\s/.test(w)){
-        const inf=await wordInfo(w.toLowerCase(), v.src||ex[w.toLowerCase()]||'');
-        if(inf){
-          v.note=inf; v.nv=NOTE_VER;
-          if(lastWordData){
-            v.d=lastWordData; v.dv=D_VER;
-            const ps=lastWordData.sense[lastWordData.primary];
-            if(ps&&ps.hu) v.hu=ps.hu;
-          }
-        }
+  let done=0, stop=false;
+  for(const lg of ['en','da']){
+    if(stop) break;
+    const part=todo.filter(v=>(v.lang||'en')===lg);
+    for(let i=0;i<part.length&&!stop;i+=20){
+      const chunk=part.slice(i,i+20);
+      const byW={}; chunk.forEach(v=>{byW[v.en.trim().toLowerCase()]=v});
+      const lines=chunk.map(v=>{
+        const w=v.en.trim().toLowerCase();
+        const s=(v.src&&v.src!=='mondat')?v.src:(ex[w]||'');
+        return v.en.trim()+' :: '+s;
+      }).join('\n');
+      try{
+        let raw=await llm(SYS_PRE(LANG[lg].en),lines,1600);
+        raw=raw.replace(/```json|```/g,'').trim();
+        const arr=JSON.parse(raw.slice(raw.indexOf('['),raw.lastIndexOf(']')+1));
+        arr.forEach(o=>{
+          const v=byW[(o.w||'').toLowerCase().trim()]; if(!v) return;
+          if(o.skip){ v.note=v.note||'tulajdonnév'; v.nv=NOTE_VER; delete v.d; v.dv=D_VER; done++; return }
+          if(o.hu) v.hu=o.hu;
+          if(o.b) v.base=(o.b||'').toLowerCase().trim();
+          if(o.bh) v.baseHu=o.bh;
+          if(o.note) v.note=o.note;
+          if(o.s&&v.src&&v.src!=='mondat'&&!v.srcHu) v.srcHu=o.s;
+          if(!v.src&&ex[v.en.trim().toLowerCase()]) v.src=ex[v.en.trim().toLowerCase()];
+          v.nv=NOTE_VER; delete v.d; v.dv=D_VER;
+          done++;
+        });
+        saveVocab();
+        toast('bővítés: '+done+' / '+todo.length,1200);
+      }catch(e){
+        stop=true;
+        const m=String(e.message||e);
+        toast(/credit|billing|402|insufficient|quota/i.test(m)
+          ? 'Nincs keret az API-kulcson — a bővítés most nem megy. Tölts fel egyenleget és próbáld újra.'
+          : /401|key|auth/i.test(m)
+            ? 'Hibás vagy hiányzó API-kulcs — a bővítés most nem megy. Ellenőrizd a ⚙-ban.'
+            : 'A bővítés megszakadt: '+m,6000);
       }
-      if(!v.hu){ try{ v.hu=await freeTranslate(v.en,'en') }catch(e){} }
-      if(!v.src&&ex[w.toLowerCase()]) v.src=ex[w.toLowerCase()];
-      if(v.src&&v.src!=='mondat'&&!v.srcHu){
-        v.srcHu=cache['en|'+v.src]||await freeTranslate(v.src,'en').catch(()=>'');
-      }
-      n++;
-    }catch(e){}
-    src=prevSrc;
-    saveVocab();
-    if(n%5===0) toast('magyarítás: '+n+'/'+todo.length,1200);
-    await new Promise(r=>setTimeout(r,250));
+      await sleep(300);
+    }
   }
-  drawVocab(); toast('kész: '+n+' kártya magyarítva',3000);
+  drawVocab(); drawFixNote();
+  if(!stop) toast('kész: '+done+' kártya bővítve Claude-dal',3000);
 }
 /* ============ beépített ismétlés ============ */
 const DAY=86400000, MIN=60000;
@@ -2635,7 +2657,7 @@ async function preAddRun(){
     'A magyarázatok, igealakok és a mondatok fordítása külön tölthető be.';
   $('preProg').appendChild(done);
   const b=document.createElement('button'); b.className='btn'; b.style.marginTop='var(--sp2)';
-  b.textContent='magyarázatok betöltése';
+  b.textContent='bővítés Claude-dal';
   b.onclick=()=>{b.disabled=true;huFix().finally(()=>{b.disabled=false})};
   $('preProg').appendChild(b);
   $('preAdd').disabled=false;
@@ -3295,10 +3317,16 @@ $('vClose').onclick=()=>$('vocab').classList.remove('open');
 $('expBtn').onclick=()=>{const r=$('expRow');r.hidden=!r.hidden};
 function drawFixNote(){
   const n=$('fixNote'); if(!n) return;
-  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&((v.nv||0)<NOTE_VER||!v.note||(v.d&&(v.dv||0)<D_VER))).length;
-  n.textContent=(todo?todo+' kártya bővíthető: ':'Minden kártya kész. ')+
-    'magyar szófaj, magyarázat, igealakok magyar megfelelőkkel, többesszám'+
-    (chapters.length?' — és példamondat a most nyitott könyvből.':'. Példamondat pótláshoz nyisd meg azt a könyvet, amiből a szavak vannak.');
+  const todo=fixTodo().length;
+  const free=engine==='free';
+  const b=$('fixBtn');
+  if(b) b.disabled=free||!todo;
+  n.textContent=!todo
+    ? 'Minden kártya kész.'
+    : free
+      ? todo+' kártya bővíthető, de a bővítést csak Claude végzi — kapcsold be a ⚙-ban. (Az ingyenes motor jegyzetei megbízhatatlanok voltak, ezért ki vannak kötve.)'
+      : todo+' kártya bővíthető Claude-dal: jelentés a mondat értelmében, szófaj, igealakok, alapalak a párosításhoz'+
+        (chapters.length?' — és példamondat a nyitott könyvből.':'.');
 }
 $('studyBtn').onclick=()=>{$('vocab').classList.remove('open');startStudy()};
 $('studyTop').onclick=()=>{ if(!vocab.length) return toast('előbb ments szavakat a szótárba'); startStudy() };
