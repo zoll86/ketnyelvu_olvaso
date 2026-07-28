@@ -14,7 +14,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Barlow+Semi+Condensed:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400;1,700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,700;1,7..72,400&family=Bitter:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Barlow+Semi+Condensed:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400;1,700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,700;1,7..72,400&family=Bitter:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Lexend:wght@300;400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
@@ -49,6 +49,12 @@ body{
 button,select,input{font-family:inherit;color:inherit}
 .glass{background:var(--panel);backdrop-filter:blur(16px) saturate(1.1);border:1px solid var(--line2)}
 
+/* ---------- HIG: érintési célpontok ---------- */
+@media(pointer:coarse){
+  .btn,.mini,.bdel,.w{min-height:44px}
+  .mini{padding:9px 12px}
+  select.btn{min-height:44px}
+}
 /* ---------- fejléc ---------- */
 header{
   flex:0 0 auto; display:flex; align-items:center; gap:var(--sp2); flex-wrap:wrap;
@@ -138,7 +144,8 @@ body.reading.rlight .tr .gloss{border-top-color:rgba(0,0,0,.22)}
 body.reading.rlight .tr .err{color:#a8352a}
 #reader{max-width:var(--rw,42rem);margin:0 auto;padding:1.4rem var(--rpad,1.05rem) 46vh;
   font-family:var(--rff,'Barlow Semi Condensed',sans-serif);color:var(--rcol,#b6b6b6);
-  font-size:var(--rfs,1.55rem);line-height:var(--rlh,1.34);font-weight:400}
+  font-size:var(--rfs,1.55rem);line-height:var(--rlh,1.34);font-weight:400;
+  letter-spacing:var(--rls,0);word-spacing:var(--rws,0)}
 #reader p{margin:0;text-indent:1.45em}
 #reader p.lead{text-indent:0}
 #reader p.lead::first-letter{font-weight:700}
@@ -580,6 +587,7 @@ body.reading.rlight .tr .err{color:#a8352a}
   <div class="srow"><label>Betűtípus</label><div class="seg" id="segFont"></div></div>
   <div class="srow"><label>Betűméret</label><input type="range" id="rFs" min="1" max="2.6" step=".05"><span class="val" id="vFs"></span></div>
   <div class="srow"><label>Sortávolság</label><input type="range" id="rLh" min="1.05" max="2" step=".02"><span class="val" id="vLh"></span></div>
+  <div class="srow"><label>Betűköz</label><input type="range" id="rLs" min="0" max="0.08" step=".005"><span class="val" id="vLs"></span></div>
   <div class="srow"><label>Hasábszélesség</label><input type="range" id="rW" min="26" max="60" step="1"><span class="val" id="vW"></span></div>
   <div style="margin-top:var(--sp5);padding-top:var(--sp4);border-top:1px solid var(--line2)">
     <div class="ssec">Gyakorlás</div>
@@ -661,7 +669,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v52';
+const APP_VER='v53';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -724,12 +732,13 @@ const FONTS={bsc:["kondenzált","'Barlow Semi Condensed',sans-serif"],
              lit:["talpas","'Literata',Georgia,serif"],
              bit:["Bitter","'Bitter',Georgia,serif"],
              atk:["Hyperlegible","'Atkinson Hyperlegible',system-ui,sans-serif"],
+             lex:["Lexend","'Lexend',system-ui,sans-serif"],
              dm:["DM Sans","'DM Sans',system-ui,sans-serif"]};
 const THEMES={black:["fekete","#000000","#a9a9a9"],
               grey:["grafit","#22262c","#ccd4dc"],
               warm:["meleg","#191006","#f3ddae"],
               sepia:["szépia","#e9dcc3","#3f331f",1]};   /* 4. elem: világos téma */
-const RD=Object.assign({theme:'black',font:'bsc',fs:1.55,lh:1.34,w:42},
+const RD=Object.assign({theme:'black',font:'bsc',fs:1.55,lh:1.34,w:42,ls:0},
   JSON.parse(store.get('ek_read')||'{}'));
 function applyRead(){
   const r=document.documentElement.style;
@@ -739,11 +748,14 @@ function applyRead(){
   r.setProperty('--rbg',th[1]); r.setProperty('--rcol',th[2]);
   r.setProperty('--rfs',RD.fs.toFixed(2)+'rem');
   r.setProperty('--rlh',RD.lh.toFixed(2));
+  r.setProperty('--rls',(RD.ls||0).toFixed(3)+'em');
+  r.setProperty('--rws',((RD.ls||0)*2.2).toFixed(3)+'em');   /* a szóköz arányosan nő */
   r.setProperty('--rw',RD.w+'rem');
   r.setProperty('--rpad',RD.w>46?'1.6rem':'1.05rem');
-  $('rFs').value=RD.fs; $('rLh').value=RD.lh; $('rW').value=RD.w;
+  $('rFs').value=RD.fs; $('rLh').value=RD.lh; $('rW').value=RD.w; $('rLs').value=RD.ls||0;
   $('vFs').textContent=Math.round(RD.fs*16)+'px';
   $('vLh').textContent=RD.lh.toFixed(2);
+  $('vLs').textContent=(RD.ls||0)?('+'+Math.round((RD.ls||0)*1000)/10+'%'):'alap';
   $('vW').textContent=RD.w+'rem';
   [...$('segTheme').children].forEach(b=>b.classList.toggle('sel',b.dataset.k===RD.theme));
   [...$('segFont').children].forEach(b=>b.classList.toggle('sel',b.dataset.k===RD.font));
@@ -2680,12 +2692,13 @@ function matchRound(){
     R.appendChild(b);
   });
 }
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 function tryPair(right,group){
   if(!mSelL){ $('mMsg').textContent='Előbb válaszd ki bal oldalon a szót.'; return }
   const i=mSelL.dataset.i;
   if(right.dataset.i===i){
     mSelL.classList.remove('sel'); mSelL.classList.add('ok'); right.classList.add('ok');
-    mScore++;
+    buzz(12); mScore++;
     const o=group.find(g=>String(g.i)===i);
     if(o){
       const first=!mWrong.has(i);
@@ -2701,7 +2714,7 @@ function tryPair(right,group){
       mRound++; setTimeout(matchRound,520);
     }
   } else {
-    right.classList.add('bad'); mWrong.add(i);
+    right.classList.add('bad'); mWrong.add(i); buzz([28,40,28]);
     setTimeout(()=>right.classList.remove('bad'),340);
     const o=group.find(g=>String(g.i)===right.dataset.i);
     $('mMsg').textContent=o?('„'+right.textContent+'” ehhez tartozik: '+(mEnOf[o.i]||o.v.en)):'Nem ez az.';
@@ -3052,6 +3065,7 @@ $('spendReset').onclick=()=>{spend={in:0,out:0,calls:0};store.set('ek_spend',JSO
 drawEngine();
 $('rFs').oninput=e=>{RD.fs=+e.target.value;applyRead()};
 $('rLh').oninput=e=>{RD.lh=+e.target.value;applyRead()};
+$('rLs').oninput=e=>{RD.ls=+e.target.value;applyRead()};
 $('rW').oninput=e=>{RD.w=+e.target.value;applyRead()};
 $('setBtn').onclick=()=>{$('vocab').classList.remove('open');$('setts').classList.toggle('open');
   if($('setts').classList.contains('open')){ drawSrs(); drawStorage() }};
