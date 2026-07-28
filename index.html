@@ -699,7 +699,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v57';
+const APP_VER='v59';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1885,6 +1885,16 @@ async function runQueue(){
 /* régi, angol magyarázatú kártyák magyarítása */
 const NOTE_VER=3;      /* 3 = szófajonkénti adatok, hordozó kifejezéssel fordítva */
 const D_VER=2;         /* 2 = "this is the X" főnév-hordozó + funkciószó-szűrés */
+function parseCards(raw){
+  raw=(raw||'').replace(/```json|```/g,'').trim();
+  const a=raw.indexOf('['), b=raw.lastIndexOf(']');
+  if(a>=0&&b>a){ try{ return JSON.parse(raw.slice(a,b+1)) }catch(e){} }
+  /* csonka válasz (kifutott a tokenkeretből): az ép {...} objektumokat egyenként mentjük ki,
+     a kimaradt szavak a következő futásban újra sorra kerülnek */
+  const out=[], ms=raw.match(/\{[^{}]*\}/g)||[];
+  for(const m of ms){ try{ out.push(JSON.parse(m)) }catch(e){} }
+  return out;
+}
 function fixTodo(){
   return vocab.filter(v=>(
     (v.nv||0)<NOTE_VER || !v.note || v.d ||        /* v.d = régi heurisztikus adat → cserére szorul */
@@ -1908,12 +1918,12 @@ async function huFix(){
                    .map(v=>v.en.trim().toLowerCase());
     if(need.length){ try{ ex=findExamples(need) }catch(e){} }
   }
-  let done=0, stop=false;
+  let done=0, stop=false, fails=0;
   for(const lg of ['en','da']){
     if(stop) break;
     const part=todo.filter(v=>(v.lang||'en')===lg);
-    for(let i=0;i<part.length&&!stop;i+=20){
-      const chunk=part.slice(i,i+20);
+    for(let i=0;i<part.length&&!stop;i+=10){
+      const chunk=part.slice(i,i+10);
       const byW={}; chunk.forEach(v=>{byW[v.en.trim().toLowerCase()]=v});
       const lines=chunk.map(v=>{
         const w=v.en.trim().toLowerCase();
@@ -1921,9 +1931,9 @@ async function huFix(){
         return v.en.trim()+' :: '+s;
       }).join('\n');
       try{
-        let raw=await llm(SYS_PRE(LANG[lg].en),lines,1600);
-        raw=raw.replace(/```json|```/g,'').trim();
-        const arr=JSON.parse(raw.slice(raw.indexOf('['),raw.lastIndexOf(']')+1));
+        const raw=await llm(SYS_PRE(LANG[lg].en),lines,3000);
+        const arr=parseCards(raw);
+        if(!arr.length) throw new Error('üres vagy értelmezhetetlen válasz');
         arr.forEach(o=>{
           const v=byW[(o.w||'').toLowerCase().trim()]; if(!v) return;
           if(o.skip){ v.note=v.note||'tulajdonnév'; v.nv=NOTE_VER; delete v.d; v.dv=D_VER; done++; return }
@@ -1939,19 +1949,24 @@ async function huFix(){
         saveVocab();
         toast('bővítés: '+done+' / '+todo.length,1200);
       }catch(e){
-        stop=true;
         const m=String(e.message||e);
-        toast(/credit|billing|402|insufficient|quota/i.test(m)
-          ? 'Nincs keret az API-kulcson — a bővítés most nem megy. Tölts fel egyenleget és próbáld újra.'
-          : /401|key|auth/i.test(m)
-            ? 'Hibás vagy hiányzó API-kulcs — a bővítés most nem megy. Ellenőrizd a ⚙-ban.'
-            : 'A bővítés megszakadt: '+m,6000);
+        if(/credit|billing|402|insufficient|quota/i.test(m)){
+          stop=true;
+          toast('Nincs keret az API-kulcson — a bővítés most nem megy. Tölts fel egyenleget és próbáld újra.',6000);
+        } else if(/401|key|auth/i.test(m)){
+          stop=true;
+          toast('Hibás vagy hiányzó API-kulcs — a bővítés most nem megy. Ellenőrizd a ⚙-ban.',6000);
+        } else {
+          fails++;                     /* ez a köteg kimaradt, a többi megy tovább */
+          toast('egy köteg kimaradt ('+m.slice(0,60)+') — folytatom',2500);
+        }
       }
       await sleep(300);
     }
   }
   drawVocab(); drawFixNote();
-  if(!stop) toast('kész: '+done+' kártya bővítve Claude-dal',3000);
+  if(!stop) toast('kész: '+done+' kártya bővítve Claude-dal'+
+    (fails?' — '+fails+' köteg kimaradt, futtasd újra a gombot a maradékra':''),4500);
 }
 /* ============ beépített ismétlés ============ */
 const DAY=86400000, MIN=60000;

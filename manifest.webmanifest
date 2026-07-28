@@ -1,5 +1,6 @@
 {
   "name": "Kétnyelvű olvasó",
+  "id": "./",
   "short_name": "Olvasó",
   "description": "EPUB olvasó mondatonkénti magyar fordítással, szótárral és beépített ismétléssel.",
   "lang": "hu",
