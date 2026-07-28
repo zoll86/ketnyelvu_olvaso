@@ -580,6 +580,14 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
     <div class="srow"><label>Verzió</label><span class="mono" id="verTxt"></span>
       <button class="mini" id="updChk">frissítés keresése</button></div>
     <div class="srow"><label>Tárhely</label><span class="mono" id="stoTxt">—</span></div>
+    <div class="srow"><label>Karbantartás</label>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--sp2);flex:1">
+        <button class="mini" id="rebuildBtn">kártyák újraépítése</button>
+        <button class="mini" id="clrCache">fordítás-cache törlése</button>
+        <button class="mini" id="clrVocab">szótár törlése</button>
+        <button class="mini" id="clrAll">minden törlése</button>
+      </div></div>
+    <p class="note" style="margin:var(--sp2) 0 0">Az újraépítés minden kártya magyarázatát és alakjait a mostani logikával írja újra — ez javítja a régi, hibás sorokat. A törlések visszavonhatatlanok, kétszer kell rájuk koppintani.</p>
     <div class="srow" style="justify-content:center">
       <button class="btn pri" id="updBtn" hidden>újratöltés</button></div>
     <p class="note" style="margin:var(--sp2) 0 0">Csak a Claude motor számol; az ingyenes fordítás nem kerül semmibe. Claude.ai-ban futtatva sem a te kulcsod fizet, a mérő ott csak tájékoztató.</p>
@@ -616,7 +624,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v40';
+const APP_VER='v42';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -989,13 +997,17 @@ const POS={noun:'főnév',verb:'ige',adjective:'melléknév',adverb:'határozós
 async function dictLookup(w){
   const k='dict|'+w;
   if(cache[k]!==undefined){ try{return JSON.parse(cache[k])}catch(e){} }
-  let res={ok:false,poss:[],def:''};
+  let res={ok:false,poss:[],def:'',defs:{}};
   try{
     const d=await grab('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(w),6000);
     const ms=d?.[0]?.meanings||[];
     if(ms.length){
       res.ok=true;
       res.poss=[...new Set(ms.map(m=>m.partOfSpeech).filter(Boolean))].slice(0,3);
+      ms.forEach(m=>{
+        const p=m.partOfSpeech, t=m.definitions?.[0]?.definition;
+        if(p&&t&&!res.defs[p]) res.defs[p]=t.replace(/\s+/g,' ').slice(0,180);
+      });
       res.def=(ms.find(m=>m.definitions?.[0]?.definition)?.definitions[0].definition||'').replace(/\s+/g,' ').slice(0,180);
     }
   }catch(e){}
@@ -1094,7 +1106,8 @@ async function wordInfo(w,sent){
     if(pl!==base) parts.push('főnévként többes: '+pl);
   }
 
-  const hu=await defHu(d.def);
+  const pick=(sure&&d.defs&&d.defs[sure])||d.def;
+  const hu=await defHu(pick);
   if(hu) parts.push(hu);
   return parts.filter(Boolean).join(' · ');
 }
@@ -1916,6 +1929,7 @@ function nextCard(){
 }
 function reveal(){
   $('sBack').hidden=false;
+  $('sCloze').hidden=true;          /* a teljes mondat a válaszban látszik, ne legyen kétszer */
   $('sBtns').innerHTML='';
   const L=[['újra',0],['nehéz',1],['jó',2],['könnyű',3]];
   L.forEach(([t,q])=>{
@@ -2671,6 +2685,46 @@ $('dueReset').onclick=()=>{counts={day:dayKey(),new:0,rev:0};saveCounts();drawSr
 drawSrs();
 $('verTxt').textContent=APP_VER+(navigator.serviceWorker&&navigator.serviceWorker.controller?' · offline kész':' · nincs service worker');
 $('updChk').onclick=checkUpdate;
+$('rebuildBtn').onclick=()=>{$('rebuildBtn').disabled=true;
+  rebuildCards().finally(()=>{$('rebuildBtn').disabled=false;drawStorage()})};
+arm($('clrCache'),'törlöm?',()=>{cache={};saveCache();toast('fordítás-cache törölve');drawStorage()});
+arm($('clrVocab'),'szótár törlése?',()=>{
+  vocab=[];saveVocab();counts={day:dayKey(),new:0,rev:0};saveCounts();
+  hist={};store.set('ek_hist','{}');drawVocab();drawSrs();drawStorage();
+  toast('a szótár és az ütemezés törölve');});
+arm($('clrAll'),'MINDEN törlése?',async()=>{
+  vocab=[];cache={};hist={};counts={day:dayKey(),new:0,rev:0};
+  saveVocab();saveCache();saveCounts();store.set('ek_hist','{}');
+  try{ const all=await libAll(); for(const b of all){ await libDel(b.id).catch(()=>{});
+        store.set('ek_pos_'+b.id,'') } }catch(e){}
+  drawVocab();drawSrs();drawLib();drawStorage();
+  if(document.body.classList.contains('reading')) closeBook();
+  toast('minden adat törölve — a beállítások megmaradtak',4000);});
+function arm(btn,label,fn){
+  btn.onclick=()=>{
+    if(btn.dataset.arm!=='1'){
+      btn.dataset.arm='1'; btn._t=btn.textContent; btn.textContent=label;
+      btn.style.color='var(--red)'; btn.style.borderColor='var(--red)';
+      setTimeout(()=>{ if(btn.dataset.arm==='1'){ btn.dataset.arm='0';
+        btn.textContent=btn._t; btn.style.color=''; btn.style.borderColor='' } },3000);
+      return;
+    }
+    btn.dataset.arm='0'; btn.textContent=btn._t; btn.style.color=''; btn.style.borderColor='';
+    fn();
+  };
+}
+function clearCachePrefixes(list){
+  Object.keys(cache).forEach(k=>{ if(list.some(p=>k.startsWith(p))) delete cache[k] });
+  saveCache();
+}
+async function rebuildCards(){
+  clearCachePrefixes(['forms|','def|','defhu|','dict|']);
+  vocab.forEach(v=>{ v.nv=0 });
+  saveVocab();
+  toast('újraépítés indul — ez eltarthat egy percig',3000);
+  await huFix();
+  drawFixNote();
+}
 async function drawStorage(){
   const el=$('stoTxt'); if(!el) return;
   try{
