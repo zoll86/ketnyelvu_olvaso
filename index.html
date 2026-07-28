@@ -195,7 +195,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 /* ---------- kezdőállapot ---------- */
 #start{max-width:32rem;margin:auto;padding:2rem 1.3rem;text-align:center}
-#lib{text-align:left;margin:var(--sp5) 0 0}
+#lib{text-align:left;margin:calc(var(--sp6) + 16px) 0 0}
 .libhead{display:flex;align-items:center;gap:var(--sp2);
   font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
   margin-bottom:var(--sp2)}
@@ -233,7 +233,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 #libList.grid .bcard{display:block;padding:0;border:0;background:none;margin:0;position:relative}
 #libList.grid .bcard:hover{background:none}
 #libList.grid .bcov{width:100%;height:auto;aspect-ratio:2/3;border-radius:var(--r1);
-  border:1px solid var(--line2);position:relative}
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 2px 10px rgba(0,0,0,.35);position:relative}
 #libList.grid .bmain{margin-top:var(--sp1)}
 #libList.grid .btitle{font-size:var(--t1);color:var(--dim);white-space:normal;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
@@ -661,7 +661,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v51';
+const APP_VER='v52';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -757,6 +757,14 @@ function heroLabel(){
   const b=$('studyTopSub'); if(!b) return;
   let d=0; try{ d=dueCount() }catch(e){ d=0 }
   b.textContent=vocab.length?(d?d+' esedékes':'ma nincs esedékes'):'még üres a szótár';
+  /* állapotfüggő hierarchia: üres szótárnál a gyakorlás nem hívogat arannyal */
+  const st=$('studyTop'), mt=$('matchTop');
+  if(st) st.classList.toggle('pri',vocab.length>0);
+  if(mt){
+    mt.disabled=vocab.length<4;
+    const ms=mt.querySelector('small');
+    if(ms) ms.textContent=vocab.length<4?'legalább 4 szó kell':'végig a szótáradon';
+  }
 }
 function vocabBadge(){
   let d=null;
@@ -2533,8 +2541,11 @@ function drawPre(){
   $('preAdd').textContent='hozzáadás a szótárhoz ('+sel.length+')';
   $('preAdd').disabled=!sel.length;
   const lb=$('preAddLlm');
-  lb.hidden=engine==='free'||!sel.length;
-  lb.textContent='hozzáadás '+(engine==='claude'?'Claude-dal':'a beállított API-val')+' ('+sel.length+')';
+  lb.hidden=!sel.length;
+  lb.disabled=engine==='free';
+  lb.textContent=engine==='free'
+    ? 'hozzáadás Claude-dal — a ⚙-ban kapcsolható be (pontosabb kártyák)'
+    : 'hozzáadás '+(engine==='claude'?'Claude-dal':'a beállított API-val')+' ('+sel.length+')';
   $('exprNote').textContent=engine==='free'
     ? 'A kifejezésbányászat csak Claude vagy saját API mellett működik: a nyelvbeli gyakoriságot gépi fordító nem tudja megítélni. Váltsd át a motort a beállításokban.'
     : 'A most nyitott fejezet szövegéből keres vonzatos igéket, idiómákat és állandó fordulatokat, hasznosság szerint rangsorolva.';
@@ -2757,8 +2768,10 @@ async function drawLib(){
   wrap.hidden=false;
   $('libCount').textContent=list.length+' könyv';
   box.className=libView==='grid'?'grid':'';
-  $('viewBtn').textContent=libView==='grid'?'lista':'rács';
-  $('sortBtn').textContent=SORTN[libSort];
+  $('viewBtn').textContent=libView==='grid'?'\u25a4 lista':'\u25a6 rács';
+  $('viewBtn').title='nézetváltás';
+  $('sortBtn').textContent='\u2195 '+SORTN[libSort];
+  $('sortBtn').title='rendezés váltása';
   box.innerHTML='';
   let lastGrp=null;
   list.forEach(b=>{
@@ -2792,6 +2805,7 @@ async function drawLib(){
     c.querySelector('.bmeta').textContent=
       (b.series?b.series+(b.sidx?' #'+(b.sidx%1?b.sidx:Math.round(b.sidx)):'')+' · ':'')+
       (b.chaps?b.chaps+' fejezet · ':'')+Math.round(b.size/1024/1024*10)/10+' MB'+(pct?' · '+pct+'%':'');
+    if(!pct) c.querySelector('.bprog').style.display='none';
     c.querySelector('.bprog i').style.width=pct+'%';
     c.onclick=e=>{ if(e.target.closest('.bdel')) return; openFromLib(b.id) };
     c.querySelector('.bdel').onclick=e=>{ e.stopPropagation(); openBookMenu(b) };
@@ -3114,7 +3128,7 @@ $('vClose').onclick=()=>$('vocab').classList.remove('open');
 $('expBtn').onclick=()=>{const r=$('expRow');r.hidden=!r.hidden};
 function drawFixNote(){
   const n=$('fixNote'); if(!n) return;
-  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&((v.nv||0)<NOTE_VER||!v.note)).length;
+  const todo=vocab.filter(v=>(v.lang||'en')==='en'&&((v.nv||0)<NOTE_VER||!v.note||(v.d&&(v.dv||0)<D_VER))).length;
   n.textContent=(todo?todo+' kártya bővíthető: ':'Minden kártya kész. ')+
     'magyar szófaj, magyarázat, igealakok magyar megfelelőkkel, többesszám'+
     (chapters.length?' — és példamondat a most nyitott könyvből.':'. Példamondat pótláshoz nyisd meg azt a könyvet, amiből a szavak vannak.');
