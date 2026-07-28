@@ -362,15 +362,24 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 #study.open{display:flex}
 .stop{display:flex;align-items:center;gap:var(--sp3);flex:0 0 auto}
 .scount{font-family:var(--mono);font-size:var(--t2);color:var(--dim)}
-.scard{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;
-  text-align:center;gap:var(--sp5);padding:var(--sp5) 0;overflow-y:auto;cursor:pointer}
+.scard{flex:1 1 auto;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
+  text-align:center;gap:var(--sp4);padding:var(--sp4) 0;overflow-y:auto;cursor:pointer}
+.scard::before,.scard::after{content:'';margin:auto}   /* középre húz, de nem vág le */
 .sfront{font-size:32px;font-weight:500;color:var(--txt);line-height:1.25;letter-spacing:-.01em}
 .scloze{font-size:var(--t3);color:var(--dim);line-height:1.6;max-width:26rem;
   padding:var(--sp3) var(--sp4);border-left:2px solid var(--line);text-align:left}
 .sback{max-width:30rem}
 .shu{font-size:22px;font-weight:300;color:var(--gold);line-height:1.35}
-.smeta{margin-top:var(--sp4);font-size:var(--t3);color:var(--dim);line-height:1.6;text-align:left}
-.smeta div{padding:var(--sp1) 0;border-bottom:1px solid var(--line2)}
+.smeta{margin-top:var(--sp4);font-size:var(--t3);color:var(--dim);line-height:1.55;text-align:left}
+.smeta div{padding:6px 0;border-bottom:1px solid var(--line2)}
+.smore{display:block;width:100%;margin-top:var(--sp2);background:none;border:0;cursor:pointer;
+  color:var(--faint);font-size:var(--t2);font-family:var(--mono);text-align:left;padding:4px 0}
+.smore:hover{color:var(--gold)}
+.sexa{margin-top:var(--sp4);padding:var(--sp3) var(--sp4);border-radius:var(--r2);
+  border-left:2px solid var(--gold);background:rgba(255,255,255,.04);text-align:left}
+.sexa div{border:0;padding:2px 0}
+.sexa .en{color:var(--txt2);font-size:var(--t3);line-height:1.5}
+.sexa .hu{color:var(--dim);font-size:var(--t2);line-height:1.5;margin-top:4px}
 .sbtns{flex:0 0 auto;display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap}
 .sbtns .btn{min-width:5.2rem;padding:9px 12px;font-size:var(--t3);
   display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15}
@@ -607,7 +616,7 @@ main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v39';
+const APP_VER='v40';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -999,7 +1008,6 @@ async function defHu(txt){
   let hu=txt; try{ hu=await freeTranslate(txt,'en') }catch(e){}
   cache[k]=hu; saveCache(); return hu;
 }
-/* egy szó teljes leírása: alapalak, szófaj, alakok, magyar magyarázat */
 /* az alakokat egy kérésben fordítja le, és elmenti */
 async function formsHu(key,forms){
   const k='forms|'+key;
@@ -1017,7 +1025,28 @@ async function formsHu(key,forms){
   }
   cache[k]=JSON.stringify(hu); saveCache(); return hu;
 }
-async function wordInfo(w){
+/* a szó szerepe a mondatban: ige vagy főnév */
+const DET_W=new Set(['a','an','the','this','that','these','those','his','her','my','your','their','our','its',
+  'of','with','in','on','at','for','from','into','onto','one','two','three','some','any','no','every','each','another']);
+const VRB_W=new Set(['to','will','would','can','could','must','should','may','might','shall','do','does','did',
+  'have','has','had','is','are','was','were','be','been','being','i','you','he','she','it','we','they','never','always','often']);
+function roleInSentence(w,sent){
+  if(!sent) return null;
+  const toks=sent.toLowerCase().match(/[a-z'’-]+/g)||[];
+  const forms=new Set([w]);
+  try{ const f=verbForms(w); [f.s,f.past,f.pp,f.ing].forEach(x=>forms.add(x)); forms.add(pluralOf(w)) }catch(e){}
+  for(let i=0;i<toks.length;i++){
+    if(!forms.has(toks[i])) continue;
+    const prev=toks[i-1];
+    if(!prev) continue;
+    if(DET_W.has(prev)) return 'noun';
+    if(VRB_W.has(prev)) return 'verb';
+    if(/ing$/.test(toks[i])) return 'verb';
+  }
+  return null;
+}
+/* egy szó teljes leírása: alapalak, szófaj, alakok, magyar magyarázat */
+async function wordInfo(w,sent){
   let d=await dictLookup(w), base=w;
   if(!d.ok){
     for(const c of lemmaCandidates(w)){
@@ -1029,25 +1058,42 @@ async function wordInfo(w){
   const parts=[];
   if(base!==w) parts.push('alap: '+base);
   parts.push(d.poss.map(x=>POS[x]||x).join(', '));
-  if(d.poss.includes('verb')){
+
+  const hasV=d.poss.includes('verb'), hasN=d.poss.includes('noun');
+  const role=roleInSentence(base,sent);
+  /* egyértelmű, ha csak egy szófaj van, vagy a mondat elárulja */
+  const sure = (hasV&&!hasN&&d.poss.length===1) ? 'verb'
+             : (hasN&&!hasV&&d.poss.length===1) ? 'noun'
+             : (role&&((role==='verb'&&hasV)||(role==='noun'&&hasN))) ? role : null;
+
+  if(hasV&&(sure==='verb')){
     const f=verbForms(base);
-    const forms=[f.base,f.s,f.past,f.pp,f.ing];
-    const lab=['jelen (alapalak)','jelen, ő/az','múlt idő','3. alak (befejezett)','folyamatos (-ing)'];
-    const hu=await formsHu(base,forms);
-    if(d.poss.length>1) parts.push('igeként:');
-    forms.forEach((x,i)=>{
-      const t=hu[i]&&hu[i].toLowerCase()!==x.toLowerCase()?' \u2013 '+hu[i]:'';
-      parts.push(lab[i]+': '+x+t);
-    });
+    const uniq=[f.base,f.s,f.past,f.pp,f.ing];
+    const hu=await formsHu(base,uniq);
+    const t=(x,i)=>hu[i]&&hu[i].toLowerCase()!==x.toLowerCase()?' \u2013 '+hu[i]:'';
+    parts.push('jelen: '+f.base+t(f.base,0)+(f.s!==f.base?'   (ő/az: '+f.s+')':''));
+    if(f.past===f.pp) parts.push('múlt idő és 3. alak: '+f.past+t(f.past,2));
+    else{ parts.push('múlt idő: '+f.past+t(f.past,2));
+          parts.push('3. alak: '+f.pp+t(f.pp,3)) }
+    parts.push('folyamatos: '+f.ing+t(f.ing,4));
+  } else if(hasV){
+    const f=verbForms(base);
+    const set=[...new Set([f.base,f.past,f.pp,f.ing])];
+    parts.push('igeként: '+set.join(' / '));
   }
-  if(d.poss.includes('noun')&&!/s$/.test(base)){
+
+  if(hasN&&(sure==='noun'||(!hasV&&d.poss.length<=2))){
     const pl=pluralOf(base);
     if(pl!==base){
       const hu=await formsHu('pl:'+base,[pl]);
       const t=hu[0]&&hu[0].toLowerCase()!==pl.toLowerCase()?' \u2013 '+hu[0]:'';
       parts.push('többes szám: '+pl+t);
     }
+  } else if(hasN&&hasV&&!sure){
+    const pl=pluralOf(base);
+    if(pl!==base) parts.push('főnévként többes: '+pl);
   }
+
   const hu=await defHu(d.def);
   if(hu) parts.push(hu);
   return parts.filter(Boolean).join(' · ');
@@ -1062,7 +1108,7 @@ async function freeGloss(sent){
   for(const w of words){
     let hu='',note='';
     try{ hu=await freeTranslate(w) }catch(e){ hu='—' }
-    if(LANG[src].dict) note=await wordInfo(w);
+    if(LANG[src].dict) note=await wordInfo(w,sent);
     out.push({en:w,hu,note});
   }
   return out;
@@ -1594,7 +1640,7 @@ async function huFix(){
     try{
       const w=v.en.trim();
       if(!/\s/.test(w)){
-        const inf=await wordInfo(w.toLowerCase());
+        const inf=await wordInfo(w.toLowerCase(), v.src||ex[w.toLowerCase()]||'');
         if(inf){ v.note=inf; v.nv=NOTE_VER }
       }
       if(!v.hu){ try{ v.hu=await freeTranslate(v.en,'en') }catch(e){} }
@@ -1826,16 +1872,28 @@ function nextCard(){
   }
   $('sHu').textContent=rev?sCur.v.en:(sCur.v.hu||'');
   const meta=$('sMeta'); meta.innerHTML='';
-  (sCur.v.note||'').split(' · ').filter(Boolean).forEach(part=>{
-    const d=document.createElement('div'); d.textContent=part; meta.appendChild(d);
-  });
+  const lines=(sCur.v.note||'').split(' · ').map(x=>x.trim()).filter(Boolean);
+  const head=lines.slice(0,4), rest=lines.slice(4);
+  head.forEach(part=>{const d=document.createElement('div');d.textContent=part;meta.appendChild(d)});
+  if(rest.length){
+    const box=document.createElement('div'); box.style.display='none'; box.style.borderBottom='0';
+    rest.forEach(part=>{const d=document.createElement('div');d.textContent=part;box.appendChild(d)});
+    const more=document.createElement('button'); more.className='smore';
+    more.textContent='+ '+rest.length+' további sor';
+    more.onclick=e=>{e.stopPropagation();
+      const open=box.style.display!=='none';
+      box.style.display=open?'none':'block';
+      more.textContent=open?('+ '+rest.length+' további sor'):'kevesebb';
+    };
+    meta.appendChild(box); meta.appendChild(more);
+  }
   if(sCur.v.src&&sCur.v.src!=='mondat'){
-    const d=document.createElement('div'); d.style.color='var(--faint)';
-    d.textContent=sCur.v.src; meta.appendChild(d);
-    if(sCur.v.srcHu){
-      const h=document.createElement('div'); h.style.color='var(--dim)';
-      h.textContent=sCur.v.srcHu; meta.appendChild(h);
-    }
+    const ex=document.createElement('div'); ex.className='sexa';
+    const e1=document.createElement('div'); e1.className='en'; e1.textContent=sCur.v.src;
+    ex.appendChild(e1);
+    if(sCur.v.srcHu){ const e2=document.createElement('div'); e2.className='hu';
+      e2.textContent=sCur.v.srcHu; ex.appendChild(e2) }
+    meta.appendChild(ex);
   }
   if((sCur.v.lapses||0)>=8||(sCur.c.lapses||0)>=8){
     const d=document.createElement('div'); d.style.color='var(--red)';
@@ -2132,13 +2190,28 @@ async function preAddRun(){
   toast(added+' szó hozzáadva — a gyakorlásban már megjelennek',4000);
 }
 /* minden kért szóhoz az első alkalmas mondat a könyvből */
+/* alkalmas-e példamondatnak: ne címlap, ne jogi szöveg, ne csupa nagybetű */
+function goodExample(sn){
+  if(sn.length<28||sn.length>190) return false;
+  if(!/[.!?"”]$/.test(sn)) return false;
+  const letters=sn.replace(/[^A-Za-zÆØÅæøå]/g,'');
+  if(!letters) return false;
+  const upper=(sn.match(/[A-ZÆØÅ]/g)||[]).length;
+  if(upper/letters.length>0.35) return false;                 /* címlap, fejezetcím */
+  const low=(sn.match(/\b[a-zæøå]{2,}\b/g)||[]).length;
+  if(low<5) return false;
+  if(/\b(isbn|copyright|all rights reserved|first published|printed in|typeset|paperback|hardback|edition|imprint|www\.|http|ebook|publisher|reprinted|trademark|no part of this)\b/i.test(sn)) return false;
+  if(/\b(chapter|contents|part one|part two|appendix|prologue|foreword)\b/i.test(sn)&&sn.length<70) return false;
+  if(/©|℗|\d{4}\s*by\s/i.test(sn)) return false;
+  return true;
+}
 function findExamples(words){
   const want=new Set(words), out={};
   const re=/[a-zæøåäöéüïàâçèêëîôùûœ']+/g;
   for(const ch of chapters){
     const sents=splitSentences((ch.body.textContent||'').replace(/\s+/g,' '));
     for(const sn of sents){
-      if(sn.length<25||sn.length>190) continue;
+      if(!goodExample(sn)) continue;
       const low=sn.toLowerCase(); const seen=new Set();
       let m; re.lastIndex=0;
       while((m=re.exec(low))) seen.add(m[0]);
