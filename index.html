@@ -656,7 +656,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v48';
+const APP_VER='v49';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1035,7 +1035,8 @@ const POS={noun:'főnév',verb:'ige',adjective:'melléknév',adverb:'határozós
    de tanulásra az félrevezető, a naiv többesszám (manies) pedig nem létezik. */
 const FUNC_W=new Set(['many','much','few','little','several','some','any','all','both','each',
   'every','either','neither','more','most','less','least','other','another','such','same','own',
-  'enough','certain','various','this','that','these','those','which','what','whose','none']);
+  'enough','certain','various','this','that','these','those','which','what','whose','none',
+  'one','no']);
 /* megszámlálhatatlan főnevek: nincs többesszámuk, ne gyártsunk "informations"-t */
 const UNCOUNT=new Set(['information','advice','furniture','news','money','music','weather',
   'knowledge','luggage','baggage','bread','butter','homework','progress','traffic','equipment',
@@ -1043,33 +1044,47 @@ const UNCOUNT=new Set(['information','advice','furniture','news','money','music'
   'water','milk','rice','sugar','salt','flour','meat','blood','rain','snow','air','oxygen',
   'electricity','gravity','software','hardware','feedback','laughter','poetry','vocabulary',
   'grammar','slang','jewelry','jewellery','clothing','stuff','garbage','trash','rubbish']);
-/* egyszeri takarítás: a korábban elmentett funkciószó-kártyákból kikerül a hamis
-   főnévi/igei olvasat és a nemlétező többesszám (many → manies), a gyorsítótárból
-   pedig a rossz szótári bejegyzés, hogy újra jól épüljön fel */
-(function fixFuncCards(){
-  if(store.get('ek_funcfix1')) return;
+/* egyszeri takarítás minden elmentett heurisztikus kártyán:
+   1) funkciószavakból (many, one, no…) kikerül a hamis főnévi/igei olvasat,
+   2) a többi kártyán a példamondat dönti el az elsődleges szófajat
+      (find → "to find them" → ige, hiába a főnév állt elöl),
+   3) a rossz gyorsítótár-bejegyzések törlődnek, hogy újra jól épüljenek fel */
+(function fixHeuristicCards(){
+  if(store.get('ek_funcfix2')) return;
+  setTimeout(()=>{                                     /* a teljes szkript beolvasása után fut */
   let changed=false;
   vocab.forEach(v=>{
+    if(!v.d) return;                                   /* Claude-jegyzethez nem nyúlunk */
     const w=((v.d&&v.d.base)||v.en||'').toLowerCase().trim();
-    if(!FUNC_W.has(w)) return;
-    if(v.d){
+    if(FUNC_W.has(w)){
       const kept=(v.d.poss||[]).filter(p=>p!=='noun'&&p!=='verb');
       if(kept.length){
         v.d.poss=kept;
         if(v.d.sense){ delete v.d.sense.noun; delete v.d.sense.verb }
         if(!kept.includes(v.d.primary)) v.d.primary=kept[0];
+        const ps=v.d.sense&&v.d.sense[v.d.primary];
+        if(ps&&ps.hu) v.hu=ps.hu;
       } else v.d=null;
-      /* a jegyzet a heurisztikából épült: a tisztított adatból építjük újra,
-         így a hamis definíció ("a közös csorda") is kikerül */
       v.note=v.d?dataToNote(v.d):'';
       changed=true;
+    } else if(v.src&&v.src!=='mondat'){
+      /* az elsődleges szófaj a mondatból: "One Ring to find them" → ige */
+      let role=roleInSentence(w,v.src);
+      if(role==='attr') role=(v.d.poss||[]).includes('adjective')?'adjective':null;
+      if(role&&(v.d.poss||[]).includes(role)&&v.d.primary!==role&&v.d.sense&&v.d.sense[role]){
+        v.d.primary=role;
+        if(v.d.sense[role].hu) v.hu=v.d.sense[role].hu;
+        v.note=dataToNote(v.d);
+        changed=true;
+      }
     }
     ['dict|'+w,'forms|n2:'+w,'forms|v2:'+w].forEach(k=>{
       if(cache[k]!==undefined){ delete cache[k]; changed=true }
     });
   });
   if(changed){ saveVocab(); saveCache() }
-  store.set('ek_funcfix1','1');
+  store.set('ek_funcfix2','1');
+  },0);
 })();
 async function dictLookup(w){
   const k='dict|'+w;
@@ -1117,6 +1132,7 @@ async function formsHu(key,forms){
 /* ===== szófajonkénti adatok: a jelentést hordozó kifejezéssel kérdezve ===== */
 function huClean(t){
   return (t||'').trim()
+    .replace(/^(?:ezek\s+az\s+|ezek\s+a\s+|ez\s+az\s+|ez\s+a\s+)/i,'')
     .replace(/^(?:az\s+ő\s+|ő\s+|a\s+|az\s+)/i,'')
     .replace(/^\s*[-–—]\s*/,'')
     .replace(/\.$/,'')
@@ -1157,9 +1173,12 @@ async function senseOf(pos,base,defs){
     });
   } else if(pos==='noun'){
     const pl=pluralOf(base);
-    const rows=[['__base','the '+base,base]];
-    if(pl!==base) rows.push(['többes szám','the '+pl,pl]);
-    const hu=await formsHu('n2:'+base,rows.map(r=>r[1]));
+    /* "this is the back" → "ez a hát": a mondatkeret alanyesetet és főnévi
+       olvasatot kényszerít — puszta "the back" fordítása melléknevet ("hátsó")
+       vagy tárgyesetet ("leleteket") is adhat */
+    const rows=[['__base','this is the '+base,base]];
+    if(pl!==base) rows.push(['többes szám','these are the '+pl,pl]);
+    const hu=await formsHu('n3:'+base,rows.map(r=>r[1]));
     out.hu=huClean(hu[0]); out.en=base;
     if(rows.length>1){
       const h=huClean(hu[1]);
@@ -1215,8 +1234,10 @@ async function buildWordData(w,sent){
   if(!d.ok) return null;
   let poss;
   if(FUNC_W.has(base)){
-    /* mennyiségjelző / névmás: az archaikus főnévi és ál-igei olvasat tanulásra félrevezető */
-    poss=d.poss.filter(p=>['determiner','pronoun','adjective','adverb'].includes(p)).slice(0,2);
+    /* mennyiségjelző / névmás / számnév: az archaikus főnévi és ál-igei olvasat félrevezető;
+       a melléknévi a sor végére kerül, mert a definíciója gyakran mellékjelentés */
+    const pref=['determiner','pronoun','numeral','adverb','adjective'];
+    poss=pref.filter(p=>d.poss.includes(p)).slice(0,2);
     if(!poss.length) poss=['determiner'];
   } else {
     poss=d.poss.filter(p=>['noun','verb','adjective','adverb'].includes(p)).slice(0,3);
@@ -1777,7 +1798,7 @@ async function gloss(sent,panel){
 }
 function addVocab(en,hu,note,sr,srHu,dat){
   if(vocab.some(v=>v.en===en&&v.hu===hu)){toast('már a szótárban van');return}
-  vocab.push({en,hu,note:note||'',nv:note?NOTE_VER:0,d:dat||null,src:sr||'',srcHu:srHu||'',
+  vocab.push({en,hu,note:note||'',nv:note?NOTE_VER:0,d:dat||null,dv:dat?D_VER:0,src:sr||'',srcHu:srHu||'',
               book:book?.title||'',lang:src}); saveVocab(); drawVocab();
   toast('«'+en.slice(0,28)+'» a szótárba került');
 }
@@ -1804,9 +1825,11 @@ async function runQueue(){
 
 /* régi, angol magyarázatú kártyák magyarítása */
 const NOTE_VER=3;      /* 3 = szófajonkénti adatok, hordozó kifejezéssel fordítva */
+const D_VER=2;         /* 2 = "this is the X" főnév-hordozó + funkciószó-szűrés */
 async function huFix(){
   const todo=vocab.filter(v=>(v.lang||'en')==='en'&&(
       (v.nv||0)<NOTE_VER || !v.note ||
+      (v.d&&(v.dv||0)<D_VER) ||          /* heurisztikus kártya: újraépítés a javított logikával */
       (v.src&&v.src!=='mondat'&&!v.srcHu) ||
       (!v.src&&chapters.length)
   ));
@@ -1829,7 +1852,7 @@ async function huFix(){
         if(inf){
           v.note=inf; v.nv=NOTE_VER;
           if(lastWordData){
-            v.d=lastWordData;
+            v.d=lastWordData; v.dv=D_VER;
             const ps=lastWordData.sense[lastWordData.primary];
             if(ps&&ps.hu) v.hu=ps.hu;
           }
