@@ -454,6 +454,28 @@ body.reading.rlight .tr .err{color:#a8352a}
 .sbtns .btn small{font-size:10px;font-family:var(--mono);opacity:.62;letter-spacing:0}
 .sdone b{color:var(--txt);font-size:var(--t4);font-weight:600;display:block;margin-bottom:var(--sp2)}
 .sdone{text-align:center;color:var(--dim);font-size:var(--t3);line-height:1.7}
+#sent{position:fixed;inset:0;z-index:72;display:none;flex-direction:column;
+  background:linear-gradient(170deg,#0e0b08,#17110c 60%,#0b0906);
+  padding:max(var(--sp4),env(safe-area-inset-top)) var(--sp4) max(var(--sp4),env(safe-area-inset-bottom))}
+#sent.open{display:flex}
+.qwrap{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  gap:var(--sp3);padding:var(--sp3) 0;overflow-y:auto;width:100%;max-width:34rem;margin:0 auto}
+.qkat{font-family:var(--mono);font-size:var(--t2);color:var(--faint);letter-spacing:.08em}
+.qhu{font-size:25px;font-weight:500;color:var(--txt);line-height:1.32;text-align:center}
+.qtipp{font-size:var(--t2);color:var(--dim);text-align:center}
+.qin{width:100%;font-family:var(--mono);font-size:var(--t4);color:var(--green);
+  background:rgba(0,0,0,.35);border:1px solid var(--line2);border-radius:var(--r2);
+  padding:12px 14px;outline:none;transition:border-color .18s}
+.qin:focus{border-color:var(--gold)}
+.qfb{width:100%;border-radius:var(--r2);padding:var(--sp3) var(--sp4);font-size:var(--t3);line-height:1.6;text-align:left}
+.qfb.ok{border:1px solid rgba(87,217,163,.5);background:rgba(87,217,163,.07)}
+.qfb.bad{border:1px solid var(--red);background:rgba(255,90,90,.06)}
+.qfb .qgood{color:var(--green);font-family:var(--mono)}
+.qfb .qyour{color:var(--red);font-family:var(--mono);text-decoration:line-through}
+.qfb .qmgy{display:block;margin-top:7px;color:var(--dim);font-size:var(--t2)}
+.qmenu{display:flex;flex-direction:column;gap:var(--sp2);width:100%;max-width:26rem}
+.qmenu .btn{display:flex;justify-content:space-between;gap:var(--sp2);width:100%}
+.qmenu .btn small{font-family:var(--mono);opacity:.65}
 #toast{position:fixed;left:50%;bottom:1.4rem;transform:translate(-50%,2rem);opacity:0;
   background:rgba(20,14,9,.96);border:1px solid var(--line2);border-radius:var(--r2);
   padding:var(--sp3) var(--sp4);font-size:var(--t2);z-index:60;pointer-events:none;
@@ -504,6 +526,7 @@ body.reading.rlight .tr .err{color:#a8352a}
     <div class="hero">
       <button class="btn pri hero-btn" id="studyTop">Gyakorlás<small id="studyTopSub">&nbsp;</small></button>
       <button class="btn hero-btn" id="matchTop">Párosítás<small>végig a szótáradon</small></button>
+      <button class="btn hero-btn" id="sentTop">Mondatok<small>fordítás beírással</small></button>
     </div>
     <div class="startrow">
       <button class="mini" id="vocabTop">szótár</button>
@@ -574,6 +597,7 @@ body.reading.rlight .tr .err{color:#a8352a}
     <p>Ugyanitt a <b>kifejezések</b> a nyitott fejezetből vonzatos igéket, idiómákat és állandó fordulatokat gyűjtenek, a nyelvbeli gyakoriság szerint rangsorolva. Ez csak Claude vagy saját API mellett működik, mert gépi fordító nem tudja megítélni, mi hasznos.</p>
     <h4>Gyakorlás</h4>
     <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban körönként négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót. A játék a teljes szótáradon végigmegy — elöl az esedékes szavakkal —, de bármikor kiléphetsz; a jól álló szavak ütemezését nem rontja el.</p>
+    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell begépelned. A mondatcsomagot JSON fájlból töltöd be (Claude generálja), az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
@@ -708,12 +732,23 @@ body.reading.rlight .tr .err{color:#a8352a}
     <button class="btn pri" id="sShow">mutasd</button>
   </div>
 </div>
+<div id="sent">
+  <div class="stop">
+    <span class="scount" id="qCount"></span>
+    <div style="flex:1"></div>
+    <button class="mini" id="qImport" title="Mondatcsomag betöltése JSON fájlból">import</button>
+    <button class="mini" id="qClose">kilép</button>
+  </div>
+  <div class="qwrap" id="qWrap"></div>
+  <div class="sbtns" id="qBtns"></div>
+</div>
 <div id="toast"></div>
 <input type="file" id="file" accept=".epub,application/epub+zip" multiple style="display:none">
+<input type="file" id="sentFile" accept=".json,application/json" style="display:none">
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v63';
+const APP_VER='v64';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2902,6 +2937,162 @@ function drawStats(){
     },60);
   }
 }
+/* ============ mondatgyakorló: magyar mondat -> beírt angol fordítás ============ */
+let sentBank=null; try{sentBank=JSON.parse(store.get('ek_sent')||'null')}catch(e){}
+let sentSt={};     try{sentSt=JSON.parse(store.get('ek_sentst')||'{}')}catch(e){}
+const QKAT={A:'Jelen idő',B:'BE és HAVE',C:'Múlt — szabályos',D:'Múlt — rendhagyó',
+            E:'Jövő idő',F:'Kérdés és tagadás',G:'Present Perfect'};
+let qQueue=[],qCur=null,qOk=0,qBad=0,qTotal=0,qMiss=[];
+
+/* összevonások kibontása mindkét oldalon: a don't és a do not egyaránt jó */
+const QCONTR=[[/\bwon't\b/g,'will not'],[/\bcan't\b/g,'can not'],[/\bcannot\b/g,'can not'],
+  [/n't\b/g,' not'],[/\b(i|you|we|they)'re\b/g,'$1 are'],[/\b(he|she|it)'s\b/g,'$1 is'],
+  [/\bi'm\b/g,'i am'],[/\b(i|you|we|they)'ve\b/g,'$1 have'],
+  [/\b(i|you|he|she|it|we|they)'ll\b/g,'$1 will']];
+function qNorm(s){
+  s=(s||'').toLowerCase().replace(/[\u2019\u2018`\u00b4]/g,"'").replace(/[.,!?;:"()\u2026]/g,' ')
+    .replace(/\s+/g,' ').trim();
+  for(const p of QCONTR) s=s.replace(p[0],p[1]);
+  return s.replace(/\s+/g,' ').trim();
+}
+function qSaveSt(){ store.set('ek_sentst',JSON.stringify(sentSt)) }
+function qStat(id){ return sentSt[id]||(sentSt[id]={ok:0,bad:0}) }
+
+function openSent(){ $('sent').classList.add('open'); qMenu(); }
+function closeSent(){ $('sent').classList.remove('open'); $('qBtns').innerHTML=''; }
+
+function qMenu(){
+  qCur=null;
+  const w=$('qWrap'); w.innerHTML=''; $('qBtns').innerHTML='';
+  $('qCount').textContent=sentBank?(sentBank.nev||'mondatgyakorló'):'mondatgyakorló';
+  const box=document.createElement('div'); box.className='qmenu';
+  if(!sentBank||!Array.isArray(sentBank.mondatok)||!sentBank.mondatok.length){
+    const d=document.createElement('div'); d.className='sdone';
+    d.innerHTML='<b>Nincs betöltött mondatcsomag.</b><br>Tölts be egy JSON fájlt az <b>import</b> gombbal.<br>'+
+      '<span style="font-size:var(--t2)">A csomagot Claude generálja; formátum: {mondatok:[{id,kat,hu,tipp,en:[],mgy}]}</span>';
+    w.appendChild(d);
+    const b=document.createElement('button'); b.className='btn pri'; b.textContent='JSON betöltése';
+    b.onclick=()=>$('sentFile').click(); box.appendChild(b); w.appendChild(box);
+    return;
+  }
+  const M=sentBank.mondatok;
+  const kats=[...new Set(M.map(m=>m.kat))];
+  const head=document.createElement('div'); head.className='sdone';
+  const done=M.filter(m=>qStat(m.id).ok>0).length;
+  head.innerHTML='<b>Miből kérdezzelek?</b><br>'+M.length+' mondat · '+done+' már sikerült legalább egyszer';
+  w.appendChild(head);
+  const mk=(label,items,sub)=>{
+    const b=document.createElement('button'); b.className='btn';
+    b.innerHTML='<span>'+label+'</span><small>'+sub+'</small>';
+    b.onclick=()=>qStart(items); box.appendChild(b);
+  };
+  kats.forEach(k=>{
+    const items=M.filter(m=>m.kat===k);
+    const bad=items.filter(m=>qStat(m.id).bad>qStat(m.id).ok).length;
+    mk((QKAT[k]||k),items,items.length+' db'+(bad?' · '+bad+' gyenge':''));
+  });
+  mk('Vegyesen mindenből',M,M.length+' db');
+  const weak=M.filter(m=>{const s=qStat(m.id);return s.bad>0&&s.bad>=s.ok});
+  if(weak.length) mk('Csak a gyengék',weak,weak.length+' db');
+  w.appendChild(box);
+}
+
+function qStart(items){
+  const pool=[...items].sort((a,b)=>{
+    const sa=qStat(a.id),sb=qStat(b.id);           /* elöl a még nem tudott */
+    return (sa.ok-sa.bad)-(sb.ok-sb.bad)||Math.random()-.5;
+  });
+  qQueue=pool.slice(0,12).sort(()=>Math.random()-.5).map(m=>({m,retry:0}));
+  qOk=0;qBad=0;qMiss=[];qTotal=qQueue.length;
+  qNext();
+}
+
+function qNext(){
+  qCur=qQueue.shift();
+  if(!qCur){ qDone(); return }
+  $('qCount').textContent=(qTotal-qQueue.length)+' / '+qTotal+(qBad?' · '+qBad+' hiba':'');
+  const w=$('qWrap'); w.innerHTML='';
+  const m=qCur.m;
+  const kat=document.createElement('div'); kat.className='qkat';
+  kat.textContent=(QKAT[m.kat]||m.kat)+(qCur.retry?' · ismétlés':''); w.appendChild(kat);
+  const hu=document.createElement('div'); hu.className='qhu'; hu.textContent=m.hu; w.appendChild(hu);
+  if(m.tipp){ const t=document.createElement('div'); t.className='qtipp'; t.textContent='('+m.tipp+')'; w.appendChild(t); }
+  const inp=document.createElement('input'); inp.className='qin'; inp.id='qIn';
+  inp.type='text'; inp.autocomplete='off'; inp.autocapitalize='off'; inp.spellcheck=false;
+  inp.placeholder='írd ide angolul, majd Enter'; w.appendChild(inp);
+  $('qBtns').innerHTML='';
+  const b=document.createElement('button'); b.className='btn pri'; b.textContent='ellenőrzés';
+  b.onclick=qCheck; $('qBtns').appendChild(b);
+  const sk=document.createElement('button'); sk.className='btn'; sk.textContent='nem tudom';
+  sk.onclick=()=>qFeedback(false,''); $('qBtns').appendChild(sk);
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();qCheck()} };
+  setTimeout(()=>inp.focus(),50);
+}
+
+function qCheck(){
+  const val=($('qIn')?$('qIn').value:'').trim();
+  if(!val) return toast('írj be egy fordítást, vagy nyomd meg a „nem tudom" gombot');
+  const good=qCur.m.en.some(a=>qNorm(a)===qNorm(val));
+  qFeedback(good,val);
+}
+
+function qFeedback(good,val){
+  const m=qCur.m, st=qStat(m.id), w=$('qWrap');
+  const fb=document.createElement('div'); fb.className='qfb '+(good?'ok':'bad');
+  const alts=m.en.slice(1);
+  if(good){
+    st.ok++; qOk+= qCur.retry?0:1;
+    fb.innerHTML='<b style="color:var(--green)">Helyes!</b> <span class="qgood">'+m.en[0]+'</span>'+
+      (alts.length?'<span class="qmgy">Így is jó: '+alts.join(' · ')+'</span>':'');
+  }else{
+    st.bad++; if(!qCur.retry){qBad++; qMiss.push(m)}
+    fb.innerHTML=(val?'<span class="qyour">'+val.replace(/</g,'&lt;')+'</span><br>':'')+
+      '<b style="color:var(--green)">Helyesen:</b> <span class="qgood">'+m.en[0]+'</span>'+
+      (alts.length?'<span class="qmgy">Így is jó: '+alts.join(' · ')+'</span>':'')+
+      (m.mgy?'<span class="qmgy">💡 '+m.mgy+'</span>':'');
+    if(qCur.retry<1) qQueue.push({m,retry:qCur.retry+1});   /* a hibás a kör végén visszajön */
+  }
+  qSaveSt();
+  const inp=$('qIn'); if(inp){inp.disabled=true; inp.classList.add(good?'ok':'bad')}
+  w.appendChild(fb);
+  $('qBtns').innerHTML='';
+  const b=document.createElement('button'); b.className='btn pri'; b.textContent='tovább';
+  b.onclick=qNext; $('qBtns').appendChild(b);
+  const onk=e=>{ if(e.key==='Enter'){e.preventDefault();document.removeEventListener('keydown',onk);qNext()} };
+  document.addEventListener('keydown',onk,{once:false});
+  $('qBtns').dataset.k='1';
+  setTimeout(()=>b.focus(),50);
+}
+
+function qDone(){
+  const w=$('qWrap'); w.innerHTML=''; $('qBtns').innerHTML='';
+  $('qCount').textContent='kész';
+  const d=document.createElement('div'); d.className='sdone';
+  d.innerHTML='<b>Kör vége: '+qOk+' / '+qTotal+' elsőre.</b>'+
+    (qMiss.length?('<br>Amit gyakorolni érdemes:<br>'+qMiss.map(m=>'• '+m.hu+' → <span style="color:var(--green)">'+m.en[0]+'</span>').join('<br>')):'<br>Hibátlan kör! 🎉');
+  w.appendChild(d);
+  const again=document.createElement('button'); again.className='btn pri'; again.textContent='új kör';
+  again.onclick=qMenu; $('qBtns').appendChild(again);
+  const ex=document.createElement('button'); ex.className='btn'; ex.textContent='kilép';
+  ex.onclick=closeSent; $('qBtns').appendChild(ex);
+}
+
+function qImportFile(ev){
+  const f=ev.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d||!Array.isArray(d.mondatok)||!d.mondatok.length) throw 0;
+      const bad=d.mondatok.find(m=>!m.id||!m.hu||!Array.isArray(m.en)||!m.en.length);
+      if(bad) throw 0;
+      sentBank=d; store.set('ek_sent',JSON.stringify(d));
+      toast(d.mondatok.length+' mondat betöltve'+(d.nev?(' — '+d.nev):''),3200);
+      if($('sent').classList.contains('open')) qMenu();
+    }catch(e){ toast('hibás mondatcsomag — {mondatok:[{id,kat,hu,en:[]}]} formátum kell') }
+  };
+  r.readAsText(f,'UTF-8'); ev.target.value='';
+}
+
 /* ============ párosítós játék ============ */
 let mPool=[], mRound=0, mSel=null, mWrong=new Set(), mScore=0, mEnOf={}, mReq=new Set();
 /* ---- mentett állás: kilépéskor megmarad, visszalépéskor onnan folytatódik ---- */
@@ -3500,6 +3691,10 @@ function drawFixNote(){
 $('studyBtn').onclick=()=>{$('vocab').classList.remove('open');startStudy()};
 $('studyTop').onclick=()=>{ if(!vocab.length) return toast('előbb ments szavakat a szótárba'); startStudy() };
 $('matchTop').onclick=()=>startMatch();
+$('sentTop').onclick=openSent;
+$('qClose').onclick=closeSent;
+$('qImport').onclick=()=>$('sentFile').click();
+$('sentFile').onchange=qImportFile;
 $('vocabTop').onclick=()=>$('vocabBtn').onclick();
 $('setTop').onclick=()=>$('setBtn').onclick();
 $('mClose').onclick=closeMatch;
