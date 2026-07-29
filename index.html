@@ -539,10 +539,13 @@ body.reading.rlight .tr .err{color:#a8352a}
     <button class="mini" id="expBtn">export</button>
     <button class="mini" id="vClose">bezár</button>
   </div>
-  <div id="expRow" hidden style="display:flex;gap:var(--sp2);margin-top:var(--sp3)">
-    <select class="mini" id="srcSel" title="Melyik forrás szavaival dolgozol (szótár, gyakorlás, párosítás)"></select>
+  <div id="srcRow" style="display:flex;gap:var(--sp2);margin-top:var(--sp3);flex-wrap:wrap;align-items:center">
+    <select class="mini" id="srcSel" title="Melyik forrás szavaival dolgozol (szótár, gyakorlás, párosítás)"
+      style="flex:1 1 auto;min-width:0;max-width:100%;text-overflow:ellipsis"></select>
     <button class="mini" id="impTsv" title="Szólista importálása TSV-ből (témakör⇥angol⇥magyar vagy angol⇥magyar)">import</button>
     <input type="file" id="impFile" accept=".tsv,.csv,.txt" hidden>
+  </div>
+  <div id="expRow" hidden style="display:flex;gap:var(--sp2);margin-top:var(--sp3);flex-wrap:wrap">
     <button class="mini" id="expTsv">Anki TSV</button>
     <button class="mini" id="expCsv">CSV (táblázat)</button>
   </div>
@@ -679,6 +682,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 <div id="match">
   <div class="stop">
     <span class="scount" id="mCount"></span><div style="flex:1"></div>
+    <button class="mini" id="mRestart" title="A mentett állás törlése, új játék">elölről</button>
     <button class="mini" id="mClose">kilép</button>
   </div>
   <div class="mgrid"><div class="mcol" id="mLeft"></div><div class="mcol" id="mRight"></div></div>
@@ -709,7 +713,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v61';
+const APP_VER='v63';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2899,8 +2903,49 @@ function drawStats(){
   }
 }
 /* ============ párosítós játék ============ */
-let mPool=[], mRound=0, mSelL=null, mWrong=new Set(), mScore=0, mEnOf={};
+let mPool=[], mRound=0, mSel=null, mWrong=new Set(), mScore=0, mEnOf={}, mReq=new Set();
+/* ---- mentett állás: kilépéskor megmarad, visszalépéskor onnan folytatódik ---- */
+function saveMatchState(){
+  try{
+    store.set('ek_match',JSON.stringify({
+      ens:mPool.map(o=>o.v.en), ptr:mRound, score:mScore,
+      wrong:[...mWrong], filter:srcFilter
+    }));
+  }catch(e){}
+}
+function loadMatchState(){
+  try{
+    const s=JSON.parse(store.get('ek_match')||'null');
+    if(!s||!s.ens||!s.ens.length) return null;
+    if((s.filter||'')!==(srcFilter||'')) return null;   /* más forrásra váltott: új játék */
+    if(s.ptr*4>=s.ens.length) return null;              /* be volt fejezve */
+    return s;
+  }catch(e){ return null }
+}
+function clearMatchState(){ store.set('ek_match','') }
+function poolFromEns(ens){
+  const byEn=new Map();
+  vocab.forEach((v,i)=>{ if(v.hu&&v.en&&inFilter(v)) byEn.set(v.en,{v,i,dir:0,c:cards(v)[0]}) });
+  return ens.map(e=>byEn.get(e)).filter(Boolean);
+}
 function startMatch(){
+  const saved=loadMatchState();
+  if(saved){
+    const pool=poolFromEns(saved.ens);
+    if(pool.length>=4&&saved.ptr*4<pool.length){
+      mPool=pool; mRound=saved.ptr; mScore=saved.score||0;
+      mWrong=new Set(saved.wrong||[]); mSel=null; mReq=new Set();
+      $('vocab').classList.remove('open');
+      $('match').classList.add('open');
+      toast('folytatás a mentett állástól — új játékhoz: „elölről”',2600);
+      matchRound();
+      return;
+    }
+  }
+  freshMatch();
+}
+function freshMatch(){
+  clearMatchState();
   const due=buildQueue().filter(o=>o.dir===0&&o.v.hu&&o.v.en);
   const all=vocab.map((v,i)=>({v,i,dir:0,c:cards(v)[0]}))
                  .filter(o=>o.v.hu&&o.v.en&&inFilter(o.v));
@@ -2910,9 +2955,10 @@ function startMatch(){
   const rest=all.filter(o=>!dueIds.has(o.i));
   mPool=due.slice().sort(()=>Math.random()-.5)
         .concat(rest.sort(()=>Math.random()-.5));
-  mRound=0; mScore=0; mWrong=new Set(); mSelL=null;
+  mRound=0; mScore=0; mWrong=new Set(); mSel=null; mReq=new Set();
   $('vocab').classList.remove('open');
   $('match').classList.add('open');
+  saveMatchState();
   matchRound();
 }
 function matchRound(){
@@ -2927,7 +2973,8 @@ function matchRound(){
   const L=$('mLeft'), R=$('mRight');
   L.innerHTML=''; R.innerHTML=''; $('mMsg').textContent='';
   $('mCount').textContent=(mRound+1)+' / '+Math.ceil(mPool.length/4)+' kör  ·  '+mScore+' találat';
-  mSelL=null;
+  mSel=null;
+  saveMatchState();
   /* alapalak + alapjelentés: Claude-tól (base/baseHu), régi kártyáknál a heurisztika
      szótöve és elsődleges jelentése, végső esetben a nyers en/hu */
   const labs=group.map(o=>{
@@ -2946,59 +2993,82 @@ function matchRound(){
   const enOf={},huOf={};
   group.forEach((o,ix)=>{enOf[o.i]=labs[ix].en; huOf[o.i]=labs[ix].hu});
   mEnOf=enOf;
-  group.forEach((o,ix)=>{
-    const b=document.createElement('button'); b.className='mitem'; b.textContent=labs[ix].en;
-    b.dataset.i=o.i;
-    b.onclick=()=>{
-      [...L.children].forEach(x=>x.classList.remove('sel'));
-      b.classList.add('sel'); mSelL=b;
-      speakLang(labs[ix].en,o.v.lang||'en');
-    };
+  /* mindkét oszlop kattintható elsőnek: ami előbb jön, az a kijelölés, a másik oszlopból a párja */
+  const pick=(btn,side,o)=>{
+    if(btn.classList.contains('ok')) return;
+    if(mSel&&mSel.side===side){                 /* ugyanaz az oszlop: átjelölés */
+      mSel.btn.classList.remove('sel');
+      btn.classList.add('sel'); mSel={btn,side,o};
+      side==='L'?speakLang(enOf[o.i],o.v.lang||'en'):speakLang(huOf[o.i],'hu');
+      return;
+    }
+    if(!mSel){                                   /* első kijelölés bármelyik oldalon */
+      btn.classList.add('sel'); mSel={btn,side,o};
+      side==='L'?speakLang(enOf[o.i],o.v.lang||'en'):speakLang(huOf[o.i],'hu');
+      return;
+    }
+    tryPair(mSel,{btn,side,o},group);            /* második kattintás a másik oldalon */
+  };
+  group.forEach(o=>{
+    const b=document.createElement('button'); b.className='mitem'; b.textContent=enOf[o.i];
+    b.dataset.i=o.i; b.onclick=()=>pick(b,'L',o);
     L.appendChild(b);
   });
   group.slice().sort(()=>Math.random()-.5).forEach(o=>{
     const b=document.createElement('button'); b.className='mitem'; b.textContent=huOf[o.i];
-    b.dataset.i=o.i;
-    b.onclick=()=>tryPair(b,group);
+    b.dataset.i=o.i; b.onclick=()=>pick(b,'R',o);
     R.appendChild(b);
   });
 }
 const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
-function tryPair(right,group){
-  if(!mSelL){ $('mMsg').textContent='Előbb válaszd ki bal oldalon a szót.'; return }
-  const i=mSelL.dataset.i;
-  if(right.dataset.i===i){
-    mSelL.classList.remove('sel'); mSelL.classList.add('ok'); right.classList.add('ok');
+function requeue(o){
+  /* elhibázott szó: pár körrel később újra előkerül — ha megint téveszted, megint jön */
+  const key=o.i+'@'+mRound;
+  if(mReq.has(key)) return;
+  mReq.add(key);
+  const at=Math.min(mPool.length,(mRound+3)*4);  /* ~3 körrel később */
+  mPool.splice(at,0,o);
+  saveMatchState();
+}
+function tryPair(first,second,group){
+  const a=first.btn, b=second.btn;
+  if(a.dataset.i===b.dataset.i){
+    a.classList.remove('sel'); a.classList.add('ok'); b.classList.add('ok');
     buzz(12); mScore++;
-    const o=group.find(g=>String(g.i)===i);
-    if(o){
-      const first=!mWrong.has(i);
-      const st=cardSt(o.c);
-      if(st!==0&&o.c.due&&o.c.due<=Date.now()){   /* csak esedékes ismétlést ütemez */
-        const tc=today(); tc.rev++; saveCounts();
-        schedule(o.c,first?2:1); o.v.bury=tc.day; saveVocab();
-      }
+    const o=first.o;
+    const firstTry=!mWrong.has(String(o.i));
+    const st=cardSt(o.c);
+    if(st!==0&&o.c.due&&o.c.due<=Date.now()){    /* csak esedékes ismétlést ütemez */
+      const tc=today(); tc.rev++; saveCounts();
+      schedule(o.c,firstTry?2:1); o.v.bury=tc.day; saveVocab();
     }
-    mSelL=null;
+    mSel=null;
     $('mCount').textContent=(mRound+1)+' / '+Math.ceil(mPool.length/4)+' kör  ·  '+mScore+' találat';
+    saveMatchState();
     if([...$('mRight').children].every(x=>x.classList.contains('ok'))){
       mRound++; setTimeout(matchRound,520);
     }
   } else {
-    right.classList.add('bad'); mWrong.add(i); buzz([28,40,28]);
-    setTimeout(()=>right.classList.remove('bad'),340);
-    const o=group.find(g=>String(g.i)===right.dataset.i);
-    $('mMsg').textContent=o?('„'+right.textContent+'” ehhez tartozik: '+(mEnOf[o.i]||o.v.en)):'Nem ez az.';
+    b.classList.add('bad'); buzz([28,40,28]);
+    mWrong.add(String(first.o.i)); mWrong.add(String(second.o.i));
+    setTimeout(()=>b.classList.remove('bad'),340);
+    requeue(first.o);                            /* a tesztelt szó visszajön később */
+    const en1=mEnOf[second.o.i]||second.o.v.en;
+    $('mMsg').textContent=second.side==='R'
+      ? ('„'+b.textContent+'” ehhez tartozik: '+en1)
+      : ('„'+b.textContent+'” magyarja: '+(second.o.v.baseHu||second.o.v.hu));
+    first.btn.classList.remove('sel'); mSel=null;
   }
 }
 function matchDone(){
+  clearMatchState();
   $('mLeft').innerHTML=''; $('mRight').innerHTML='';
   const box=document.createElement('div');
   box.innerHTML='<b>Kész.</b><br>'+mScore+' párosítás, '+mWrong.size+' elsőre elhibázott szó.';
   $('mMsg').innerHTML=''; $('mMsg').appendChild(box);
   const again=document.createElement('button'); again.className='btn';
   again.textContent='új kör'; again.style.margin='var(--sp3) var(--sp2) 0';
-  again.onclick=startMatch;
+  again.onclick=freshMatch;
   const out=document.createElement('button'); out.className='btn pri';
   out.textContent='kilép'; out.style.margin='var(--sp3) 0 0';
   out.onclick=closeMatch;
@@ -3007,6 +3077,7 @@ function matchDone(){
   vocabBadge();
 }
 function closeMatch(){ $('match').classList.remove('open'); vocabBadge(); drawVocab() }
+$('mRestart').onclick=()=>{ if(confirm('Biztos elölről kezded? A mentett állás törlődik.')) freshMatch() };
 /* ============ könyvtár megjelenítése ============ */
 function progOf(id,chaps){
   try{
