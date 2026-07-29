@@ -534,6 +534,9 @@ body.reading.rlight .tr .err{color:#a8352a}
     <button class="mini" id="vClose">bezár</button>
   </div>
   <div id="expRow" hidden style="display:flex;gap:var(--sp2);margin-top:var(--sp3)">
+    <select class="mini" id="srcSel" title="Melyik forrás szavaival dolgozol (szótár, gyakorlás, párosítás)"></select>
+    <button class="mini" id="impTsv" title="Szólista importálása TSV-ből (témakör⇥angol⇥magyar vagy angol⇥magyar)">import</button>
+    <input type="file" id="impFile" accept=".tsv,.csv,.txt" hidden>
     <button class="mini" id="expTsv">Anki TSV</button>
     <button class="mini" id="expCsv">CSV (táblázat)</button>
   </div>
@@ -699,7 +702,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v59';
+const APP_VER='v60';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2031,10 +2034,14 @@ function cards(v){
 }
 const cardSt=c=>c.st!==undefined?c.st:(c.due?2:0);
 
+/* forrás-szűrő: '' = minden forrás; különben a v.book (könyv vagy importált csomag) neve */
+let srcFilter=store.get('ek_srcfilter')||'';
+const inFilter=v=>!srcFilter||(v.book||'')===srcFilter;
 function buildQueue(){
   const now=Date.now(), tc=today(), k=tc.day;
   const learn=[], rev=[], nw=[];
   vocab.forEach((v,i)=>{
+    if(!inFilter(v)) return;
     const buried=v.bury===k;
     cards(v).forEach((c,dir)=>{
       const st=cardSt(c), o={v,i,dir,c};
@@ -2436,11 +2443,66 @@ document.addEventListener('visibilitychange',()=>{      /* háttérbe téve eln�
   if(document.hidden&&rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} drawPlayer() }
 });
 /* ============ szótár panel + export ============ */
+function importTsv(text,fname){
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){toast('üres fájl');return}
+  let rows=lines.map(l=>l.split('\t').map(c=>c.trim()));
+  /* fejléc-felismerés */
+  const h0=rows[0].map(c=>c.toLowerCase());
+  if(h0.some(c=>['angol','magyar','temakor','témakör','english','hungarian','en','hu'].includes(c)))
+    rows=rows.slice(1);
+  const cols=rows[0]?rows[0].length:0;
+  if(cols<2){toast('nem találtam tabulátorral elválasztott oszlopokat');return}
+  /* csomagnév: a fájlnévből ajánlunk, de átírható */
+  let def=(fname||'importált csomag').replace(/\.(tsv|csv|txt)$/i,'')
+        .replace(/_/g,' ').replace(/\s*(szokincs|szókincs)?\s*v?\d+\s*$/i,'').trim()||'importált csomag';
+  const pack=(prompt('Csomag neve (ezen a néven lesz szűrhető a szótárban, gyakorlásban, párosításban):',def)||'').trim();
+  if(!pack) return;
+  const have=new Map();   /* kulcs → kártya, hogy ismétlődésnél a témakört hozzáfűzhessük */
+  vocab.forEach(v=>{ if((v.book||'')===pack) have.set((v.en||'').toLowerCase().trim(),v) });
+  let added=0, dup=0;
+  rows.forEach(r=>{
+    let topic='',en='',hu='';
+    if(r.length>=3){ [topic,en,hu]=r } else { [en,hu]=r }
+    en=(en||'').trim(); hu=(hu||'').trim();
+    if(!en||!hu) return;
+    const key=en.toLowerCase();
+    const old=have.get(key);
+    if(old){ dup++;
+      /* ugyanaz a kifejezés több témakörben: a jegyzet mindkettőt őrzi */
+      if(topic&&old.note&&!old.note.includes(topic)) old.note+=' · '+topic;
+      return }
+    vocab.push({en,hu,note:topic||'',nv:NOTE_VER,src:'',srcHu:'',
+                book:pack,lang:'en'});
+    have.set(key,vocab[vocab.length-1]);   /* a fájlon belüli ismétlődést is fogja */
+    added++;
+  });
+  saveVocab();
+  srcFilter=pack; store.set('ek_srcfilter',pack);   /* rögtön az új csomagot mutatjuk */
+  drawVocab(); heroLabel&&heroLabel(); drawFixNote&&drawFixNote();
+  toast(added+' kártya importálva a(z) „'+pack+'” csomagba'+
+        (dup?' ('+dup+' már megvolt, kihagyva)':''),4500);
+}
+function drawSrcSel(){
+  const s=$('srcSel'); if(!s) return;
+  const packs=[...new Set(vocab.map(v=>v.book||'').filter(Boolean))].sort();
+  s.innerHTML='';
+  const mk=(val,txt)=>{const o=document.createElement('option');o.value=val;o.textContent=txt;s.appendChild(o)};
+  mk('','minden forrás ('+vocab.length+')');
+  packs.forEach(p=>mk(p,p+' ('+vocab.filter(v=>(v.book||'')===p).length+')'));
+  if(srcFilter&&!packs.includes(srcFilter)){srcFilter='';store.set('ek_srcfilter','')}
+  s.value=srcFilter;
+  s.onchange=()=>{srcFilter=s.value;store.set('ek_srcfilter',srcFilter);
+    drawVocab();heroLabel&&heroLabel()};
+}
 function drawVocab(){
+  drawSrcSel();
   const l=$('vlist'); l.innerHTML='';
+  const shown=vocab.map((v,i)=>({v,i})).filter(o=>inFilter(o.v));
   if(!vocab.length){l.innerHTML='<p style="color:var(--dim);font-size:var(--t3);line-height:1.6">Még üres. Nyisd ki egy mondat fordítását, kérd a „szavak” gombot, és koppints arra, amit meg akarsz tanulni.</p>';return}
-  vocab.slice().reverse().forEach((v,ri)=>{
-    const i=vocab.length-1-ri;
+  if(!shown.length){l.innerHTML='<p style="color:var(--dim);font-size:var(--t3)">Ebben a forrásban nincs kártya.</p>';return}
+  shown.slice().reverse().forEach(o=>{
+    const {v,i}=o;
     const d=document.createElement('div'); d.className='vcard';
     d.innerHTML='<div class="vmain"><div class="vtop"><b></b><i></i>'+
       '<span class="vlang"></span></div><div class="vmeta"></div></div>'+
@@ -2467,6 +2529,14 @@ function dl(name,text,mime){
   a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),3000);
 }
+$('impTsv').onclick=()=>$('impFile').click();
+$('impFile').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>importTsv(String(r.result||''),f.name);
+  r.readAsText(f,'utf-8');
+  e.target.value='';
+};
 $('expTsv').onclick=()=>{ if(!vocab.length)return toast('a szótár üres');
   dl('szotar_anki.tsv',vocab.map(v=>[v.en,v.hu,v.note,v.src].map(x=>(x||'').replace(/\t|\n/g,' ')).join('\t')).join('\n'),'text/tab-separated-values');
   toast('TSV letöltve — Anki: Import, Tab elválasztó')};
@@ -2820,7 +2890,8 @@ function drawStats(){
 let mPool=[], mRound=0, mSelL=null, mWrong=new Set(), mScore=0, mEnOf={};
 function startMatch(){
   const due=buildQueue().filter(o=>o.dir===0&&o.v.hu&&o.v.en);
-  const all=vocab.map((v,i)=>({v,i,dir:0,c:cards(v)[0]})).filter(o=>o.v.hu&&o.v.en);
+  const all=vocab.map((v,i)=>({v,i,dir:0,c:cards(v)[0]}))
+                 .filter(o=>o.v.hu&&o.v.en&&inFilter(o.v));
   if(all.length<4) return toast('legalább négy lefordított szó kell hozzá');
   /* a teljes szótár lepörög: elöl az esedékesek, utánuk a többi, mind megkeverve */
   const dueIds=new Set(due.map(o=>o.i));
