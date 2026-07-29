@@ -442,7 +442,13 @@ body.reading.rlight .tr .err{color:#a8352a}
 .sexa div{border:0;padding:2px 0}
 .sexa .en{color:var(--txt2);font-size:var(--t3);line-height:1.5}
 .sexa .hu{color:var(--dim);font-size:var(--t2);line-height:1.5;margin-top:4px}
+.splay{flex:0 0 auto;display:flex;justify-content:center;margin-bottom:var(--sp2)}
+.splay:empty{display:none}
+.splay .btn{min-width:6rem;padding:9px 18px;font-size:var(--t3)}
 .sbtns{flex:0 0 auto;display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap}
+/* a négy értékelő mindig egyetlen sorban, a hüvelykujj-zónában */
+.sbtns.grades{flex-wrap:nowrap;gap:var(--sp1)}
+.sbtns.grades .btn{flex:1 1 0;min-width:0;padding:9px 4px}
 .sbtns .btn{min-width:5.2rem;padding:9px 12px;font-size:var(--t3);
   display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15}
 .sbtns .btn small{font-size:10px;font-family:var(--mono);opacity:.62;letter-spacing:0}
@@ -693,6 +699,7 @@ body.reading.rlight .tr .err{color:#a8352a}
       <div class="smeta" id="sMeta"></div>
     </div>
   </div>
+  <div class="splay" id="sPlayRow"></div>
   <div class="sbtns" id="sBtns">
     <button class="btn pri" id="sShow">mutasd</button>
   </div>
@@ -702,7 +709,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v60';
+const APP_VER='v61';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2154,7 +2161,8 @@ function studyDone(nothingDue){
       'A következő ismétlés '+nextDueText()+'.';
   }
   $('sFront').appendChild(box);
-  $('sBtns').innerHTML='';
+  $('sBtns').innerHTML=''; $('sBtns').classList.remove('grades');
+  $('sPlayRow').innerHTML='';
   const ex=document.createElement('button'); ex.className='btn'; ex.textContent='szabad gyakorlás';
   ex.onclick=startExtra; $('sBtns').appendChild(ex);
   const b=document.createElement('button'); b.className='btn pri'; b.textContent='kilép';
@@ -2259,14 +2267,15 @@ function addExample(meta){
 }
 function finishCard(rev){
   $('sBack').hidden=true;
-  $('sBtns').innerHTML='';
+  $('sBtns').innerHTML=''; $('sBtns').classList.remove('grades');
+  $('sPlayRow').innerHTML='';
+  const spF=document.createElement('button'); spF.className='btn'; spF.textContent='\u25b6';
+  spF.title='kiejtés';
+  spF.onclick=e=>{e.stopPropagation();
+    rev?speakLang(sCur.v.hu,'hu'):speakLang(sCur.v.en,sCur.v.lang||'en')};
+  $('sBtns').appendChild(spF);
   const show=document.createElement('button'); show.className='btn pri'; show.textContent='mutasd';
   show.onclick=reveal; $('sBtns').appendChild(show);
-  if(!rev){
-    const sp=document.createElement('button'); sp.className='btn'; sp.textContent='\u25b6';
-    sp.onclick=e=>{e.stopPropagation();speakLang(sCur.v.en,sCur.v.lang||'en')};
-    $('sBtns').appendChild(sp);
-  }
   if(sUndo){
     const u=document.createElement('button'); u.className='btn'; u.textContent='\u21b6 vissza';
     u.title='utolsó válasz visszavonása'; u.onclick=undoAnswer; $('sBtns').appendChild(u);
@@ -2276,7 +2285,13 @@ function reveal(){
   $('sBack').hidden=false;
   speakCardBack();
   $('sCloze').hidden=true;          /* a teljes mondat a válaszban látszik, ne legyen kétszer */
-  $('sBtns').innerHTML='';
+  /* ▶ feljebb, középre — az értékelők fölé */
+  $('sPlayRow').innerHTML='';
+  const sp=document.createElement('button'); sp.className='btn'; sp.textContent='\u25b6';
+  sp.title='kiejtés'; sp.onclick=e=>{e.stopPropagation();speakLang(sCur.v.en,sCur.v.lang||'en')};
+  $('sPlayRow').appendChild(sp);
+  /* a négy értékelő egyetlen sorban, alul, a hüvelykujj-zónában */
+  $('sBtns').innerHTML=''; $('sBtns').classList.add('grades');
   const L=[['újra',0],['nehéz',1],['jó',2],['könnyű',3]];
   L.forEach(([t,q])=>{
     const b=document.createElement('button'); b.className='btn'+(q===2?' pri':'');
@@ -2288,9 +2303,6 @@ function reveal(){
     }
     b.onclick=()=>answer(q); $('sBtns').appendChild(b);
   });
-  const sp=document.createElement('button'); sp.className='btn'; sp.textContent='\u25b6';
-  sp.title='kiejtés'; sp.onclick=e=>{e.stopPropagation();speakLang(sCur.v.en,sCur.v.lang||'en')};
-  $('sBtns').appendChild(sp);
 }
 function answer(q){
   const o=sCur;
