@@ -773,7 +773,7 @@ body.railon #study,body.railon #match,body.railon #sent{
         <button class="mini" id="gkeySave">ment</button>
         <button class="mini" id="gkeyLoad">hangok betöltése</button></div>
       <div id="gVoiceRows"></div>
-      <p class="note" style="margin:var(--sp2) 0 0">A zárójeles ár tájékoztató: ennyi egymillió karakter. Egy Tolkien-fejezet nagyjából negyvenezer karakter, tehát a Chirp3 HD-n úgy egy dollár — de a havi ingyenes keret ennél a szintnél is egymillió karakter, vagyis kb. huszonöt fejezet minden hónapban, ingyen. A legyártott hang itt marad a telefonon, másodszorra hálózat nélkül is szól, és a dán meg a magyar is ezen a szinten szólal meg.</p>
+      <p class="note" style="margin:var(--sp2) 0 0">A zárójeles ár tájékoztató: ennyi egymillió karakter. Egy Tolkien-fejezet nagyjából negyvenezer karakter, tehát a Chirp3 HD-n úgy egy dollár — de a havi ingyenes keret ennél a szintnél is egymillió karakter, vagyis kb. huszonöt fejezet minden hónapban, ingyen. A legyártott hang itt marad a telefonon, másodszorra hálózat nélkül is szól, és a Chirp3 HD a dánt meg a magyart is viszi. A magyarhoz érdemes más hangot választani, mert akkor a nyelvváltást a hangváltás is jelzi. A „mind” gomb ugyanazt a mondatot elmondja minden azonos szintű hanggal, sorban.</p>
     </div>
     <div id="ttsKok">
     <div class="srow"><label>Neurális angol hang</label>
@@ -883,7 +883,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v81';
+const APP_VER='v82';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3176,7 +3176,48 @@ async function drawGVoiceRows(){
     const t=document.createElement('button'); t.className='mini'; t.textContent='próba';
     t.onclick=()=>gttsTest(lg);
     row.appendChild(t);
+    const cm=document.createElement('button'); cm.className='mini'; cm.textContent='mind';
+    cm.title='ugyanaz a mondat minden azonos szintű hanggal, sorban';
+    cm.onclick=()=>gttsCompare(lg,cm);
+    row.appendChild(cm);
     box.appendChild(row);
+  }
+}
+/* Tizenhárom hangot legördülőből egyenként végigkattintani reménytelen, és a
+   végén nem emlékszel, melyik volt a jó. Ez a gomb ugyanazt a mondatot mondja el
+   minden azonos nyelvű és azonos szintű hanggal, sorban, a nevét kiírva a gombra.
+   Egy mondat ~70 karakter: tizenhárom hang alig ezer karakter, tehát ingyen van. */
+let gCmp=false;
+async function gttsCompare(lg,btn){
+  if(gCmp){ gCmp=false; return }
+  let list; try{ list=await gVoicesFor(lg) }catch(e){ return toast('nincsenek betöltve a hangok') }
+  const base=TTS.gvoice[lg]||(list[0]&&list[0].name);
+  if(!base) return toast('nincs hang ehhez a nyelvhez');
+  const code=base.split('-').slice(0,2).join('-'), tier=gTier(base)[0];
+  const same=list.filter(v=>(v.languageCodes||[]).includes(code)&&gTier(v.name)[0]===tier);
+  if(same.length<2) return gttsTest(lg);
+  const keep=TTS.gvoice[lg], label=btn?btn.textContent:'';
+  const lang=lg==='hu'?'hu-HU':lg==='da'?'da-DK':code;
+  gCmp=true;
+  try{
+    for(let i=0;i<same.length;i++){
+      if(!gCmp) break;
+      const nm=same[i].name, short=nm.replace(/^[a-z]{2}-[A-Z]{2}-Chirp3-HD-/,'').replace(/^[a-z]{2}-[A-Z]{2}-/,'');
+      TTS.gvoice[lg]=nm;
+      if(btn) btn.textContent=(i+1)+'/'+same.length+' · '+short+' — állj';
+      let blob=null;
+      try{ blob=await ttsBlob(GSAMPLE[lg],lang,1) }
+      catch(e){ toast(short+': '+((e&&e.message)||'nem sikerult'),5000); continue }
+      if(!gCmp) break;
+      await kokPlay(blob);
+      if(gCmp) await sleep(250);
+    }
+  } finally {
+    gCmp=false;
+    TTS.gvoice[lg]=keep; store.set('ek_gvoice',JSON.stringify(TTS.gvoice));
+    if(btn) btn.textContent=label||'mind';
+    drawKokSize();
+    toast('a kiválasztott hang maradt: '+((keep||'—').replace(/^[a-z]{2}-[A-Z]{2}-/,''))+' — a legördülőből állítsd át arra, amelyik tetszett',7000);
   }
 }
 async function gttsTest(lg){
