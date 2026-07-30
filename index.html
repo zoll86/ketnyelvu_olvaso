@@ -58,9 +58,14 @@ button,select,input{font-family:inherit;color:inherit}
 /* ---------- felolvasó ---------- */
 #player{position:fixed;left:50%;transform:translateX(-50%);z-index:46;
   bottom:max(var(--sp3),env(safe-area-inset-bottom));
-  display:flex;gap:var(--sp1);padding:var(--sp2);border-radius:999px;
+  display:flex;flex-direction:column;align-items:center;gap:var(--sp1);
+  padding:var(--sp2) var(--sp3);border-radius:var(--r3);
   background:rgba(24,19,13,.94);backdrop-filter:blur(16px);
   border:1px solid var(--line);box-shadow:0 10px 34px rgba(0,0,0,.5)}
+#player .prow{display:flex;gap:var(--sp1);align-items:center}
+#player .prow2{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:center}
+#player .prow2 .mini{padding:5px 9px;font-size:var(--t1)}
+#player .prow2 .mini.on{border-color:rgba(232,182,76,.5);color:var(--gold)}
 #player[hidden]{display:none}
 .s.rdnow{background:rgba(232,182,76,.2);border-radius:5px}
 body.reading.rlight .s.rdnow{background:rgba(170,110,20,.24)}
@@ -456,22 +461,38 @@ body.reading.rlight .tr .err{color:#a8352a}
 .sbtns .btn small{font-size:10px;font-family:var(--mono);opacity:.62;letter-spacing:0}
 .sdone b{color:var(--txt);font-size:var(--t4);font-weight:600;display:block;margin-bottom:var(--sp2)}
 .sdone{text-align:center;color:var(--dim);font-size:var(--t3);line-height:1.7}
-.daily{display:flex;align-items:center;gap:var(--sp2);margin-top:var(--sp3);
-  padding:9px var(--sp3);border:1px solid var(--line);border-radius:999px;
-  background:rgba(255,255,255,.025);font-size:var(--t2);color:var(--dim);
-  transition:border-color .3s,box-shadow .3s}
-.daily.done{border-color:rgba(232,182,76,.45)}
-.daily.pop{animation:dpop .7s var(--spring)}
-@keyframes dpop{40%{transform:scale(1.035);box-shadow:0 0 22px rgba(232,182,76,.28)}}
-.daily .dflame{font-family:var(--mono);color:var(--gold);white-space:nowrap}
-.daily .dbar{flex:1;min-width:2.5rem;height:5px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden}
-.daily .dbar i{display:block;height:100%;width:0;border-radius:999px;
-  background:linear-gradient(90deg,var(--gold),#f0d28a);transition:width .45s var(--spring)}
-.daily .dnum{font-family:var(--mono);white-space:nowrap}
-.daily .ddots{display:flex;gap:3px;flex:0 0 auto}
-.daily .ddots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.13)}
-.daily .ddots i.part{background:rgba(232,182,76,.4)}
-.daily .ddots i.on{background:var(--gold)}
+/* ---------- napi haladás: fix felső sáv, a játékok fölött is ----------
+   A hét napja hét könyvgerincként áll egy polcon: a maiban tölt fel a haladás,
+   a kész napok teljes magasságban aranyak. Így egy elem hordozza a mai állást
+   és a heti történetet is — nem kell hozzá se külön sáv, se pontsor, se ikon. */
+:root{--rail:30px}
+#rail{position:fixed;top:0;left:0;right:0;z-index:78;height:var(--rail);
+  display:none;align-items:center;gap:var(--sp3);
+  padding:0 var(--sp4) 0 var(--sp4);
+  padding-top:env(safe-area-inset-top);height:calc(var(--rail) + env(safe-area-inset-top));
+  background:rgba(14,11,8,.82);backdrop-filter:blur(14px) saturate(1.1);
+  border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+body.railon #rail{display:flex}
+#rail.pop{animation:dpop .7s var(--spring)}
+@keyframes dpop{40%{filter:brightness(1.35)}}
+.shelf{display:flex;align-items:flex-end;gap:2.5px;height:15px;flex:0 0 auto}
+.shelf i{width:4px;height:100%;border-radius:1.5px;background:rgba(255,255,255,.10);
+  position:relative;overflow:hidden;transition:background .3s}
+.shelf i.part{background:rgba(232,182,76,.34)}
+.shelf i.on{background:var(--gold)}
+.shelf i.today{background:rgba(255,255,255,.14);box-shadow:0 2px 0 0 var(--gold)}
+.shelf i.today b{position:absolute;left:0;right:0;bottom:0;display:block;
+  background:linear-gradient(180deg,#f0d28a,var(--gold));transition:height .45s var(--spring)}
+#rail .rstreak{font-size:13px;font-weight:600;color:var(--gold);
+  letter-spacing:.02em;white-space:nowrap}
+#rail .rstreak span{font-family:var(--mono);font-size:10.5px;color:var(--dim);
+  font-weight:400;margin-left:3px;letter-spacing:.06em}
+#rail .rtoday{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
+#rail.done .rtoday{color:var(--gold)}
+/* a sáv alatt kezdődjön a tartalom */
+body.railon #start{padding-top:calc(2rem + var(--rail))}
+body.railon #study,body.railon #match,body.railon #sent{
+  padding-top:calc(var(--rail) + var(--sp3) + env(safe-area-inset-top))}
 #sent{position:fixed;inset:0;z-index:72;display:none;flex-direction:column;
   background:linear-gradient(170deg,#0e0b08,#17110c 60%,#0b0906);
   padding:max(var(--sp4),env(safe-area-inset-top)) var(--sp4) max(var(--sp4),env(safe-area-inset-bottom))}
@@ -551,11 +572,17 @@ body.reading.rlight .tr .err{color:#a8352a}
 <button id="dots" title="Fejléc mutatása (H)" aria-label="Fejléc mutatása">⋯</button>
 
 <div id="player" hidden>
-  <button class="btn pri" id="plPause" title="Szünet / folytatás">⏸</button>
-  <button class="btn" id="plSkip" title="Következő mondat">⏭</button>
-  <button class="btn" id="plSpeed" title="Tempó"></button>
-  <button class="btn" id="plHu" title="Magyar fordítás felolvasása"></button>
-  <button class="btn" id="plStop" title="Felolvasás leállítása">×</button>
+  <div class="prow">
+    <button class="btn pri" id="plPause" title="Szünet / folytatás">⏸</button>
+    <button class="btn" id="plSkip" title="Következő mondat">⏭</button>
+    <button class="btn" id="plStop" title="Felolvasás leállítása">×</button>
+  </div>
+  <div class="prow2">
+    <button class="mini" id="plSpeed" title="Tempó"></button>
+    <button class="mini" id="plHu" title="Magyar fordítás felolvasása"></button>
+    <button class="mini" id="plGap" title="Szünet az idegen mondat után — legyen időd fejben lefordítani"></button>
+    <button class="mini" id="plSleep" title="Elalvás-időzítő"></button>
+  </div>
 </div>
 
 <main id="main">
@@ -565,12 +592,6 @@ body.reading.rlight .tr .err{color:#a8352a}
       <button class="btn pri hero-btn" id="studyTop">Gyakorlás<small id="studyTopSub">&nbsp;</small></button>
       <button class="btn hero-btn" id="matchTop">Párosítás<small>végig a szótáradon</small></button>
       <button class="btn hero-btn" id="sentTop">Mondatok<small>fordítás beírással</small></button>
-    </div>
-    <div class="daily" id="daily" title="Napi cél az összes gyakorlatból együtt">
-      <span class="dflame" id="dFlame">🔥 0</span>
-      <div class="dbar"><i id="dFill"></i></div>
-      <span class="dnum" id="dNum">0/30</span>
-      <span class="ddots" id="dDots"></span>
     </div>
     <div class="startrow">
       <button class="mini" id="vocabTop">szótár</button>
@@ -647,6 +668,7 @@ body.reading.rlight .tr .err{color:#a8352a}
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
     <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
+    <p><b>Hangoskönyvként hallgatva</b> két dolog segít: a <b>szünet</b> gombbal beállítható, mennyi csend legyen az idegen mondat után (1–5 másodperc), hogy legyen időd fejben lefordítani, mielőtt megjön a magyar; az <b>⏾ időzítő</b> pedig 15–60 perc után magától leállítja a felolvasást, ha elalszol. A magyar fordítások a következő mondatokra előre elkészülnek a háttérben, ingyenes motorral, így nincs szünet a két nyelv között — és ami egyszer elkészült, offline is megszólal.</p>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
     <h4>Olvasás</h4>
     <p>A ⋯ gombbal lehozod a menüsávot: egyetlen felső sávban van a kilépés a könyvtárba, a fejezetválasztó, a haladás, a betűméret, a <b>szókincs</b>, a <b>szótár</b> és a ⚙ — keskeny kijelzőn az eszközök a ☰ gomb mögé kerülnek. Minden tartós beállítás — forrásnyelv, fordítómotor, előtöltés, napi adagok — a ⚙ panelben van, szakaszokra bontva. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
@@ -793,13 +815,18 @@ body.reading.rlight .tr .err{color:#a8352a}
   <div class="qwrap" id="qWrap"></div>
   <div class="sbtns" id="qBtns"></div>
 </div>
+<div id="rail" title="Napi haladás — minden gyakorlat ide számol">
+  <span class="shelf" id="dShelf"></span>
+  <span class="rstreak" id="dStreak">0<span>nap</span></span>
+  <span class="rtoday" id="dNum">0/30</span>
+</div>
 <div id="toast"></div>
 <input type="file" id="file" accept=".epub,application/epub+zip" multiple style="display:none">
 <input type="file" id="sentFile" accept=".json,application/json" style="display:none">
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v69';
+const APP_VER='v70';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2128,25 +2155,53 @@ function goalStreak(){
 function goalReached(){
   const st=goalStreak();
   toast('🎉 mai cél megvan'+(st>1?' — '+st+' napos sorozat!':'!'),3400);
-  const el=$('daily'); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop') }
+  const el=$('rail'); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop') }
   buzz([14,60,14]);
 }
+/* a sáv a kezdőlapon és a gyakorlatok fölött látszik, olvasás közben nem
+   (ott a képernyő a könyvé) */
+function railVisible(){
+  const play=['study','match','sent'].some(id=>{const e=$(id);return e&&e.classList.contains('open')});
+  return play||!document.body.classList.contains('reading');
+}
 function drawDaily(){
-  const el=$('daily'); if(!el) return;
+  const el=$('rail'); if(!el) return;
+  document.body.classList.toggle('railon',railVisible());
   const hh=dayHits(dayKey()), st=goalStreak();
-  $('dFlame').textContent='🔥 '+st;
-  $('dNum').textContent=Math.min(hh,goal)+'/'+goal;
-  $('dFill').style.width=Math.min(100,goal?hh/goal*100:0)+'%';
+  $('dStreak').innerHTML=st+'<span>nap</span>';
+  $('dNum').textContent=Math.min(hh,goal)+' / '+goal;
   el.classList.toggle('done',hh>=goal);
-  el.title=(st?st+' napos sorozat · ':'')+'ma '+hh+' helyes válasz (cél '+goal+') · összesen '+hitsAll.toLocaleString('hu');
-  const dots=$('dDots'); dots.innerHTML='';
+  el.title=(st?st+' napos sorozat · ':'')+'ma '+hh+' helyes válasz (cél '+goal+
+    ') · összesen '+hitsAll.toLocaleString('hu')+' — minden gyakorlat ide számol';
+  const sh=$('dShelf'); sh.innerHTML='';
   for(let i=6;i>=0;i--){
     const d=new Date(); d.setDate(d.getDate()-i);
-    const dh=dayHits(dayKey(d)), s=document.createElement('i');
-    s.className=dh>=goal?'on':(dh>0?'part':'');
-    s.title=dayKey(d)+': '+dh; dots.appendChild(s);
+    const k=dayKey(d), dh=dayHits(k), s=document.createElement('i');
+    if(i===0){
+      s.className='today';
+      const f=document.createElement('b');
+      f.style.height=Math.min(100,goal?dh/goal*100:0)+'%';
+      s.appendChild(f);
+    } else s.className=dh>=goal?'on':(dh>0?'part':'');
+    s.title=k+': '+dh+(dh>=goal?' ✓':'');
+    sh.appendChild(s);
   }
 }
+/* a panelek nyitása/zárása és az olvasó mód sok helyen történik: egy figyelő
+   szinkronban tartja a sáv láthatóságát anélkül, hogy mindenhova kódot kellene tenni */
+function syncRail(){
+  try{
+    const want=railVisible();
+    if(document.body.classList.contains('railon')!==want)
+      document.body.classList.toggle('railon',want);
+  }catch(e){}
+}
+try{
+  const mo=new MutationObserver(syncRail);
+  mo.observe(document.body,{attributes:true,attributeFilter:['class']});
+  ['study','match','sent'].forEach(id=>{ const e=$(id);
+    if(e) mo.observe(e,{attributes:true,attributeFilter:['class']}) });
+}catch(e){}
 function forecast(days){
   const out=[]; const now=new Date();
   for(let i=0;i<days;i++){
@@ -2482,6 +2537,13 @@ function closeStudy(){ $('study').classList.remove('open'); saveVocab(); drawVoc
   paint();
   r.oninput=()=>{ goal=+r.value||30; store.set('ek_goal',String(goal)); paint(); drawDaily() };
 })();
+(function(){
+  const r=$('rail'); if(!r) return;
+  r.onclick=()=>{
+    const hh=dayHits(dayKey()), st=goalStreak();
+    toast(st+' napos sorozat · ma '+hh+'/'+goal+' · összesen '+hitsAll.toLocaleString('hu')+' helyes válasz',4200);
+  };
+})();
 $('sTts').onclick=e=>{e.stopPropagation(); autoTts=!autoTts;
   store.set('ek_autotts',autoTts?'1':'0'); drawTtsBtn();
   if(autoTts) speakCardFront(); else try{speechSynthesis.cancel()}catch(x){} };
@@ -2553,6 +2615,12 @@ let rdOn=false, rdPtr=0, rdEpoch=0, rdLoop=false, rdWl=null;
 let rdSpeed=+(store.get('ek_rdspeed')||1);
 let rdHu=store.get('ek_rdhu')!=='0';
 const RD_SPEEDS=[1,.9,.75,.6,1.25];   /* csak az idegen nyelvre hat, a magyar mindig 1x */
+/* hangoskönyv mód: szünet a nyelvek között + elalvás-időzítő + fordítás-előtöltés */
+let rdGap=+(store.get('ek_rdgap')||0);
+const RD_GAPS=[0,1,2,3,5];
+let rdSleepMin=0, rdSleepEnd=0, rdSleepT=0;
+const RD_SLEEPS=[0,15,30,45,60];
+let rdPre=false;
 function speakAsync(t,lang,rate){
   return new Promise(res=>{
     if(!t){res();return}
@@ -2622,9 +2690,33 @@ async function rdWake(on){
 }
 function drawPlayer(){
   $('plPause').textContent=rdOn?'⏸':'▶';
+  const g=$('plGap'); if(g){ g.textContent=rdGap?('szünet '+rdGap+'s'):'szünet ki';
+    g.classList.toggle('on',!!rdGap) }
+  const s=$('plSleep');
+  if(s){
+    if(rdSleepEnd){
+      const left=Math.max(0,Math.round((rdSleepEnd-Date.now())/60000));
+      s.textContent='⏾ '+left+' perc'; s.classList.add('on');
+    } else { s.textContent='⏾ időzítő'; s.classList.remove('on') }
+  }
   $('plSpeed').textContent=(src||'en').toUpperCase()+' '+String(rdSpeed).replace('.',',')+'×';
   $('plSpeed').title='Az idegen nyelv tempója \u2014 a magyar mindig normál (1\u00d7)';
   $('plHu').textContent=rdHu?'HU: be':'HU: ki';
+  $('plHu').classList.toggle('on',rdHu);
+}
+/* Fordítás-előtöltés a felolvasáshoz: amíg az aktuális mondat szól, a következők
+   magyarja már elkészül, így nincs csend a két nyelv között. Ingyenes motorral. */
+async function rdPrefetch(all,from){
+  if(rdPre) return; rdPre=true;
+  try{
+    for(let k=from+1;k<Math.min(from+7,all.length);k++){
+      if(!rdOn||!rdHu) break;
+      const t=(all[k].textContent||'').trim();
+      if(!t||cache[ck(t)]) continue;
+      try{ const hu=await freeTranslate(t); if(hu){ cache[ck(t)]=hu; saveCache() } }catch(e){}
+      await sleep(250);
+    }
+  } finally { rdPre=false }
 }
 function startReading(){
   if(!document.body.classList.contains('reading')) return;
@@ -2644,11 +2736,16 @@ function stopReading(){
   try{speechSynthesis.cancel()}catch(e){}
   sentList().forEach(s=>s.classList.remove('rdnow'));
   $('player').hidden=true; rdWake(false); keepAudio(false); mediaSess('none');
+  rdSleepEnd=0; rdSleepMin=0; clearTimeout(rdSleepT); rdSleepT=0;
 }
 async function loopRead(){
   if(rdLoop) return; rdLoop=true;
   try{
     while(rdOn){
+      if(rdSleepEnd&&Date.now()>=rdSleepEnd){        /* tartalék, ha a rendszer visszafogta az időzítőt */
+        rdSleepEnd=0; rdSleepMin=0; clearTimeout(rdSleepT); stopReading();
+        toast('elalvás-időzítő: leállítottam a felolvasást',3200); break;
+      }
       let all=sentList();
       if(rdPtr>=all.length){
         if(curChap<chapters.length-1){       /* fejezet vége: megy tovább magától */
@@ -2662,10 +2759,16 @@ async function loopRead(){
       sp.classList.add('rdnow');
       try{ sp.scrollIntoView({block:'center',behavior:'smooth'}) }catch(x){}
       try{speechSynthesis.cancel()}catch(x){}
+      drawPlayer();                          /* az időzítő hátralévő ideje frissül */
+      rdPrefetch(all,rdPtr);                 /* a következő mondatok magyarja a háttérben készül */
       await speakAsync(sent, src==='da'?'da-DK':'en-US', rdSpeed);
       if(!rdOn) break;
       if(e!==rdEpoch) continue;              /* ⏭: a magyar rész kimarad */
       if(rdHu){
+        if(rdGap){                           /* csend: van időd fejben lefordítani */
+          await sleep(rdGap*1000);
+          if(!rdOn||e!==rdEpoch) continue;
+        }
         /* a fordítás a meglévő gyorsítótárból jön; ha nincs, az ingyenes motorral
            készül, hogy egy egész könyv meghallgatása ne költsön API-pénzt */
         let hu=cache[ck(sent)];
@@ -2692,6 +2795,26 @@ $('plSpeed').onclick=()=>{
   store.set('ek_rdspeed',String(rdSpeed)); drawPlayer();
 };
 $('plHu').onclick=()=>{ rdHu=!rdHu; store.set('ek_rdhu',rdHu?'1':'0'); drawPlayer() };
+$('plGap').onclick=()=>{
+  rdGap=RD_GAPS[(RD_GAPS.indexOf(rdGap)+1)%RD_GAPS.length];
+  store.set('ek_rdgap',String(rdGap)); drawPlayer();
+  toast(rdGap?('szünet a magyar előtt: '+rdGap+' másodperc'):'szünet kikapcsolva');
+};
+function armSleep(){
+  clearTimeout(rdSleepT); rdSleepT=0;
+  if(!rdSleepEnd) return;
+  /* pontos leállítás: nem várunk a következő mondathatárig */
+  rdSleepT=setTimeout(()=>{
+    rdSleepEnd=0; rdSleepMin=0;
+    if(rdOn){ stopReading(); toast('elalvás-időzítő: leállítottam a felolvasást',3200) }
+  },Math.max(0,rdSleepEnd-Date.now()));
+}
+$('plSleep').onclick=()=>{
+  rdSleepMin=RD_SLEEPS[(RD_SLEEPS.indexOf(rdSleepMin)+1)%RD_SLEEPS.length];
+  rdSleepEnd=rdSleepMin?Date.now()+rdSleepMin*60000:0;
+  armSleep(); drawPlayer();
+  toast(rdSleepMin?('elalvás-időzítő: '+rdSleepMin+' perc'):'elalvás-időzítő kikapcsolva');
+};
 $('plStop').onclick=()=>stopReading();
 /* Zárolt kijelzőn és háttérben is folytatja: a néma hangsáv tartja életben a lapot,
    a felolvasót pedig meg kell lökni, mert egyes böngészők felfüggesztik. */
