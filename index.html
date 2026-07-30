@@ -694,7 +694,7 @@ body.railon #study,body.railon #match,body.railon #sent{
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
-    <p>A felolvasás alapból a <b>rendszerhangon</b> szól: azonnali, ingyenes, de gépies. A ⚙ → Hang alatt átállítható <b>Google felhőre</b>, ami hangoskönyvhöz közelítő minőséget ad, és mind a három nyelvet viszi — az angolt, a dánt és a magyart is. Ehhez egy saját Google TTS kulcs kell; a hangok listája a kulcs beírása után magától betöltődik, és nyelvenként külön választható. A <b>mind</b> gombbal ugyanaz a mondat végighallgatható minden azonos szintű hangon, hogy füllel dönthess. Érdemes a magyarhoz más hangot választani: akkor a nyelvváltást a hangváltás is jelzi. A legördülőben minden hang mellett ott az ára; a panel kiírja, mennyi karaktert használtál el ebben a hónapban, és a nyitott fejezet mérete is látszik, mielőtt legyártatnád. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali; ami egyszer legyártódott, a telefonon marad. A legyártott hang <b>ki is mentheto</b>: a <b>mentés WAV-ba</b> egyetlen hangoskönyv-fájlt készít a fejezetből, a <b>zip</b> mondatonként külön fájlt. Androidon a Letöltések mappába kerül, asztali Chrome-ban választhatsz mappát is. Olvasás közben a program soha nem várakozik hangra: ami már kész, azt szólaltatja meg, ami nem, azt a rendszerhang mondja, miközben a háttérben előregyárt. A lejátszóban a <b>⛁</b> szám mutatja, hány mondat hangja van készen.</p>
+    <p>A felolvasás alapból a <b>rendszerhangon</b> szól: azonnali, ingyenes, de gépies. A ⚙ → Hang alatt átállítható <b>Google felhőre</b>, ami hangoskönyvhöz közelítő minőséget ad, és mind a három nyelvet viszi — az angolt, a dánt és a magyart is. Ehhez egy saját Google TTS kulcs kell; a hangok listája a kulcs beírása után magától betöltődik, és nyelvenként külön választható. A <b>mind</b> gombbal ugyanaz a mondat végighallgatható minden azonos szintű hangon, hogy füllel dönthess. Érdemes a magyarhoz más hangot választani: akkor a nyelvváltást a hangváltás is jelzi. A legördülőben minden hang mellett ott az ára; a panel kiírja, mennyi karaktert használtál el ebben a hónapban, és a nyitott fejezet mérete is látszik, mielőtt legyártatnád. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali; ami egyszer legyártódott, a telefonon marad. Olvasás közben a program soha nem várakozik hangra: ami már kész, azt szólaltatja meg, ami nem, azt a rendszerhang mondja, miközben a háttérben előregyárt. A lejátszóban a <b>⛁</b> szám mutatja, hány mondat hangja van készen.</p>
     <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
     <p><b>Hangoskönyvként hallgatva</b> két dolog segít: a <b>szünet</b> gombbal beállítható, mennyi csend legyen az idegen mondat után (1–5 másodperc), hogy legyen időd fejben lefordítani, mielőtt megjön a magyar; az <b>⏾ időzítő</b> pedig 15–60 perc után magától leállítja a felolvasást, ha elalszol. A magyar fordítások a következő mondatokra előre elkészülnek a háttérben, ingyenes motorral, így nincs szünet a két nyelv között — és ami egyszer elkészült, offline is megszólal.</p>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
@@ -777,8 +777,6 @@ body.railon #study,body.railon #match,body.railon #sent{
     </div>
     <div class="srow" id="ttsBuildRow" hidden><label>Hangoskönyv</label>
       <button class="mini" id="ttsBuildBtn">fejezet előgyártása</button>
-      <button class="mini" id="ttsWavBtn" title="A fejezet hangja egyetlen fájlban">mentés WAV-ba</button>
-      <button class="mini" id="ttsZipBtn" title="Mondatonként külön fájl, egy zip-ben">zip</button>
       <button class="mini" id="ttsWipeBtn" title="A legyártott hangok törlése (a modell megmarad)">törlés</button>
       <span class="note" style="margin:0" id="ttsSize"></span></div>
 
@@ -875,7 +873,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v86';
+const APP_VER='v87';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2656,8 +2654,12 @@ let ttsHinted=false;
 
 /* ---- Hangforrás: rendszerhang vagy Google felhő -----------------------------
    A felhős hang ugyanabba az `audio` tárolóba kerül, amit korábban a helyi modell
-   használt, tehát a gyorsítótár, a tárolási korlát, az előgyártás és a WAV-mentés
-   ugyanaz maradt. Csak a gyártás helye más: egy fetch. */
+   használt, tehát a gyorsítótár, a tárolási korlát és az előgyártás ugyanaz maradt.
+   Csak a gyártás helye más: egy fetch.
+   A fejezet WAV-ba mentése a v87-ben szándékosan kikerült: az egy terjeszthető
+   hangoskönyv-fájlt hozott létre a felhasználó jogvédett könyvéből, és pont azt a
+   kiadványt váltotta ki, amit meg lehet vásárolni. A hallgatás offline így is megy,
+   mert a legyártott hang a tárolóban marad — csak fájlként nem hagyja el a készüléket. */
 const TTS={prov:store.get('ek_ttsprov')||'sys', gkey:store.get('ek_gkey')||'',
   gvoice:{}, list:null, err:''};
 try{ TTS.gvoice=JSON.parse(store.get('ek_gvoice')||'{}') }catch(e){}
@@ -2830,120 +2832,6 @@ async function ttsCountReady(){
   ttsDepth=n; ttsTotal=all.length; drawPlayer();
 }
 /* indítás előtti feltöltés, hogy az első mondatokra ne kelljen várni */
-/* ---- WAV-összefűzés: a mondatok hangjából egyetlen hangoskönyv-fájl ----
-   A RIFF-darabokat végigjárjuk (nem feltételezzük a 44 bájtos fejlécet), a PCM-et
-   egymás után fűzzük, és új fejlécet írunk. Csak azonos formátumú részek fűzhetők. */
-function wavParse(ab){
-  const dv=new DataView(ab), u=new Uint8Array(ab);
-  const tag=o=>String.fromCharCode(u[o],u[o+1],u[o+2],u[o+3]);
-  if(tag(0)!=='RIFF'||tag(8)!=='WAVE') throw new Error('nem WAV');
-  let p=12, fmt=null, data=null;
-  while(p+8<=u.length){
-    const id=tag(p), sz=dv.getUint32(p+4,true), body=p+8;
-    if(id==='fmt ') fmt={ch:dv.getUint16(body+2,true),rate:dv.getUint32(body+4,true),bits:dv.getUint16(body+14,true)};
-    else if(id==='data') data=u.subarray(body,Math.min(body+sz,u.length));
-    p=body+sz+(sz&1);
-  }
-  if(!fmt||!data) throw new Error('hiányos WAV');
-  return {fmt,data};
-}
-function wavHeader(total,fmt){
-  const b=new Uint8Array(44), dv=new DataView(b.buffer);
-  const put=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i)};
-  const byteRate=fmt.rate*fmt.ch*fmt.bits/8;
-  put(0,'RIFF'); dv.setUint32(4,36+total,true); put(8,'WAVEfmt ');
-  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,fmt.ch,true);
-  dv.setUint32(24,fmt.rate,true); dv.setUint32(28,byteRate,true);
-  dv.setUint16(32,fmt.ch*fmt.bits/8,true); dv.setUint16(34,fmt.bits,true);
-  put(36,'data'); dv.setUint32(40,total,true);
-  return b;
-}
-/* csendszünet két mondat közé, hogy ne folyjanak egybe */
-function wavSilence(ms,fmt){
-  const n=Math.round(fmt.rate*fmt.ch*(fmt.bits/8)*ms/1000);
-  return new Uint8Array(n - (n % (fmt.ch*fmt.bits/8)));
-}
-/* Blob, ArrayBuffer és tipizált tömb egyaránt jó bemenet */
-async function asBuf(x){
-  if(!x) throw new Error('üres');
-  if(typeof x.arrayBuffer==='function') return await x.arrayBuffer();   /* Blob */
-  /* szándékosan nem instanceof: az más futtatási környezetből jövő puffernél hamis */
-  if(x.buffer&&typeof x.byteLength==='number')                          /* tipizált tömb */
-    return x.buffer.slice(x.byteOffset||0,(x.byteOffset||0)+x.byteLength);
-  if(typeof x.byteLength==='number'&&typeof x.slice==='function') return x;   /* ArrayBuffer */
-  throw new Error('ismeretlen hangformátum');
-}
-async function wavJoin(blobs,gapMs){
-  const parts=[]; let fmt=null, total=0, skipped=0;
-  for(const b of blobs){
-    let r; try{ r=wavParse(await asBuf(b)) }catch(e){ skipped++; continue }
-    if(!fmt) fmt=r.fmt;
-    else if(r.fmt.rate!==fmt.rate||r.fmt.ch!==fmt.ch||r.fmt.bits!==fmt.bits){ skipped++; continue }
-    if(parts.length&&gapMs){ const s=wavSilence(gapMs,fmt); parts.push(s); total+=s.length }
-    parts.push(r.data); total+=r.data.length;
-  }
-  if(!fmt||!total) throw new Error('nincs összefűzhető hang');
-  return {blob:new Blob([wavHeader(total,fmt),...parts],{type:'audio/wav'}),
-          seconds:Math.round(total/(fmt.rate*fmt.ch*fmt.bits/8)), skipped};
-}
-function safeName(s){ return (s||'fejezet').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,70) }
-function dlBlob(blob,name){
-  const u=URL.createObjectURL(blob), a=document.createElement('a');
-  a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(u),4000);
-}
-/* Androidon nincs mappaválasztó, ezért letöltés (Letöltések mappa). Asztali
-   Chrome-ban viszont igazi mappát lehet választani, és oda írunk közvetlenül. */
-const canDirPick=()=>typeof window.showDirectoryPicker==='function';
-async function saveToDir(blob,name){
-  try{
-    let dir=null;
-    try{ dir=await audGet('__dir') }catch(e){}
-    if(dir&&dir.requestPermission){
-      const st=await dir.requestPermission({mode:'readwrite'});
-      if(st!=='granted') dir=null;
-    }
-    if(!dir||!dir.getFileHandle){
-      dir=await window.showDirectoryPicker({mode:'readwrite',id:'olvaso-hang'});
-      try{ await audPut('__dir',dir) }catch(e){}
-    }
-    const fh=await dir.getFileHandle(name,{create:true});
-    const w=await fh.createWritable(); await w.write(blob); await w.close();
-    return dir.name||'a választott mappa';
-  }catch(e){ return null }
-}
-/* a fejezet hangja egyetlen fájlban — ez az, amit bármely zenelejátszó megnyit */
-async function exportChapterWav(mode){
-  const list=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
-  if(!list.length) return toast('nincs mit menteni ebben a fejezetben');
-  const blobs=[]; let missing=0;
-  for(const t of list){
-    let b=null; try{ b=await audGet(audKey(t,src==='da'?'da-DK':'en-US',rdSpeed)) }catch(e){}
-    if(b) blobs.push(b); else missing++;
-  }
-  if(!blobs.length) return toast('előbb nyomd meg a „fejezet előgyártása” gombot');
-  const title=safeName(((book&&book.title)||'konyv')+' - '+((chapters[curChap]&&chapters[curChap].name)||(curChap+1)+'. fejezet'));
-  const vname=(TTS.gvoice[src==='da'?'da':'en']||'hang')
-    .replace(/^[a-z]{2}-[A-Z]{2}-(Chirp3-HD-)?/,'');
-  if(mode==='zip'){
-    try{
-      const zip=new JSZip();
-      blobs.forEach((b,i)=>zip.file(String(i+1).padStart(3,'0')+'.wav',b));
-      const out=await zip.generateAsync({type:'blob'});
-      dlBlob(out,title+' ('+vname+').zip');
-      toast(blobs.length+' fájl egy zip-ben'+(missing?(' — '+missing+' mondat még nincs legyártva'):''),4200);
-    }catch(e){ toast('a zip nem készült el: '+e.message) }
-    return;
-  }
-  let r; try{ r=await wavJoin(blobs,350) }catch(e){ return toast('összefűzés nem sikerült: '+e.message) }
-  const name=title+' ('+vname+').wav';
-  const mins=Math.round(r.seconds/60);
-  const where=canDirPick()?await saveToDir(r.blob,name):null;
-  if(!where) dlBlob(r.blob,name);
-  toast((where?('mentve: '+where):'letöltve a Letöltések mappába')+' — '+mins+' perc, '
-    +Math.round(r.blob.size/1048576)+' MB'+(missing?(' · '+missing+' mondat kimaradt'):''),5200);
-}
-
 /* egész fejezet legyártása: utána a hallgatás offline és azonnali */
 let ttsBuilding=false;
 async function ttsBuildChapter(from,limit,quiet){
@@ -3121,8 +3009,6 @@ function initTts(){
      törlésével a jelölés megmaradt, a kezelő nem — vagyis a gombok szépen ott
      lettek volna, és semmit nem tettek volna. Ezért kerültek ide. */
   const bb=$('ttsBuildBtn'); if(bb) bb.onclick=()=>ttsBuildChapter();
-  const wb=$('ttsWavBtn');   if(wb) wb.onclick=()=>exportChapterWav('wav');
-  const zb=$('ttsZipBtn');   if(zb) zb.onclick=()=>exportChapterWav('zip');
   const kw=$('ttsWipeBtn');
   if(kw) kw.onclick=async()=>{
     if(!confirm('Törlöm a legyártott hangokat? Újra le kell gyártani őket, ami a havi keretből fogy.')) return;
