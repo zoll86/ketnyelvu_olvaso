@@ -837,7 +837,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v71';
+const APP_VER='v72';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2606,11 +2606,15 @@ async function kokLoad(){
   KOK.state='loading'; KOK.pct=0; KOK.err=''; drawKok();
   try{
     const mod=KOK.loader?await KOK.loader():await import(KOK_URL);
-    const gpu=!!(navigator.gpu);
-    KOK.tts=await mod.KokoroTTS.from_pretrained(KOK_MODEL,{
-      dtype:gpu?'fp32':'q8', device:gpu?'webgpu':'wasm',
-      progress_callback:p=>{ if(p&&typeof p.progress==='number'){ KOK.pct=Math.round(p.progress); drawKok() } }
-    });
+    const prog=p=>{ if(p&&typeof p.progress==='number'){ KOK.pct=Math.round(p.progress); drawKok() } };
+    /* q8 mindkét úton: ugyanazok a fájlok (~92 MB), csak a futtatás módja más.
+       Ha a WebGPU nem indul el, magától visszaesik WASM-ra — nincs újabb letöltés. */
+    const tryDev=async dev=>mod.KokoroTTS.from_pretrained(KOK_MODEL,
+      {dtype:'q8',device:dev,progress_callback:prog});
+    if(navigator.gpu){
+      try{ KOK.tts=await tryDev('webgpu') }
+      catch(e){ KOK.tts=await tryDev('wasm') }
+    } else KOK.tts=await tryDev('wasm');
     KOK.state='ready'; KOK.on=true; store.set('ek_kok','1');
     drawKok(); toast('neurális angol hang kész',2600);
     return true;
