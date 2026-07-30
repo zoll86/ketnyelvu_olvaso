@@ -773,6 +773,7 @@ body.railon #study,body.railon #match,body.railon #sent{
         <button class="mini" id="gkeySave">ment</button>
         <button class="mini" id="gkeyLoad">hangok betöltése</button></div>
       <div id="gVoiceRows"></div>
+      <p class="note" style="margin:var(--sp2) 0 0" id="gUsage"></p>
       <p class="note" style="margin:var(--sp2) 0 0">A zárójeles ár tájékoztató: ennyi egymillió karakter. Egy Tolkien-fejezet nagyjából negyvenezer karakter, tehát a Chirp3 HD-n úgy egy dollár — de a havi ingyenes keret ennél a szintnél is egymillió karakter, vagyis kb. huszonöt fejezet minden hónapban, ingyen. A legyártott hang itt marad a telefonon, másodszorra hálózat nélkül is szól, és a Chirp3 HD a dánt meg a magyart is viszi. A magyarhoz érdemes más hangot választani, mert akkor a nyelvváltást a hangváltás is jelzi. A „mind” gomb ugyanazt a mondatot elmondja minden azonos szintű hanggal, sorban.</p>
     </div>
     <div id="ttsKok">
@@ -782,14 +783,15 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow" id="kokVoiceRow" hidden><label>Hangszín</label>
       <select class="inp" id="kokVoice"></select>
       <button class="mini" id="kokTest">próba</button></div>
+    <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. Mérve 54 s egy mondat ezen a telefonon, ami fejezetenként tíz óra: ez az út gyakorlatilag zárva.</p>
+    </div>
     <div class="srow" id="kokBuildRow" hidden><label>Hangoskönyv</label>
       <button class="mini" id="kokBuildBtn">fejezet előgyártása</button>
       <button class="mini" id="kokWavBtn" title="A fejezet hangja egyetlen fájlban">mentés WAV-ba</button>
       <button class="mini" id="kokZipBtn" title="Mondatonként külön fájl, egy zip-ben">zip</button>
       <button class="mini" id="kokWipeBtn" title="A legyártott hangok törlése (a modell megmarad)">törlés</button>
       <span class="note" style="margin:0" id="kokSize"></span></div>
-    <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. Mérve 54 s egy mondat ezen a telefonon, ami fejezetenként tíz óra: ez az út gyakorlatilag zárva.</p>
-    </div>
+
     <div id="voiceRows"></div>
     <p class="note" style="margin:var(--sp2) 0 0">Ha egyik hang sem tetszik: a telefon beállításaiban telepíthető jobb beszédmotor, és az itt is megjelenik. Ez a legnagyobb ugrás a felolvasás minőségében.</p>
     <div class="ssec">Fordítás</div>
@@ -883,7 +885,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v82';
+const APP_VER='v85';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2669,6 +2671,11 @@ const KOK={on:store.get('ek_kok')==='1', voice:store.get('ek_kokvoice')||'bm_geo
   state:'off', ready:false, pct:0, err:'', loaded:0, total:0, file:'', files:{},
   wk:null, seq:0, jobs:new Map(), factory:null};   /* factory: teszthez cserélhető szálindító */
 let kokAudio=null, kokBusy=false;
+/* A szóló hang ígéretének feloldója. A leállításnak FEL KELL OLDANIA, különben a
+   felolvasó ciklusa örökre egy `await`-ben marad: a megállított hangelem soha nem
+   ad `ended`-et, a kezelője pedig már le van szedve. Emiatt X után (és ⏭ után, és
+   könyvváltás után) nem indult újra a felolvasás, csak az app újratöltésére. */
+let kokRes=null;
 /* folyamatos háttérgyártás: a puffer mélysége és a mért gyártási idők */
 let kokBufTarget=+(store.get('ek_kokbuf')||6);
 let kokDepth=0, kokMaking='', kokSlowWarned=false;
@@ -2798,6 +2805,50 @@ function audKey(t,lang,speed){
 /* Van-e egyáltalán legyártott hangunk, amit lejátszhatunk? */
 const ttsOn=()=>cloudOn()||(TTS.prov==='kok'&&kokReady());
 const GT='https://texttospeech.googleapis.com/v1/';
+/* ---- havi karakterszámláló -------------------------------------------------
+   Az ingyenes keret nem kvóta, hanem számlázási kedvezmény: a Cloud Console
+   Quotas lapján NEM látszik, csak a Billing jelentésben, az meg késik egy napot.
+   Ezért itt is számolunk: a Google minden karaktert számol, a szóközöket és az
+   újsorokat is, tehát a text.length pontosan az, amit ő is számol.
+   Fontos korlát: ez csak azt látja, amit EBBŐL a böngészőből küldtünk el. Ha más
+   gépről is használod, a hiteles szám a Billing jelentésben van. */
+const GPOOL={'Chirp3 HD':['Chirp3 HD',1000000],'Studio':['Studio',100000],
+  'Neural2':['Neural2/Polyglot',1000000],
+  'WaveNet':['Standard/WaveNet',4000000],'Standard':['Standard/WaveNet',4000000]};
+const gMonth=()=>new Date().toISOString().slice(0,7);
+let gUse={}; try{ gUse=JSON.parse(store.get('ek_gusage')||'{}') }catch(e){}
+const gPool=name=>GPOOL[gTier(name)[0]]||['Standard/WaveNet',4000000];
+function gAdd(name,n){
+  if(!n) return;
+  const m=gMonth(), [pool,cap]=gPool(name);
+  gUse[m]=gUse[m]||{};
+  const before=gUse[m][pool]||0, after=before+n;
+  gUse[m][pool]=after;
+  /* csak a mostani és az előző hónap érdekes, a többi mehet */
+  Object.keys(gUse).forEach(k=>{ if(k<m&&Object.keys(gUse).length>2) delete gUse[k] });
+  store.set('ek_gusage',JSON.stringify(gUse));
+  /* figyelmeztetés a küszöbök átlépésekor, hónaponként egyszer */
+  const warn=(pct,txt)=>{
+    if(before>=cap*pct||after<cap*pct) return;
+    const k='ek_gwarn_'+m+'_'+pool+'_'+pct;
+    if(store.get(k)) return; store.set(k,'1'); toast(txt,8000);
+  };
+  warn(0.8,'a havi ingyenes keret 80%-a elment ('+pool+') — innentől érdemes figyelni');
+  warn(1,'elfogyott a havi ingyenes keret ('+pool+') — innentől fizetős, a Billing jelentésben látszik');
+  drawGUsage();
+}
+function gFmt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ') }
+function drawGUsage(){
+  const el=$('gUsage'); if(!el) return;
+  const m=gMonth(), rec=gUse[m]||{};
+  const keys=Object.keys(rec).filter(k=>rec[k]>0);
+  if(!keys.length){ el.textContent='Ebben a hónapban még nem küldtünk semmit a felhőbe.'; return }
+  const caps={'Chirp3 HD':1000000,'Studio':100000,'Neural2/Polyglot':1000000,'Standard/WaveNet':4000000};
+  el.textContent=m+': '+keys.map(k=>{
+    const cap=caps[k]||1000000, u=rec[k];
+    return k+' '+gFmt(u)+'/'+gFmt(cap)+' karakter ('+Math.min(100,Math.round(u/cap*100))+'%)';
+  }).join(' · ')+' — csak ebből a böngészőből számolva; a hiteles szám a Google Billing jelentésében van.';
+}
 function gtErr(r,d){
   let m=''; try{ m=d&&d.error&&d.error.message }catch(e){}
   return new Error('a felhő elutasította ('+r.status+')'+(m?': '+m:''));
@@ -2847,6 +2898,7 @@ async function gttsSynth(text,lang,speed){
      body:JSON.stringify({input:{text},voice:{languageCode,name},audioConfig:cfg})});
   let d=null; try{ d=await r.json() }catch(e){}
   if(!r.ok||!d||!d.audioContent) throw gtErr(r,d);
+  gAdd(name,(text||'').length);          /* a Google is a teljes bemenetet számolja */
   const b=atob(d.audioContent), u=new Uint8Array(b.length);
   for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
   return new Blob([u],{type:'audio/wav'});
@@ -2884,19 +2936,32 @@ async function kokBlob(text,speed,timeout){
   return blob;
 }
 function kokStop(){
+  const r=kokRes; kokRes=null;
   try{ if(kokAudio){ kokAudio.pause(); kokAudio.onended=null; kokAudio.onerror=null;
     if(kokAudio._u) URL.revokeObjectURL(kokAudio._u); kokAudio=null } }catch(e){}
+  if(r) r();                      /* a várakozó ciklus szabadul */
 }
 function kokPlay(blob){
   return new Promise(res=>{
+    let a=null, done=false, to=0;
+    const fin=()=>{
+      if(done) return; done=true;
+      clearTimeout(to);
+      if(kokRes===fin) kokRes=null;
+      try{ if(a&&a._u) URL.revokeObjectURL(a._u) }catch(e){}
+      if(a&&kokAudio===a) kokAudio=null;
+      res();
+    };
     try{
-      kokStop();
-      const u=URL.createObjectURL(blob), a=new Audio(u);
-      a._u=u; kokAudio=a;
-      const fin=()=>{ try{URL.revokeObjectURL(u)}catch(e){} if(kokAudio===a) kokAudio=null; res() };
+      kokStop();                    /* az előzőt lezárja és feloldja */
+      const u=URL.createObjectURL(blob); a=new Audio(u);
+      a._u=u; kokAudio=a; kokRes=fin;
       a.onended=fin; a.onerror=fin;
+      /* biztosíték: ha a rendszer se ended-et, se error-t nem ad (lezárt kijelző,
+         sérült blob), három perc után továbbmegyünk. Beragadni nem szabad. */
+      to=setTimeout(fin,180000);
       const p=a.play(); if(p&&p.catch) p.catch(fin);
-    }catch(e){ res() }
+    }catch(e){ fin() }
   });
 }
 /* Folyamatos háttérgyártás: a lejátszás előtt mindig legyen néhány kész mondat.
@@ -3140,7 +3205,8 @@ function drawTts(){
   $('ttsCloud').hidden = TTS.prov!=='cloud';
   $('ttsKok').hidden   = TTS.prov!=='kok';
   const g=$('gkey'); if(g&&!g.value) g.value=TTS.gkey;
-  if(TTS.prov==='cloud') drawGVoiceRows();
+  if(TTS.prov==='cloud'){ drawGVoiceRows(); drawGUsage() }
+  $('kokBuildRow').hidden = !(cloudOn()||KOK.state==='ready');
   drawKokSize();
 }
 const GSAMPLE={en:'The road goes ever on and on, down from the door where it began.',
@@ -3261,8 +3327,32 @@ function drawKok(){
     : st==='ready'?(KOK.on?'bekapcsolva — az angol ezzel szól':'letöltve, kikapcsolva')
     : st==='error'?('hiba: '+KOK.err) : 'nincs letöltve — most a rendszerhang szól (kb. 90 MB, wifin javasolt)';
   $('kokVoiceRow').hidden = st!=='ready';
-  $('kokBuildRow').hidden = st!=='ready';
-  if(st==='ready'){ drawKokSize() }
+  /* a hangoskönyv-sor mindkét neurális úton kell: felhős módban is előgyártunk,
+     mentünk WAV-ba és törlünk. A v82-ben ez a Kokoro szakaszban lakott, tehát
+     felhős módban elérhetetlen volt. */
+  $('kokBuildRow').hidden = !(cloudOn()||st==='ready');
+  if(st==='ready'||cloudOn()){ drawKokSize() }
+}
+/* Mennyi karakter a nyitott fejezet? Ez az, amit az előgyártás elküldene. */
+function chapChars(){
+  const list=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
+  const fg=list.reduce((a,t)=>a+t.length,0);
+  let hu=0;
+  if(rdHu) list.forEach(t=>{ const x=cache[ck(t)]; if(x) hu+=x.length });
+  return {fg,hu,n:fg+hu,db:list.length};
+}
+/* Az idegen nyelv és a magyar KÜLÖN szinten lehet — és érdemes is, mert a magyar
+   csak támaszték: WaveNeten más keretből és nyolcadannyiért megy. Ezért a becslés
+   is külön árazza a kettőt, különben a szám hamis lenne. */
+function chapCost(){
+  const c=chapChars();
+  const rate=n=>n?(+gTier(n)[1].replace(/[^0-9.]/g,'')||0):0;
+  const fgN=TTS.gvoice[src==='da'?'da':'en']||'', huN=TTS.gvoice.hu||'';
+  const parts=[];
+  if(c.fg) parts.push(gTier(fgN)[0]+' '+gFmt(c.fg));
+  if(c.hu&&huN) parts.push(gTier(huN)[0]+' '+gFmt(c.hu));
+  const usd=c.fg/1e6*rate(fgN)+(huN?c.hu/1e6*rate(huN):0);
+  return {c,parts,usd};
 }
 async function drawKokSize(){
   const el=$('kokSize'); if(!el) return;
@@ -3271,7 +3361,13 @@ async function drawKokSize(){
     const mb=all.reduce((s,r)=>s+(r.n||0),0)/1048576;
     /* a mért gyártási idő a helyi Kokoróra vonatkozik; felhős úton félrevezető lenne */
     const avg=(TTS.prov==='kok'&&kokAvg())?(' · átlag '+(kokAvg()/1000).toFixed(1)+' s/mondat'):'';
-    el.textContent=(all.length?(all.length+' mondat · '+mb.toFixed(1)+' MB'):'még semmi nincs legyártva')+avg;
+    let est='';
+    if(cloudOn()){
+      const q=chapCost();
+      est=' · ez a fejezet '+q.parts.join(' + ')+' karakter'
+        +(q.usd?(' ≈ '+q.usd.toFixed(2)+' $ a keretből'):'');
+    }
+    el.textContent=(all.length?(all.length+' mondat · '+mb.toFixed(1)+' MB'):'még semmi nincs legyártva')+avg+est;
   }catch(e){ el.textContent='' }
 }
 function drawVoiceRows(){
@@ -3323,7 +3419,13 @@ function speakCardBack(){
   rev?speakLang(sCur.v.en,sCur.v.lang||'en'):speakLang(sCur.v.hu,'hu');
 }
 /* ============ könyv-felolvasó ============ */
-let rdOn=false, rdPtr=0, rdEpoch=0, rdLoop=false, rdWl=null;
+let rdOn=false, rdPtr=0, rdEpoch=0, rdWl=null;
+/* rdRun: egy felolvasási MENET azonosítója. Az rdEpoch nem jó erre, mert azt a ⏭ is
+   emeli. A menetszám csak indításkor és leállításkor nő, és a ciklus ahhoz köti magát:
+   egy beragadt régi ciklus így nem tudja megakadályozni egy új menet indulását, és
+   amint a beragadt await feloldódik, magától kilép. Egyetlen boolean kapu helyett
+   ez azért kell, mert egy elakadt kapu csak app-újraindítással nyílt ki. */
+let rdRun=0, rdLoopRun=-1;
 let rdSpeed=+(store.get('ek_rdspeed')||1);
 let rdHu=store.get('ek_rdhu')!=='0';
 const RD_SPEEDS=[1,.9,.75,.6,1.25];   /* csak az idegen nyelvre hat, a magyar mindig 1x */
@@ -3419,7 +3521,7 @@ function mediaSess(state){
     }
     navigator.mediaSession.playbackState=state;
     const H=(n,f)=>{ try{navigator.mediaSession.setActionHandler(n,f)}catch(e){} };
-    H('play',()=>{ if(!rdOn){ rdOn=true; rdEpoch++; keepAudio(true); loopRead(); drawPlayer(); mediaSess('playing') } });
+    H('play',()=>{ if(!rdOn){ rdOn=true; rdEpoch++; rdRun++; keepAudio(true); loopRead(); drawPlayer(); mediaSess('playing') } });
     H('pause',()=>{ if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} drawPlayer(); mediaSess('paused') } });
     H('nexttrack',()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} });
     H('stop',()=>stopReading());
@@ -3488,7 +3590,7 @@ function startReading(){
   const top=$('main').scrollTop+70;
   let i=all.findIndex(s=>s.offsetTop>=top);
   rdPtr=i<0?0:i;
-  rdOn=true; rdEpoch++;
+  rdOn=true; rdEpoch++; rdRun++;
   $('player').hidden=false; drawPlayer();
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
   loopRead();                            /* azonnal indul: semmire nem kell várni */
@@ -3496,16 +3598,17 @@ function startReading(){
   ttsRunAhead();                          /* felhős úton csendben előregyártunk */
 }
 function stopReading(){
-  rdOn=false; rdEpoch++;
+  rdOn=false; rdEpoch++; rdRun++;
   try{speechSynthesis.cancel()}catch(e){} kokStop();
   sentList().forEach(s=>s.classList.remove('rdnow'));
   $('player').hidden=true; rdWake(false); keepAudio(false); mediaSess('none');
   rdSleepEnd=0; rdSleepMin=0; clearTimeout(rdSleepT); rdSleepT=0;
 }
 async function loopRead(){
-  if(rdLoop) return; rdLoop=true;
+  if(rdLoopRun===rdRun) return;        /* ehhez a menethez már fut ciklus */
+  rdLoopRun=rdRun; const my=rdRun;
   try{
-    while(rdOn){
+    while(rdOn&&my===rdRun){
       if(rdSleepEnd&&Date.now()>=rdSleepEnd){        /* tartalék, ha a rendszer visszafogta az időzítőt */
         rdSleepEnd=0; rdSleepMin=0; clearTimeout(rdSleepT); stopReading();
         toast('elalvás-időzítő: leállítottam a felolvasást',3200); break;
@@ -3526,11 +3629,12 @@ async function loopRead(){
       drawPlayer();                          /* az időzítő hátralévő ideje frissül */
       rdPrefetch(all,rdPtr);                 /* a következő mondatok magyarja a háttérben készül */
       await speakAsync(sent, src==='da'?'da-DK':'en-US', rdSpeed);
-      if(!rdOn) break;
+      if(!rdOn||my!==rdRun) break;
       if(e!==rdEpoch) continue;              /* ⏭: a magyar rész kimarad */
       if(rdHu){
         if(rdGap){                           /* csend: van időd fejben lefordítani */
           await sleep(rdGap*1000);
+          if(my!==rdRun) break;
           if(!rdOn||e!==rdEpoch) continue;
         }
         /* a fordítás a meglévő gyorsítótárból jön; ha nincs, az ingyenes motorral
@@ -3538,19 +3642,19 @@ async function loopRead(){
         let hu=cache[ck(sent)];
         if(!hu){ try{ hu=await freeTranslate(sent) }catch(x){ hu='' }
                  if(hu){ cache[ck(sent)]=hu; saveCache() } }
-        if(!rdOn) break;
+        if(!rdOn||my!==rdRun) break;
         if(e===rdEpoch&&hu) await speakAsync(hu,'hu-HU',1);   /* a magyar mindig normál tempó */
       }
       sp.classList.remove('rdnow');
-      if(!rdOn) break;
+      if(!rdOn||my!==rdRun) break;
       if(e===rdEpoch) rdPtr++;
     }
-  } finally { rdLoop=false }
+  } finally { if(rdLoopRun===my) rdLoopRun=-1 }
 }
 $('readBtn').onclick=()=>startReading();
 $('plPause').onclick=()=>{
   if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} kokStop(); keepAudio(false); mediaSess('paused') }
-  else { rdOn=true; rdEpoch++; keepAudio(true); mediaSess('playing'); loopRead(); rdWake(true) }
+  else { rdOn=true; rdEpoch++; rdRun++; keepAudio(true); mediaSess('playing'); loopRead(); rdWake(true) }
   drawPlayer();
 };
 $('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} kokStop(); };
