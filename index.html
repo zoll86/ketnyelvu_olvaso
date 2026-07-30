@@ -582,6 +582,7 @@ body.railon #study,body.railon #match,body.railon #sent{
     <button class="mini" id="plHu" title="Magyar fordítás felolvasása"></button>
     <button class="mini" id="plGap" title="Szünet az idegen mondat után — legyen időd fejben lefordítani"></button>
     <button class="mini" id="plSleep" title="Elalvás-időzítő"></button>
+    <span class="mini" id="plBuf" hidden style="pointer-events:none"></span>
   </div>
 </div>
 
@@ -667,7 +668,7 @@ body.railon #study,body.railon #match,body.railon #sent{
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
-    <p>Az angol felolvasáshoz a ⚙-ben letölthető egy <b>neurális hang</b> (Kokoro): a modell egyszer töltődik le, utána a telefonon fut, hálózat nélkül is, és lényegesen élethűbben artikulál a rendszerhangnál. Brit és amerikai hangszínek közül választhatsz — irodalomhoz a brit <i>George</i> vagy <i>Fable</i> a jó választás. Csak az angolra vonatkozik; a dán és a magyar a rendszerhangon szól. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali. Ha egy mondat legyártása mégis lassú lenne, a rendszerhang veszi át, hogy a felolvasás soha ne akadjon meg.</p>
+    <p>Az angol felolvasáshoz a ⚙-ben letölthető egy <b>neurális hang</b> (Kokoro): a modell egyszer töltődik le, utána a telefonon fut, hálózat nélkül is, és lényegesen élethűbben artikulál a rendszerhangnál. Brit és amerikai hangszínek közül választhatsz — irodalomhoz a brit <i>George</i> vagy <i>Fable</i> a jó választás. Csak az angolra vonatkozik; a dán és a magyar a rendszerhangon szól. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali. A legyártott hang <b>ki is mentheto</b>: a <b>mentés WAV-ba</b> egyetlen hangoskönyv-fájlt készít a fejezetből (mondatok között rövid szünettel), amit bármely zenelejátszó megnyit; a <b>zip</b> mondatonként külön fájlt ad. Androidon a Letöltések mappába kerül, asztali Chrome-ban választhatsz mappát is. A magyar felolvasás nem menthető, mert azt a rendszer hangja mondja, és annak a hangja nem hozzáférhető a programnak. A hallgatás <b>folyamatos háttérgyártással</b> megy: indításkor feltölti a puffert, majd amíg az aktuális mondat szól, előre legyártja a következőket — a lejátszóban a <b>⛁</b> szám mutatja, hány mondat van készen, és azt is, ha épp készül valami. A puffer mélysége a ⚙-ben állítható (alapból 6 mondat); lassabb telefonon érdemes nagyobbra venni. Ott látszik a mért gyártási idő is (átlag másodperc/mondat), amiből eldöntheted, elég-e a valós idejű hallgatáshoz. Ha egy mondat sokáig nem készül el, a program inkább vár, mint hogy hangot cseréljen — csak végszükségben, félperces várakozás után veszi át a rendszerhang.</p>
     <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
     <p><b>Hangoskönyvként hallgatva</b> két dolog segít: a <b>szünet</b> gombbal beállítható, mennyi csend legyen az idegen mondat után (1–5 másodperc), hogy legyen időd fejben lefordítani, mielőtt megjön a magyar; az <b>⏾ időzítő</b> pedig 15–60 perc után magától leállítja a felolvasást, ha elalszol. A magyar fordítások a következő mondatokra előre elkészülnek a háttérben, ingyenes motorral, így nincs szünet a két nyelv között — és ami egyszer elkészült, offline is megszólal.</p>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
@@ -740,8 +741,12 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow" id="kokVoiceRow" hidden><label>Hangszín</label>
       <select class="inp" id="kokVoice"></select>
       <button class="mini" id="kokTest">próba</button></div>
+    <div class="srow" id="kokBufRow" hidden><label>Előre gyártott mondatok</label>
+      <input type="range" id="rKokBuf" min="2" max="20" step="1"><span class="val" id="vKokBuf"></span></div>
     <div class="srow" id="kokBuildRow" hidden><label>Hangoskönyv</label>
       <button class="mini" id="kokBuildBtn">fejezet előgyártása</button>
+      <button class="mini" id="kokWavBtn" title="A fejezet hangja egyetlen fájlban">mentés WAV-ba</button>
+      <button class="mini" id="kokZipBtn" title="Mondatonként külön fájl, egy zip-ben">zip</button>
       <span class="note" style="margin:0" id="kokSize"></span></div>
     <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. A legyártott mondatok megmaradnak, így másodszorra azonnal indulnak.</p>
     <div id="voiceRows"></div>
@@ -837,7 +842,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v72';
+const APP_VER='v75';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2597,13 +2602,27 @@ const KOK_VOICES=[
 const KOK={on:store.get('ek_kok')==='1', voice:store.get('ek_kokvoice')||'bm_george',
   tts:null, state:'off', pct:0, err:'', loader:null, gen:0};
 let kokAudio=null, kokBusy=false;
+/* folyamatos háttérgyártás: a puffer mélysége és a mért gyártási idők */
+let kokBufTarget=+(store.get('ek_kokbuf')||6);
+let kokDepth=0, kokMaking='';
+let kokTimes=[]; try{ kokTimes=JSON.parse(store.get('ek_koktimes')||'[]') }catch(e){}
+function noteGen(ms){
+  kokTimes.push(ms); if(kokTimes.length>20) kokTimes.shift();
+  store.set('ek_koktimes',JSON.stringify(kokTimes));
+}
+const kokAvg=()=>kokTimes.length?Math.round(kokTimes.reduce((a,b)=>a+b,0)/kokTimes.length):0;
 const kokCap=()=>+(store.get('ek_audcap')||150)*1048576;   /* tárolási korlát, MB-ban állítható */
-const KOK_WAIT=12000;                                      /* ennyit várunk egy mondatra */
+/* Inkább várunk a saját hangra, mint hogy egyetlen mondat kedvéért hangot cseréljünk
+   (a hangváltás menet közben zavaróbb, mint egy rövid csend) — de nem a végtelenségig:
+   ha a telefon nem bírja valós időben, az előgyártás a járható út, és ezt meg is mondjuk. */
+const kokWait=()=>+(store.get('ek_kokwait')||20)*1000;
+let kokHinted=false;
 
 async function kokLoad(){
   if(KOK.state==='ready') return true;
   if(KOK.state==='loading') return false;
   KOK.state='loading'; KOK.pct=0; KOK.err=''; drawKok();
+  await askPersist();          /* a 92 MB-os modell ne essen ki helyszűkében */
   try{
     const mod=KOK.loader?await KOK.loader():await import(KOK_URL);
     const prog=p=>{ if(p&&typeof p.progress==='number'){ KOK.pct=Math.round(p.progress); drawKok() } };
@@ -2660,21 +2679,157 @@ function kokPlay(blob){
     }catch(e){ res() }
   });
 }
-/* a legyártott hang előre, hogy ne kelljen rá várni a lejátszásnál */
+/* Folyamatos háttérgyártás: a lejátszás előtt mindig legyen néhány kész mondat.
+   Amíg az aktuális mondat szól, a következőket gyártja — így a hang nem szakad meg. */
 async function kokAhead(all,from){
   if(!kokReady()||kokBusy) return;
   kokBusy=true;
   try{
-    for(let k=from+1;k<Math.min(from+3,all.length);k++){
+    let depth=0;
+    for(let k=from+1;k<Math.min(from+1+kokBufTarget,all.length);k++){
       if(!rdOn||!kokReady()) break;
       const t=(all[k].textContent||'').trim(); if(!t) continue;
       const key=kokKey(t,rdSpeed);
-      try{ if(await audGet(key)) continue }catch(e){}
+      let have=false; try{ have=!!(await audGet(key)) }catch(e){}
+      if(have){ depth++; kokDepth=depth; continue }
+      kokMaking=(k-from)+'/'+kokBufTarget; drawPlayer();
+      const t0=Date.now();
       try{ await kokBlob(t,rdSpeed) }catch(e){ break }
+      noteGen(Date.now()-t0);
+      depth++; kokDepth=depth; kokMaking=''; drawPlayer();
     }
-  } finally { kokBusy=false }
+    kokDepth=depth;
+  } finally { kokBusy=false; kokMaking=''; drawPlayer() }
+}
+/* indítás előtti feltöltés, hogy az első mondatokra ne kelljen várni */
+async function kokWarmup(all,from,want){
+  if(!kokReady()) return;
+  for(let k=from;k<Math.min(from+want,all.length);k++){
+    if(!rdOn) return;
+    const t=(all[k].textContent||'').trim(); if(!t) continue;
+    let have=false; try{ have=!!(await audGet(kokKey(t,rdSpeed))) }catch(e){}
+    if(have){ kokDepth=k-from+1; continue }
+    kokMaking='indítás '+(k-from+1)+'/'+want; drawPlayer();
+    const t0=Date.now();
+    try{ await kokBlob(t,rdSpeed) }catch(e){ break }
+    noteGen(Date.now()-t0); kokDepth=k-from+1;
+  }
+  kokMaking=''; drawPlayer();
 }
 const kokReady=()=>KOK.on&&KOK.state==='ready'&&!!KOK.tts;
+/* ---- WAV-összefűzés: a mondatok hangjából egyetlen hangoskönyv-fájl ----
+   A RIFF-darabokat végigjárjuk (nem feltételezzük a 44 bájtos fejlécet), a PCM-et
+   egymás után fűzzük, és új fejlécet írunk. Csak azonos formátumú részek fűzhetők. */
+function wavParse(ab){
+  const dv=new DataView(ab), u=new Uint8Array(ab);
+  const tag=o=>String.fromCharCode(u[o],u[o+1],u[o+2],u[o+3]);
+  if(tag(0)!=='RIFF'||tag(8)!=='WAVE') throw new Error('nem WAV');
+  let p=12, fmt=null, data=null;
+  while(p+8<=u.length){
+    const id=tag(p), sz=dv.getUint32(p+4,true), body=p+8;
+    if(id==='fmt ') fmt={ch:dv.getUint16(body+2,true),rate:dv.getUint32(body+4,true),bits:dv.getUint16(body+14,true)};
+    else if(id==='data') data=u.subarray(body,Math.min(body+sz,u.length));
+    p=body+sz+(sz&1);
+  }
+  if(!fmt||!data) throw new Error('hiányos WAV');
+  return {fmt,data};
+}
+function wavHeader(total,fmt){
+  const b=new Uint8Array(44), dv=new DataView(b.buffer);
+  const put=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i)};
+  const byteRate=fmt.rate*fmt.ch*fmt.bits/8;
+  put(0,'RIFF'); dv.setUint32(4,36+total,true); put(8,'WAVEfmt ');
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,fmt.ch,true);
+  dv.setUint32(24,fmt.rate,true); dv.setUint32(28,byteRate,true);
+  dv.setUint16(32,fmt.ch*fmt.bits/8,true); dv.setUint16(34,fmt.bits,true);
+  put(36,'data'); dv.setUint32(40,total,true);
+  return b;
+}
+/* csendszünet két mondat közé, hogy ne folyjanak egybe */
+function wavSilence(ms,fmt){
+  const n=Math.round(fmt.rate*fmt.ch*(fmt.bits/8)*ms/1000);
+  return new Uint8Array(n - (n % (fmt.ch*fmt.bits/8)));
+}
+/* Blob, ArrayBuffer és tipizált tömb egyaránt jó bemenet */
+async function asBuf(x){
+  if(!x) throw new Error('üres');
+  if(typeof x.arrayBuffer==='function') return await x.arrayBuffer();   /* Blob */
+  /* szándékosan nem instanceof: az más futtatási környezetből jövő puffernél hamis */
+  if(x.buffer&&typeof x.byteLength==='number')                          /* tipizált tömb */
+    return x.buffer.slice(x.byteOffset||0,(x.byteOffset||0)+x.byteLength);
+  if(typeof x.byteLength==='number'&&typeof x.slice==='function') return x;   /* ArrayBuffer */
+  throw new Error('ismeretlen hangformátum');
+}
+async function wavJoin(blobs,gapMs){
+  const parts=[]; let fmt=null, total=0, skipped=0;
+  for(const b of blobs){
+    let r; try{ r=wavParse(await asBuf(b)) }catch(e){ skipped++; continue }
+    if(!fmt) fmt=r.fmt;
+    else if(r.fmt.rate!==fmt.rate||r.fmt.ch!==fmt.ch||r.fmt.bits!==fmt.bits){ skipped++; continue }
+    if(parts.length&&gapMs){ const s=wavSilence(gapMs,fmt); parts.push(s); total+=s.length }
+    parts.push(r.data); total+=r.data.length;
+  }
+  if(!fmt||!total) throw new Error('nincs összefűzhető hang');
+  return {blob:new Blob([wavHeader(total,fmt),...parts],{type:'audio/wav'}),
+          seconds:Math.round(total/(fmt.rate*fmt.ch*fmt.bits/8)), skipped};
+}
+function safeName(s){ return (s||'fejezet').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,70) }
+function dlBlob(blob,name){
+  const u=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),4000);
+}
+/* Androidon nincs mappaválasztó, ezért letöltés (Letöltések mappa). Asztali
+   Chrome-ban viszont igazi mappát lehet választani, és oda írunk közvetlenül. */
+const canDirPick=()=>typeof window.showDirectoryPicker==='function';
+async function saveToDir(blob,name){
+  try{
+    let dir=null;
+    try{ dir=await audGet('__dir') }catch(e){}
+    if(dir&&dir.requestPermission){
+      const st=await dir.requestPermission({mode:'readwrite'});
+      if(st!=='granted') dir=null;
+    }
+    if(!dir||!dir.getFileHandle){
+      dir=await window.showDirectoryPicker({mode:'readwrite',id:'olvaso-hang'});
+      try{ await audPut('__dir',dir) }catch(e){}
+    }
+    const fh=await dir.getFileHandle(name,{create:true});
+    const w=await fh.createWritable(); await w.write(blob); await w.close();
+    return dir.name||'a választott mappa';
+  }catch(e){ return null }
+}
+/* a fejezet hangja egyetlen fájlban — ez az, amit bármely zenelejátszó megnyit */
+async function exportChapterWav(mode){
+  const list=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
+  if(!list.length) return toast('nincs mit menteni ebben a fejezetben');
+  const blobs=[]; let missing=0;
+  for(const t of list){
+    let b=null; try{ b=await audGet(kokKey(t,rdSpeed)) }catch(e){}
+    if(b) blobs.push(b); else missing++;
+  }
+  if(!blobs.length) return toast('előbb nyomd meg a „fejezet előgyártása” gombot');
+  const title=safeName(((book&&book.title)||'konyv')+' - '+((chapters[curChap]&&chapters[curChap].name)||(curChap+1)+'. fejezet'));
+  const vname=(KOK_VOICES.find(v=>v[0]===KOK.voice)||['',''])[1].split(' —')[0]||KOK.voice;
+  if(mode==='zip'){
+    try{
+      const zip=new JSZip();
+      blobs.forEach((b,i)=>zip.file(String(i+1).padStart(3,'0')+'.wav',b));
+      const out=await zip.generateAsync({type:'blob'});
+      dlBlob(out,title+' ('+vname+').zip');
+      toast(blobs.length+' fájl egy zip-ben'+(missing?(' — '+missing+' mondat még nincs legyártva'):''),4200);
+    }catch(e){ toast('a zip nem készült el: '+e.message) }
+    return;
+  }
+  let r; try{ r=await wavJoin(blobs,350) }catch(e){ return toast('összefűzés nem sikerült: '+e.message) }
+  const name=title+' ('+vname+').wav';
+  const mins=Math.round(r.seconds/60);
+  const where=canDirPick()?await saveToDir(r.blob,name):null;
+  if(!where) dlBlob(r.blob,name);
+  toast((where?('mentve: '+where):'letöltve a Letöltések mappába')+' — '+mins+' perc, '
+    +Math.round(r.blob.size/1048576)+' MB'+(missing?(' · '+missing+' mondat kimaradt'):''),5200);
+}
+
 async function kokTest(){
   if(!kokReady()) return;
   try{
@@ -2693,6 +2848,14 @@ function initKok(){
   }
   const test=$('kokTest'); if(test) test.onclick=()=>kokTest();
   const bb=$('kokBuildBtn'); if(bb) bb.onclick=()=>kokBuildChapter();
+  const rb=$('rKokBuf');
+  if(rb){
+    const paint=()=>{ $('vKokBuf').textContent=kokBufTarget+' mondat'; rb.value=kokBufTarget };
+    paint();
+    rb.oninput=()=>{ kokBufTarget=+rb.value||6; store.set('ek_kokbuf',String(kokBufTarget)); paint() };
+  }
+  const wb=$('kokWavBtn'); if(wb) wb.onclick=()=>exportChapterWav('wav');
+  const zb=$('kokZipBtn'); if(zb) zb.onclick=()=>exportChapterWav('zip');
   const b=$('kokBtn');
   if(b) b.onclick=async()=>{
     if(KOK.state==='ready'){                    /* csak ki/be kapcsolás, a modell megmarad */
@@ -2753,6 +2916,7 @@ function drawKok(){
     : st==='error'?('hiba: '+KOK.err) : 'nincs letöltve — most a rendszerhang szól';
   $('kokVoiceRow').hidden = st!=='ready';
   $('kokBuildRow').hidden = st!=='ready';
+  $('kokBufRow').hidden = st!=='ready';
   if(st==='ready'){ drawKokSize() }
 }
 async function drawKokSize(){
@@ -2760,7 +2924,8 @@ async function drawKokSize(){
   try{
     const all=await audAll();
     const mb=all.reduce((s,r)=>s+(r.n||0),0)/1048576;
-    el.textContent=all.length?(all.length+' mondat · '+mb.toFixed(1)+' MB'):'még semmi nincs legyártva';
+    const avg=kokAvg()?(' · átlag '+(kokAvg()/1000).toFixed(1)+' s/mondat'):'';
+    el.textContent=(all.length?(all.length+' mondat · '+mb.toFixed(1)+' MB'):'még semmi nincs legyártva')+avg;
   }catch(e){ el.textContent='' }
 }
 function drawVoiceRows(){
@@ -2829,10 +2994,15 @@ async function speakAsync(t,lang,rate){
     try{
       const blob=await Promise.race([
         kokBlob(t,rate||1),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('lassú')),KOK_WAIT))
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('lassú')),kokWait()))
       ]);
       if(blob){ await kokPlay(blob); return }
-    }catch(e){}
+    }catch(e){
+      if((e&&e.message)==='lassú'&&!kokHinted){
+        kokHinted=true;
+        toast('a telefon nem bírja valós időben a neurális hangot — a ⚙-ben a „fejezet előgyártása” megoldja',5600);
+      }
+    }
   }
   return speakSys(t,lang,rate);
 }
@@ -2918,6 +3088,17 @@ function drawPlayer(){
   $('plSpeed').title='Az idegen nyelv tempója \u2014 a magyar mindig normál (1\u00d7)';
   $('plHu').textContent=rdHu?'HU: be':'HU: ki';
   $('plHu').classList.toggle('on',rdHu);
+  const bf=$('plBuf');
+  if(bf){
+    if(!kokReady()) bf.hidden=true;
+    else{
+      bf.hidden=false;
+      bf.textContent=kokMaking?('hang készül… '+kokMaking):('⛁ '+kokDepth);
+      bf.title=kokMaking?'a következő mondatok hangja most készül'
+        :(kokDepth+' mondat hangja van előre készen'+(kokAvg()?(' · átlag '+(kokAvg()/1000).toFixed(1)+' s/mondat'):''));
+      bf.classList.toggle('on',!!kokMaking);
+    }
+  }
 }
 /* Fordítás-előtöltés a felolvasáshoz: amíg az aktuális mondat szól, a következők
    magyarja már elkészül, így nincs csend a két nyelv között. Ingyenes motorral. */
@@ -2944,7 +3125,10 @@ function startReading(){
   rdOn=true; rdEpoch++;
   $('player').hidden=false; drawPlayer();
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
-  loopRead();
+  /* neurális hangnál előbb feltöltjük a puffert, hogy ne kelljen a hangra várni */
+  if(kokReady()){
+    kokWarmup(all,rdPtr,Math.min(3,kokBufTarget)).then(()=>{ if(rdOn) loopRead() });
+  } else loopRead();
 }
 function stopReading(){
   rdOn=false; rdEpoch++;
@@ -4424,6 +4608,15 @@ async function rebuildCards(){
   await huFix();
   drawFixNote();
 }
+/* A böngésző helyszűkében törölheti egy oldal tárolóját. Nálunk ott van minden
+   könyv, a szótár és a legyártott hang, ezért kérünk tartós tárolást. */
+async function askPersist(){
+  try{
+    if(!navigator.storage||!navigator.storage.persist) return false;
+    if(await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  }catch(e){ return false }
+}
 async function drawStorage(){
   const el=$('stoTxt'); if(!el) return;
   try{
@@ -4433,9 +4626,13 @@ async function drawStorage(){
       const e=await navigator.storage.estimate();
       if(e&&e.usage) mb=' · '+(Math.round(e.usage/1048576*10)/10)+' MB';
     }
-    el.textContent=books+' könyv · '+vocab.length+' szó'+mb;
+    let prot='';
+    try{ if(navigator.storage&&navigator.storage.persisted)
+      prot=(await navigator.storage.persisted())?' · védett':' · nem védett' }catch(e){}
+    el.textContent=books+' könyv · '+vocab.length+' szó'+mb+prot;
   }catch(e){ el.textContent='—' }
 }
+askPersist();
 $('updBtn').onclick=()=>{
   if(swReg&&swReg.waiting) swReg.waiting.postMessage('skipWaiting');
   setTimeout(()=>location.reload(),300);
