@@ -867,7 +867,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v79';
+const APP_VER='v80';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3115,23 +3115,32 @@ async function speakAsync(t,lang,rate){
 function speakSys(t,lang,rate){
   return new Promise(res=>{
     if(!t){res();return}
-    let done=false, iv=0;
+    let done=false, iv=0, started=false;
     const fin=()=>{ if(done)return; done=true; clearInterval(iv); res() };
     try{
       const u=new SpeechSynthesisUtterance(t);
       u.lang=lang; applyVoice(u,lang); u.rate=rate;
+      u.onstart=()=>{ started=true };
       u.onend=fin; u.onerror=fin;
       speechSynthesis.speak(u);
     }catch(e){ fin(); return }
     /* lezárt kijelzőn a rendszer néha elnyeli az onend jelzést; ez a figyelő
-       gondoskodik róla, hogy a felolvasás akkor se álljon meg örökre */
+       gondoskodik róla, hogy a felolvasás akkor se álljon meg örökre.
+       FIGYELEM — neurális rendszerhang (VoxSherpa/Piper/Kokoro mint Android TTS-motor)
+       esetén a megszólalás ELŐTT másodpercek telhetnek el, és a böngésző ilyenkor néha
+       se speaking-et, se pending-et nem jelez. Amíg az onstart nem jött meg, a csend NEM
+       azt jelenti, hogy a mondat lement — a régi 1,5 s-os türelem minden mondatot
+       átlépett volna. Ezért két szint: megszólalás után szoros, előtte tág. */
     const est=(t.length/(11*Math.max(rate,.4)))*1000+2500;   /* ~11 karakter/másodperc */
     const t0=Date.now(); let quiet=0;
     iv=setInterval(()=>{
       if(done){ clearInterval(iv); return }
       let busy=true; try{ busy=speechSynthesis.speaking||speechSynthesis.pending }catch(e){}
       quiet=busy?0:quiet+1;
-      if((quiet>=3&&Date.now()-t0>1500)||Date.now()-t0>est*4+20000) fin();
+      const el=Date.now()-t0;
+      if(started){ if(quiet>=3&&el>1500) return fin() }
+      else if(quiet>=25&&el>10000) return fin();   /* meg sem szólalt: 10 s után továbbmegyünk */
+      if(el>est*4+20000) fin();
     },400);
   });
 }
