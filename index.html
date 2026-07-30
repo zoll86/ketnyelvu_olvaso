@@ -663,10 +663,11 @@ body.railon #study,body.railon #match,body.railon #sent{
     <h4>Gyakorlás</h4>
     <p>A kezdőlapon egy vékony csík mutatja a <b>napi haladást</b>: a lángnál a napi sorozat, mellette a mai helyes válaszok a napi célból, a végén az utolsó hét nap. Minden gyakorlattípus ugyanabba a számlálóba dolgozik — ismétlő, párosítás, mondatok —, tehát mindegy, mivel gyakorolsz. A napi cél a ⚙-ben állítható, és egy kihagyott nap még nem szakítja meg a sorozatot.</p>
     <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban körönként négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót. A játék a teljes szótáradon végigmegy — elöl a korábban nehéznek bizonyult és az esedékes szavakkal —, de bármikor kiléphetsz; a jól álló szavak ütemezését nem rontja el. Minden szó <b>legalább kétszer</b> visszatér a játékban, hogy rögzüljön, a hibázott szavak háromszor és sűrűbben. Tévesztésnél <b>mindkét</b> érintett szó nehéznek számít, mert a másikat legközelebb csak kizárásos alapon tudnád. A kör utolsó párja nem számít találatnak — az kikövetkeztethető —, ezért az a szó később valódi próbát kap.</p>
-    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell visszaadnod. A <b>📖 mondatok a könyvből</b> gomb a nyitott könyvedből gyűjt gyakorlóanyagot: nem generál semmit, hanem az író saját mondatait válogatja ki — így az angol biztosan helyes —, a magyar oldalt pedig a már meglévő fordításokból és az ingyenes motorból teszi hozzá, API nélkül. A rövid, régies szavaktól és tulajdonnevektől mentes mondatokat választja, nyelvtani kategóriákba sorolva. Ha egy fordítás mégis félresikerült, a <b>⚑</b> gombbal örökre kihagyható. Készíthető külön mondatcsomag JSON fájlból is. Két mód van: az <b>összerakás</b>ban a megadott szavakra koppintasz helyes sorrendben (pár beugrató szóval), a <b>beírás</b>ban gépeled a fordítást. Összerakásnál a vonal színe mutatja, jó úton jársz-e (zöld = folytatható, piros = az utolsó szót vissza kell venni), a <b>💡 súgás</b> pedig megvillantja a következő helyes szót. Az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
+    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell visszaadnod. A <b>📖 mondatok a könyvből</b> gomb a könyvedből gyűjt gyakorlóanyagot — ha épp nem olvasol, előbb választhatsz a könyvtáradból: nem generál semmit, hanem az író saját mondatait válogatja ki — így az angol biztosan helyes —, a magyar oldalt pedig a már meglévő fordításokból és az ingyenes motorból teszi hozzá, API nélkül. A rövid, régies szavaktól és tulajdonnevektől mentes mondatokat választja, nyelvtani kategóriákba sorolva. Ha egy fordítás mégis félresikerült, a <b>⚑</b> gombbal örökre kihagyható. Készíthető külön mondatcsomag JSON fájlból is. Két mód van: az <b>összerakás</b>ban a megadott szavakra koppintasz helyes sorrendben (pár beugrató szóval), a <b>beírás</b>ban gépeled a fordítást. Összerakásnál a vonal színe mutatja, jó úton jársz-e (zöld = folytatható, piros = az utolsó szót vissza kell venni), a <b>💡 súgás</b> pedig megvillantja a következő helyes szót. Az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
+    <p>Az angol felolvasáshoz a ⚙-ben letölthető egy <b>neurális hang</b> (Kokoro): a modell egyszer töltődik le, utána a telefonon fut, hálózat nélkül is, és lényegesen élethűbben artikulál a rendszerhangnál. Brit és amerikai hangszínek közül választhatsz — irodalomhoz a brit <i>George</i> vagy <i>Fable</i> a jó választás. Csak az angolra vonatkozik; a dán és a magyar a rendszerhangon szól. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali. Ha egy mondat legyártása mégis lassú lenne, a rendszerhang veszi át, hogy a felolvasás soha ne akadjon meg.</p>
     <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
     <p><b>Hangoskönyvként hallgatva</b> két dolog segít: a <b>szünet</b> gombbal beállítható, mennyi csend legyen az idegen mondat után (1–5 másodperc), hogy legyen időd fejben lefordítani, mielőtt megjön a magyar; az <b>⏾ időzítő</b> pedig 15–60 perc után magától leállítja a felolvasást, ha elalszol. A magyar fordítások a következő mondatokra előre elkészülnek a háttérben, ingyenes motorral, így nincs szünet a két nyelv között — és ami egyszer elkészült, offline is megszólal.</p>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
@@ -733,6 +734,16 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
       <button class="mini" id="dueReset">mai számláló nullázása</button></div>
     <div class="ssec">Hang</div>
+    <div class="srow"><label>Neurális angol hang</label>
+      <button class="btn" id="kokBtn">letöltés</button>
+      <span class="note" style="margin:0;flex:1" id="kokState"></span></div>
+    <div class="srow" id="kokVoiceRow" hidden><label>Hangszín</label>
+      <select class="inp" id="kokVoice"></select>
+      <button class="mini" id="kokTest">próba</button></div>
+    <div class="srow" id="kokBuildRow" hidden><label>Hangoskönyv</label>
+      <button class="mini" id="kokBuildBtn">fejezet előgyártása</button>
+      <span class="note" style="margin:0" id="kokSize"></span></div>
+    <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. A legyártott mondatok megmaradnak, így másodszorra azonnal indulnak.</p>
     <div id="voiceRows"></div>
     <p class="note" style="margin:var(--sp2) 0 0">Ha egyik hang sem tetszik: a telefon beállításaiban telepíthető jobb beszédmotor, és az itt is megjelenik. Ez a legnagyobb ugrás a felolvasás minőségében.</p>
     <div class="ssec">Fordítás</div>
@@ -826,7 +837,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v70';
+const APP_VER='v71';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -956,9 +967,11 @@ const IDB={p:null};
 function idb(){
   if(IDB.p) return IDB.p;
   IDB.p=new Promise((res,rej)=>{
-    const r=indexedDB.open('olvaso',1);
+    const r=indexedDB.open('olvaso',2);
     r.onupgradeneeded=()=>{const d=r.result;
-      if(!d.objectStoreNames.contains('books')) d.createObjectStore('books',{keyPath:'id'});};
+      if(!d.objectStoreNames.contains('books')) d.createObjectStore('books',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('audio')) d.createObjectStore('audio',{keyPath:'k'});};
+    r.onblocked=()=>{};
     r.onsuccess=()=>res(r.result);
     r.onerror=()=>rej(r.error||new Error('IndexedDB nem elérhető'));
   });
@@ -972,6 +985,21 @@ function idbOp(mode,fn){
     t.onerror=()=>rej(t.error);
   }));
 }
+/* általános tárolóhozzáférés (a hangoknak külön tároló kell) */
+function idbOn(name,mode,fn){
+  return idb().then(d=>new Promise((res,rej)=>{
+    if(!d.objectStoreNames.contains(name)){ res(null); return }
+    const t=d.transaction(name,mode), st=t.objectStore(name);
+    let out; try{ out=fn(st) }catch(e){ rej(e); return }
+    t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);
+    t.onerror=()=>rej(t.error);
+  }));
+}
+const audGet=k=>idbOn('audio','readonly',st=>st.get(k)).then(r=>r&&r.blob||null);
+const audPut=(k,blob)=>idbOn('audio','readwrite',st=>st.put({k,blob,n:blob.size,ts:Date.now()}));
+const audAll=()=>idbOn('audio','readonly',st=>st.getAll()).then(r=>r||[]);
+const audDel=k=>idbOn('audio','readwrite',st=>st.delete(k));
+const audClear=()=>idbOn('audio','readwrite',st=>st.clear());
 const libPut=rec=>idbOp('readwrite',st=>st.put(rec));
 const libAll=()=>idbOp('readonly',st=>st.getAll());
 const libGet=id=>idbOp('readonly',st=>st.get(id));
@@ -2547,6 +2575,155 @@ function closeStudy(){ $('study').classList.remove('open'); saveVocab(); drawVoc
 $('sTts').onclick=e=>{e.stopPropagation(); autoTts=!autoTts;
   store.set('ek_autotts',autoTts?'1':'0'); drawTtsBtn();
   if(autoTts) speakCardFront(); else try{speechSynthesis.cancel()}catch(x){} };
+/* ============ Kokoro: neurális angol hang a böngészőben ============
+   Apache-licences, 82M paraméteres modell, WASM/WebGPU alatt fut, minden helyben.
+   Csak az angolt viszi (a modell nem tud dánul), a dán és a magyar marad rendszerhangon.
+   Ami egyszer legyártódott, IndexedDB-ben marad: másodszorra azonnali és offline. */
+const KOK_URL='https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js';
+const KOK_MODEL='onnx-community/Kokoro-82M-v1.0-ONNX';
+/* a zárójeles jegy a modell saját hangminősítése; irodalomhoz a brit hangok elöl */
+const KOK_VOICES=[
+ ['bm_george','George — brit férfi (C)'],
+ ['bm_fable','Fable — brit férfi (C)'],
+ ['bm_daniel','Daniel — brit férfi (D)'],
+ ['bm_lewis','Lewis — brit férfi (D+)'],
+ ['bf_emma','Emma — brit nő (B−)'],
+ ['bf_isabella','Isabella — brit nő (C)'],
+ ['af_heart','Heart — amerikai nő (A)'],
+ ['af_bella','Bella — amerikai nő (A−)'],
+ ['am_michael','Michael — amerikai férfi'],
+ ['am_puck','Puck — amerikai férfi']
+];
+const KOK={on:store.get('ek_kok')==='1', voice:store.get('ek_kokvoice')||'bm_george',
+  tts:null, state:'off', pct:0, err:'', loader:null, gen:0};
+let kokAudio=null, kokBusy=false;
+const kokCap=()=>+(store.get('ek_audcap')||150)*1048576;   /* tárolási korlát, MB-ban állítható */
+const KOK_WAIT=12000;                                      /* ennyit várunk egy mondatra */
+
+async function kokLoad(){
+  if(KOK.state==='ready') return true;
+  if(KOK.state==='loading') return false;
+  KOK.state='loading'; KOK.pct=0; KOK.err=''; drawKok();
+  try{
+    const mod=KOK.loader?await KOK.loader():await import(KOK_URL);
+    const gpu=!!(navigator.gpu);
+    KOK.tts=await mod.KokoroTTS.from_pretrained(KOK_MODEL,{
+      dtype:gpu?'fp32':'q8', device:gpu?'webgpu':'wasm',
+      progress_callback:p=>{ if(p&&typeof p.progress==='number'){ KOK.pct=Math.round(p.progress); drawKok() } }
+    });
+    KOK.state='ready'; KOK.on=true; store.set('ek_kok','1');
+    drawKok(); toast('neurális angol hang kész',2600);
+    return true;
+  }catch(e){
+    KOK.state='error'; KOK.err=(e&&e.message)||'nem sikerült betölteni';
+    KOK.tts=null; drawKok(); return false;
+  }
+}
+function kokKey(t,speed){ return KOK.voice+'|'+speed+'|'+t }
+/* tárolási korlát: a legrégebben használt hangok esnek ki elsőként */
+async function audTrim(){
+  try{
+    const all=await audAll();
+    const cap=kokCap();
+    let total=all.reduce((s,r)=>s+(r.n||0),0);
+    if(total<=cap) return;
+    all.sort((a,b)=>(a.ts||0)-(b.ts||0));   /* a legrégebben használt esik ki elsőként */
+    for(const r of all){ if(total<=cap*0.85) break; await audDel(r.k); total-=(r.n||0) }
+  }catch(e){}
+}
+async function kokBlob(text,speed){
+  const k=kokKey(text,speed);
+  try{ const hit=await audGet(k); if(hit) return hit }catch(e){}
+  if(!KOK.tts) throw new Error('nincs betöltve');
+  const out=await KOK.tts.generate(text,{voice:KOK.voice,speed:speed||1});
+  const blob=out.toBlob();
+  audPut(k,blob).then(audTrim).catch(()=>{});
+  return blob;
+}
+function kokStop(){
+  try{ if(kokAudio){ kokAudio.pause(); kokAudio.onended=null; kokAudio.onerror=null;
+    if(kokAudio._u) URL.revokeObjectURL(kokAudio._u); kokAudio=null } }catch(e){}
+}
+function kokPlay(blob){
+  return new Promise(res=>{
+    try{
+      kokStop();
+      const u=URL.createObjectURL(blob), a=new Audio(u);
+      a._u=u; kokAudio=a;
+      const fin=()=>{ try{URL.revokeObjectURL(u)}catch(e){} if(kokAudio===a) kokAudio=null; res() };
+      a.onended=fin; a.onerror=fin;
+      const p=a.play(); if(p&&p.catch) p.catch(fin);
+    }catch(e){ res() }
+  });
+}
+/* a legyártott hang előre, hogy ne kelljen rá várni a lejátszásnál */
+async function kokAhead(all,from){
+  if(!kokReady()||kokBusy) return;
+  kokBusy=true;
+  try{
+    for(let k=from+1;k<Math.min(from+3,all.length);k++){
+      if(!rdOn||!kokReady()) break;
+      const t=(all[k].textContent||'').trim(); if(!t) continue;
+      const key=kokKey(t,rdSpeed);
+      try{ if(await audGet(key)) continue }catch(e){}
+      try{ await kokBlob(t,rdSpeed) }catch(e){ break }
+    }
+  } finally { kokBusy=false }
+}
+const kokReady=()=>KOK.on&&KOK.state==='ready'&&!!KOK.tts;
+async function kokTest(){
+  if(!kokReady()) return;
+  try{
+    const blob=await kokBlob('The road goes ever on and on, down from the door where it began.',1);
+    await kokPlay(blob);
+  }catch(e){ toast('a próba nem sikerült: '+((e&&e.message)||'')) }
+}
+function initKok(){
+  const sel=$('kokVoice');
+  if(sel&&!sel.options.length){
+    KOK_VOICES.forEach(([id,label])=>{ const o=document.createElement('option');
+      o.value=id; o.textContent=label; sel.appendChild(o) });
+    sel.value=KOK.voice;
+    sel.onchange=()=>{ KOK.voice=sel.value; store.set('ek_kokvoice',KOK.voice);
+      if(kokReady()) kokTest() };
+  }
+  const test=$('kokTest'); if(test) test.onclick=()=>kokTest();
+  const bb=$('kokBuildBtn'); if(bb) bb.onclick=()=>kokBuildChapter();
+  const b=$('kokBtn');
+  if(b) b.onclick=async()=>{
+    if(KOK.state==='ready'){                    /* csak ki/be kapcsolás, a modell megmarad */
+      KOK.on=!KOK.on; store.set('ek_kok',KOK.on?'1':'0'); drawKok();
+      toast(KOK.on?'neurális angol hang bekapcsolva':'visszaálltam a rendszerhangra');
+      return;
+    }
+    await kokLoad();
+  };
+  drawKok();
+}
+initKok();
+/* egész fejezet legyártása: utána a hallgatás offline és azonnali */
+let kokBuild=false;
+async function kokBuildChapter(){
+  if(!kokReady()) return toast('előbb töltsd le a neurális hangot');
+  if(kokBuild){ kokBuild=false; return }
+  const all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
+  if(!all.length) return toast('nincs mit legyártani ebben a fejezetben');
+  kokBuild=true; let done=0, made=0;
+  for(const t of all){
+    if(!kokBuild) break;
+    done++;
+    const key=kokKey(t,rdSpeed);
+    let have=false; try{ have=!!(await audGet(key)) }catch(e){}
+    if(!have){ try{ await kokBlob(t,rdSpeed); made++ }catch(e){} }
+    const b=$('kokBuildBtn');
+    if(b) b.textContent='gyártás… '+done+'/'+all.length+' — megszakítás';
+    if(done%5===0) drawKokSize();
+  }
+  kokBuild=false;
+  const b=$('kokBuildBtn'); if(b) b.textContent='fejezet előgyártása';
+  drawKokSize();
+  toast(made?('kész: '+made+' új mondat hangja legyártva'):'már minden mondat kész volt',3200);
+}
 /* ---- hangválasztó: a rendszer nyelvenként több hangot ad, és a gyári alap
        gyakran nem a legjobb. Itt kiválasztható, és minden felolvasás ezt használja. ---- */
 let voicePick=JSON.parse(store.get('ek_voices')||'{}');
@@ -2562,6 +2739,26 @@ function pickVoice(lg){
 }
 function applyVoice(u,lg){ const v=pickVoice(lg); if(v){ u.voice=v; u.lang=v.lang } }
 const VSAMPLE={en:'This is how this voice sounds.',da:'Sådan lyder denne stemme.',hu:'Ez a magyar hang.'};
+function drawKok(){
+  const b=$('kokBtn'), s=$('kokState'); if(!b||!s) return;
+  const st=KOK.state;
+  b.textContent = st==='ready'?(KOK.on?'kikapcsol':'bekapcsol') : st==='loading'?'töltés…' : st==='error'?'újra' : 'letöltés';
+  b.disabled = st==='loading';
+  s.textContent = st==='loading'?('modell letöltése… '+KOK.pct+'%')
+    : st==='ready'?(KOK.on?'bekapcsolva — az angol ezzel szól':'letöltve, kikapcsolva')
+    : st==='error'?('hiba: '+KOK.err) : 'nincs letöltve — most a rendszerhang szól';
+  $('kokVoiceRow').hidden = st!=='ready';
+  $('kokBuildRow').hidden = st!=='ready';
+  if(st==='ready'){ drawKokSize() }
+}
+async function drawKokSize(){
+  const el=$('kokSize'); if(!el) return;
+  try{
+    const all=await audAll();
+    const mb=all.reduce((s,r)=>s+(r.n||0),0)/1048576;
+    el.textContent=all.length?(all.length+' mondat · '+mb.toFixed(1)+' MB'):'még semmi nincs legyártva';
+  }catch(e){ el.textContent='' }
+}
 function drawVoiceRows(){
   const box=$('voiceRows'); if(!box) return;
   box.innerHTML='';
@@ -2621,7 +2818,21 @@ const RD_GAPS=[0,1,2,3,5];
 let rdSleepMin=0, rdSleepEnd=0, rdSleepT=0;
 const RD_SLEEPS=[0,15,30,45,60];
 let rdPre=false;
-function speakAsync(t,lang,rate){
+/* angolra a neurális hang, ha kész; ha lassú vagy hibázik, a rendszerhang veszi át,
+   hogy a felolvasás soha ne akadjon meg */
+async function speakAsync(t,lang,rate){
+  if(t&&kokReady()&&/^en/i.test(lang||'')){
+    try{
+      const blob=await Promise.race([
+        kokBlob(t,rate||1),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('lassú')),KOK_WAIT))
+      ]);
+      if(blob){ await kokPlay(blob); return }
+    }catch(e){}
+  }
+  return speakSys(t,lang,rate);
+}
+function speakSys(t,lang,rate){
   return new Promise(res=>{
     if(!t){res();return}
     let done=false, iv=0;
@@ -2733,7 +2944,7 @@ function startReading(){
 }
 function stopReading(){
   rdOn=false; rdEpoch++;
-  try{speechSynthesis.cancel()}catch(e){}
+  try{speechSynthesis.cancel()}catch(e){} kokStop();
   sentList().forEach(s=>s.classList.remove('rdnow'));
   $('player').hidden=true; rdWake(false); keepAudio(false); mediaSess('none');
   rdSleepEnd=0; rdSleepMin=0; clearTimeout(rdSleepT); rdSleepT=0;
@@ -2761,6 +2972,7 @@ async function loopRead(){
       try{speechSynthesis.cancel()}catch(x){}
       drawPlayer();                          /* az időzítő hátralévő ideje frissül */
       rdPrefetch(all,rdPtr);                 /* a következő mondatok magyarja a háttérben készül */
+      kokAhead(all,rdPtr);                   /* és a neurális hangjuk is, ha be van kapcsolva */
       await speakAsync(sent, src==='da'?'da-DK':'en-US', rdSpeed);
       if(!rdOn) break;
       if(e!==rdEpoch) continue;              /* ⏭: a magyar rész kimarad */
@@ -2785,11 +2997,11 @@ async function loopRead(){
 }
 $('readBtn').onclick=()=>startReading();
 $('plPause').onclick=()=>{
-  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} keepAudio(false); mediaSess('paused') }
+  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} kokStop(); keepAudio(false); mediaSess('paused') }
   else { rdOn=true; rdEpoch++; keepAudio(true); mediaSess('playing'); loopRead(); rdWake(true) }
   drawPlayer();
 };
-$('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} };
+$('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} kokStop(); };
 $('plSpeed').onclick=()=>{
   rdSpeed=RD_SPEEDS[(RD_SPEEDS.indexOf(rdSpeed)+1)%RD_SPEEDS.length];
   store.set('ek_rdspeed',String(rdSpeed)); drawPlayer();
@@ -3455,19 +3667,51 @@ function qMenu(){
   addBookBtn(box);
   w.appendChild(box);
 }
-/* „a nyitott könyvből” — csak akkor van értelme, ha épp olvasol egy könyvet */
+/* Mindig látszik: ha épp olvasol, a nyitott könyvből gyűjt, ha nem, előbb
+   választhatsz a könyvtáradból — ott keresi az ember, ezért ott is legyen. */
 function addBookBtn(box){
-  if(!chapters.length) return;
   const b=document.createElement('button'); b.className='btn';
-  b.innerHTML='<span>📖 mondatok a könyvből</span><small>'+((book&&book.title)||'')+'</small>';
-  b.onclick=async()=>{
-    const pack=await buildBookPack(60);
-    if(!pack) { qMenu(); return }
-    sentBank=pack; store.set('ek_sent',JSON.stringify(pack));
-    toast(pack.mondatok.length+' mondat a könyvedből',3000);
-    qMenu();
-  };
+  const has=chapters.length>0;
+  b.innerHTML='<span>📖 mondatok a könyvből</span><small>'+
+    (has?((book&&book.title)||'a nyitott könyvből'):'válassz könyvet')+'</small>';
+  b.onclick=()=>{ has?harvestNow():pickBookForHarvest() };
   box.appendChild(b);
+}
+async function harvestNow(){
+  const pack=await buildBookPack(60);
+  if(!pack){ qMenu(); return }
+  sentBank=pack; store.set('ek_sent',JSON.stringify(pack));
+  toast(pack.mondatok.length+' mondat a könyvedből',3000);
+  qMenu();
+}
+async function pickBookForHarvest(){
+  const w=$('qWrap'); w.innerHTML=''; $('qBtns').innerHTML='';
+  let list=[]; try{ list=await libAll() }catch(e){}
+  if(!list.length){
+    const d=document.createElement('div'); d.className='sdone';
+    d.innerHTML='<b>Nincs könyv a könyvtárban.</b><br>Húzz be egy EPUB-ot a kezdőlapon, utána innen tudsz belőle mondatokat gyűjteni.';
+    w.appendChild(d);
+  } else {
+    const head=document.createElement('div'); head.className='sdone';
+    head.innerHTML='<b>Melyik könyvből gyűjtsek?</b><br><span style="font-size:var(--t2);color:var(--dim)">a könyv megnyílik, és a mondatai bekerülnek a gyakorlóba</span>';
+    w.appendChild(head);
+    const box=document.createElement('div'); box.className='qmenu';
+    list.sort((a,b)=>(b.last||b.added||0)-(a.last||a.added||0)).slice(0,12).forEach(rec=>{
+      const b2=document.createElement('button'); b2.className='btn';
+      b2.innerHTML='<span>'+(rec.title||rec.name||'könyv')+'</span><small>'+(rec.chaps||'?')+' fejezet</small>';
+      b2.onclick=async()=>{
+        w.innerHTML='<div class="sdone"><b>Könyv megnyitása…</b></div>';
+        closeSent();
+        await openFromLib(rec.id);
+        openSent();
+        if(chapters.length) harvestNow(); else qMenu();
+      };
+      box.appendChild(b2);
+    });
+    w.appendChild(box);
+  }
+  const back=document.createElement('button'); back.className='btn'; back.textContent='vissza';
+  back.onclick=qMenu; $('qBtns').appendChild(back);
 }
 
 function qStart(items){
