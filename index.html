@@ -761,6 +761,21 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
       <button class="mini" id="dueReset">mai számláló nullázása</button></div>
     <div class="ssec">Hang</div>
+    <div class="srow"><label>Hangforrás</label>
+      <select class="inp" id="ttsProv">
+        <option value="sys">rendszerhang — ingyenes, azonnali</option>
+        <option value="cloud">Google felhő — hangoskönyv-minőség</option>
+        <option value="kok">neurális helyi (Kokoro) — lassú</option>
+      </select></div>
+    <div id="ttsCloud" hidden>
+      <div class="srow"><label>Google TTS kulcs</label>
+        <input id="gkey" type="password" class="inp" placeholder="AIza..." autocomplete="off">
+        <button class="mini" id="gkeySave">ment</button>
+        <button class="mini" id="gkeyLoad">hangok betöltése</button></div>
+      <div id="gVoiceRows"></div>
+      <p class="note" style="margin:var(--sp2) 0 0">A zárójeles ár tájékoztató: ennyi egymillió karakter. Egy Tolkien-fejezet nagyjából negyvenezer karakter, tehát a Chirp3 HD-n úgy egy dollár — de a havi ingyenes keret ennél a szintnél is egymillió karakter, vagyis kb. huszonöt fejezet minden hónapban, ingyen. A legyártott hang itt marad a telefonon, másodszorra hálózat nélkül is szól, és a dán meg a magyar is ezen a szinten szólal meg.</p>
+    </div>
+    <div id="ttsKok">
     <div class="srow"><label>Neurális angol hang</label>
       <button class="btn" id="kokBtn">letöltés</button>
       <span class="note" style="margin:0;flex:1" id="kokState"></span></div>
@@ -773,7 +788,8 @@ body.railon #study,body.railon #match,body.railon #sent{
       <button class="mini" id="kokZipBtn" title="Mondatonként külön fájl, egy zip-ben">zip</button>
       <button class="mini" id="kokWipeBtn" title="A legyártott hangok törlése (a modell megmarad)">törlés</button>
       <span class="note" style="margin:0" id="kokSize"></span></div>
-    <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. A legyártott mondatok megmaradnak, így másodszorra azonnal indulnak.</p>
+    <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. Mérve 54 s egy mondat ezen a telefonon, ami fejezetenként tíz óra: ez az út gyakorlatilag zárva.</p>
+    </div>
     <div id="voiceRows"></div>
     <p class="note" style="margin:var(--sp2) 0 0">Ha egyik hang sem tetszik: a telefon beállításaiban telepíthető jobb beszédmotor, és az itt is megjelenik. Ez a legnagyobb ugrás a felolvasás minőségében.</p>
     <div class="ssec">Fordítás</div>
@@ -867,7 +883,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v80';
+const APP_VER='v81';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2765,6 +2781,89 @@ async function kokLoad(){
   }
 }
 function kokKey(t,speed){ return KOK.voice+'|'+speed+'|'+t }
+/* ---- Hangforrás: rendszer / helyi Kokoro / Google felhő ---------------------
+   A felhős út ugyanabba az `audio` tárolóba dolgozik, mint a Kokoro, tehát a
+   gyorsítótár, a tárolási korlát, az előgyártás és a WAV-mentés változatlanul
+   működik. Csak a gyártás helye más: worker helyett egy fetch. */
+const TTS={prov:store.get('ek_ttsprov')||'sys', gkey:store.get('ek_gkey')||'',
+  gvoice:{}, list:null, err:''};
+try{ TTS.gvoice=JSON.parse(store.get('ek_gvoice')||'{}') }catch(e){}
+const lg2=l=>(l||'en').slice(0,2).toLowerCase();
+const cloudOn=()=>TTS.prov==='cloud'&&!!TTS.gkey;
+/* Egyetlen gyorsítótár-kulcs. A Kokoro régi kulcsai érintetlenül maradnak. */
+function audKey(t,lang,speed){
+  return cloudOn() ? ('g|'+(TTS.gvoice[lg2(lang)]||'')+'|'+speed+'|'+t)
+                   : kokKey(t,speed);
+}
+/* Van-e egyáltalán legyártott hangunk, amit lejátszhatunk? */
+const ttsOn=()=>cloudOn()||(TTS.prov==='kok'&&kokReady());
+const GT='https://texttospeech.googleapis.com/v1/';
+function gtErr(r,d){
+  let m=''; try{ m=d&&d.error&&d.error.message }catch(e){}
+  return new Error('a felhő elutasította ('+r.status+')'+(m?': '+m:''));
+}
+async function gttsList(){
+  if(TTS.list) return TTS.list;
+  if(!TTS.gkey) throw new Error('nincs kulcs');
+  const r=await fetch(GT+'voices?key='+encodeURIComponent(TTS.gkey));
+  let d=null; try{ d=await r.json() }catch(e){}
+  if(!r.ok) throw gtErr(r,d);
+  TTS.list=(d&&d.voices)||[];
+  return TTS.list;
+}
+/* A hang nevéből olvasható ki a szint, és a szint az ár. Kiírjuk, hogy látszódjon. */
+function gTier(n){
+  if(/Chirp3-HD/i.test(n)) return ['Chirp3 HD','$30/M',5];
+  if(/Studio/i.test(n))    return ['Studio','$160/M',4];
+  if(/Neural2/i.test(n))   return ['Neural2','$16/M',3];
+  if(/Wavenet/i.test(n))   return ['WaveNet','$4/M',2];
+  return ['Standard','$4/M',1];
+}
+async function gVoicesFor(lg){
+  const all=await gttsList();
+  const pref=lg==='en'?'en-GB':lg==='da'?'da-DK':'hu-HU';
+  const hit=all.filter(v=>(v.languageCodes||[]).some(c=>c.toLowerCase().startsWith(lg)));
+  hit.sort((a,b)=>{
+    const ap=(a.languageCodes||[]).includes(pref)?0:1, bp=(b.languageCodes||[]).includes(pref)?0:1;
+    if(ap!==bp) return ap-bp;
+    const at=gTier(a.name)[2], bt=gTier(b.name)[2];
+    if(at!==bt) return bt-at;
+    const am=a.ssmlGender==='MALE'?0:1, bm=b.ssmlGender==='MALE'?0:1;
+    if(am!==bm) return am-bm;
+    return a.name.localeCompare(b.name);
+  });
+  return hit;
+}
+async function gttsSynth(text,lang,speed){
+  const lg=lg2(lang), name=TTS.gvoice[lg];
+  if(!name) throw new Error('nincs kiválasztva '+lg+' hang');
+  if(!TTS.gkey) throw new Error('nincs kulcs');
+  const languageCode=name.split('-').slice(0,2).join('-');
+  const cfg={audioEncoding:'LINEAR16',sampleRateHertz:24000};
+  /* a tempót csak akkor küldjük, ha tényleg más: néhány hang elutasítja a paramétert */
+  if(speed&&Math.abs(speed-1)>0.01) cfg.speakingRate=Math.min(Math.max(speed,0.25),4);
+  const r=await fetch(GT+'text:synthesize?key='+encodeURIComponent(TTS.gkey),
+    {method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({input:{text},voice:{languageCode,name},audioConfig:cfg})});
+  let d=null; try{ d=await r.json() }catch(e){}
+  if(!r.ok||!d||!d.audioContent) throw gtErr(r,d);
+  const b=atob(d.audioContent), u=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+  return new Blob([u],{type:'audio/wav'});
+}
+/* Egyetlen belépési pont a gyártásra, bármelyik forrásról. Gyorsítótár először. */
+async function ttsBlob(text,lang,speed){
+  const k=audKey(text,lang,speed);
+  try{ const hit=await audGet(k); if(hit) return hit }catch(e){}
+  let blob;
+  if(cloudOn()) blob=await gttsSynth(text,lang,speed);
+  else{
+    if(!KOK.ready) throw new Error('nincs betöltve');
+    blob=await kokAsk({t:'gen',text,voice:KOK.voice,speed:speed||1},null,0);
+  }
+  audPut(k,blob).then(audTrim).catch(()=>{});
+  return blob;
+}
 /* tárolási korlát: a legrégebben használt hangok esnek ki elsőként */
 async function audTrim(){
   try{
@@ -2805,10 +2904,11 @@ function kokPlay(blob){
 /* Mennyi mondat hangja van kész ebből a fejezetből — ezt írja ki a lejátszó. */
 let kokTotal=0;
 async function kokCountReady(){
-  if(!kokReady()){ kokDepth=0; kokTotal=0; drawPlayer(); return }
+  if(!ttsOn()){ kokDepth=0; kokTotal=0; drawPlayer(); return }
   const all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
   let n=0;
-  for(const t of all){ try{ if(await audGet(kokKey(t,rdSpeed))) n++ }catch(e){} }
+  const lang=src==='da'?'da-DK':'en-US';
+  for(const t of all){ try{ if(await audGet(audKey(t,lang,rdSpeed))) n++ }catch(e){} }
   kokDepth=n; kokTotal=all.length; drawPlayer();
 }
 /* indítás előtti feltöltés, hogy az első mondatokra ne kelljen várni */
@@ -2901,7 +3001,7 @@ async function exportChapterWav(mode){
   if(!list.length) return toast('nincs mit menteni ebben a fejezetben');
   const blobs=[]; let missing=0;
   for(const t of list){
-    let b=null; try{ b=await audGet(kokKey(t,rdSpeed)) }catch(e){}
+    let b=null; try{ b=await audGet(audKey(t,src==='da'?'da-DK':'en-US',rdSpeed)) }catch(e){}
     if(b) blobs.push(b); else missing++;
   }
   if(!blobs.length) return toast('előbb nyomd meg a „fejezet előgyártása” gombot');
@@ -2976,26 +3076,48 @@ function initKok(){
 initKok();
 /* egész fejezet legyártása: utána a hallgatás offline és azonnali */
 let kokBuild=false;
-async function kokBuildChapter(){
-  if(!kokReady()) return toast('előbb töltsd le a neurális hangot');
+async function kokBuildChapter(from,limit,quiet){
+  if(!ttsOn()) return toast('előbb válassz hangforrást a ⚙ → Hang alatt');
   if(kokBuild){ kokBuild=false; return }
-  const all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
-  if(!all.length) return toast('nincs mit legyártani ebben a fejezetben');
-  kokBuild=true; let done=0, made=0;
+  let all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
+  const lang=src==='da'?'da-DK':'en-US';
+  if(from) all=all.slice(from);
+  if(limit) all=all.slice(0,limit);
+  if(!all.length) return quiet||toast('nincs mit legyártani ebben a fejezetben');
+  kokBuild=true; let done=0, made=0, fail=0, lastErr='';
   for(const t of all){
     if(!kokBuild) break;
     done++;
-    const key=kokKey(t,rdSpeed);
-    let have=false; try{ have=!!(await audGet(key)) }catch(e){}
-    if(!have){ try{ await kokBlob(t,rdSpeed); made++ }catch(e){} }
+    let have=false; try{ have=!!(await audGet(audKey(t,lang,rdSpeed))) }catch(e){}
+    if(!have){
+      try{ await ttsBlob(t,lang,rdSpeed); made++; fail=0 }
+      catch(e){ fail++; lastErr=(e&&e.message)||''; 
+        /* három egymást követő hiba: nincs értelme ezerszer belefutni ugyanabba */
+        if(fail>=3){ kokBuild=false; if(!quiet) toast('leállt: '+lastErr,6000); break }
+      }
+    }
+    if(rdHu){                              /* a magyar fordítás hangja is kell a kétnyelvű hallgatáshoz */
+      const hu=cache[ck(t)];
+      if(hu&&cloudOn()&&TTS.gvoice.hu){
+        let h2=false; try{ h2=!!(await audGet(audKey(hu,'hu-HU',1))) }catch(e){}
+        if(!h2){ try{ await ttsBlob(hu,'hu-HU',1); made++ }catch(e){} }
+      }
+    }
     const b=$('kokBuildBtn');
-    if(b) b.textContent='gyártás… '+done+'/'+all.length+' — megszakítás';
+    if(b&&!quiet) b.textContent='gyártás… '+done+'/'+all.length+' — megszakítás';
     if(done%5===0) drawKokSize();
   }
   kokBuild=false;
   const b=$('kokBuildBtn'); if(b) b.textContent='fejezet előgyártása';
   drawKokSize();
-  toast(made?('kész: '+made+' új mondat hangja legyártva'):'már minden mondat kész volt',3200);
+  if(!quiet) toast(made?('kész: '+made+' hang legyártva'):'már minden kész volt',3200);
+}
+/* Olvasás indulásakor a felhős úton csendben előreszaladunk, hogy a lejátszás
+   utolérhetetlen legyen. Egy mondat kimondása 4–6 s, a legyártása kevesebb, tehát
+   a puffer magától nő. A felolvasás közben SEMMIRE nem vár: ez külön szál. */
+function ttsRunAhead(){
+  if(!cloudOn()||kokBuild) return;
+  kokBuildChapter(Math.max(rdPtr-1,0),60,true).catch(()=>{});
 }
 /* ---- hangválasztó: a rendszer nyelvenként több hangot ad, és a gyári alap
        gyakran nem a legjobb. Itt kiválasztható, és minden felolvasás ezt használja. ---- */
@@ -3012,6 +3134,80 @@ function pickVoice(lg){
 }
 function applyVoice(u,lg){ const v=pickVoice(lg); if(v){ u.voice=v; u.lang=v.lang } }
 const VSAMPLE={en:'This is how this voice sounds.',da:'Sådan lyder denne stemme.',hu:'Ez a magyar hang.'};
+function drawTts(){
+  const p=$('ttsProv'); if(!p) return;
+  p.value=TTS.prov;
+  $('ttsCloud').hidden = TTS.prov!=='cloud';
+  $('ttsKok').hidden   = TTS.prov!=='kok';
+  const g=$('gkey'); if(g&&!g.value) g.value=TTS.gkey;
+  if(TTS.prov==='cloud') drawGVoiceRows();
+  drawKokSize();
+}
+const GSAMPLE={en:'The road goes ever on and on, down from the door where it began.',
+  da:'Vejen går altid videre, ned fra døren hvor den begyndte.',
+  hu:'Az út mindig továbbmegy, le a kaputól, ahol elkezdődött.'};
+async function drawGVoiceRows(){
+  const box=$('gVoiceRows'); if(!box) return;
+  if(!TTS.gkey){ box.innerHTML='<p class="note" style="margin:0">Írd be a kulcsot, aztán „hangok betöltése”.</p>'; return }
+  if(!TTS.list){ box.innerHTML='<p class="note" style="margin:0">'+(TTS.err||'nyomd meg a „hangok betöltése” gombot')+'</p>'; return }
+  box.innerHTML='';
+  for(const [lg,label] of [['en','Angol'],['da','Dán'],['hu','Magyar']]){
+    const list=await gVoicesFor(lg);
+    const row=document.createElement('div'); row.className='srow';
+    const lab=document.createElement('label'); lab.textContent=label+' hang'; row.appendChild(lab);
+    if(!list.length){
+      const n=document.createElement('span'); n.className='note'; n.style.margin='0';
+      n.textContent='nincs '+label.toLowerCase()+' hang'; row.appendChild(n); box.appendChild(row); continue;
+    }
+    const sel=document.createElement('select'); sel.className='inp';
+    const o0=document.createElement('option'); o0.value=''; o0.textContent='— nincs kiválasztva —';
+    sel.appendChild(o0);
+    list.forEach(v=>{
+      const [tier,price]=gTier(v.name);
+      const g=v.ssmlGender==='MALE'?'férfi':v.ssmlGender==='FEMALE'?'nő':'';
+      const o=document.createElement('option'); o.value=v.name;
+      o.textContent=v.name.replace(/^[a-z]{2}-[A-Z]{2}-/,'')+' · '+(v.languageCodes||[''])[0]
+        +(g?(' · '+g):'')+' · '+tier+' ('+price+')';
+      sel.appendChild(o);
+    });
+    sel.value=TTS.gvoice[lg]||'';
+    sel.onchange=()=>{ TTS.gvoice[lg]=sel.value; store.set('ek_gvoice',JSON.stringify(TTS.gvoice)) };
+    row.appendChild(sel);
+    const t=document.createElement('button'); t.className='mini'; t.textContent='próba';
+    t.onclick=()=>gttsTest(lg);
+    row.appendChild(t);
+    box.appendChild(row);
+  }
+}
+async function gttsTest(lg){
+  if(!TTS.gvoice[lg]) return toast('előbb válassz hangot');
+  const t0=Date.now();
+  try{
+    const blob=await ttsBlob(GSAMPLE[lg], lg==='hu'?'hu-HU':lg==='da'?'da-DK':'en-GB', 1);
+    const ms=Date.now()-t0;
+    await kokPlay(blob); drawKokSize();
+    toast(ms<120?'gyorsítótárból szólt':('legyártás: '+(ms/1000).toFixed(1)+' s'),4000);
+  }catch(e){ toast('nem sikerült: '+((e&&e.message)||''),7000) }
+}
+function initTts(){
+  const p=$('ttsProv');
+  if(p) p.onchange=()=>{ TTS.prov=p.value; store.set('ek_ttsprov',TTS.prov);
+    kokHinted=false; drawTts(); drawPlayer();
+    toast(TTS.prov==='cloud'?'Google felhő':TTS.prov==='kok'?'helyi Kokoro':'rendszerhang') };
+  const ks=$('gkeySave');
+  if(ks) ks.onclick=()=>{ TTS.gkey=($('gkey').value||'').trim(); store.set('ek_gkey',TTS.gkey);
+    TTS.list=null; TTS.err=''; toast(TTS.gkey?'kulcs elmentve':'kulcs törölve'); drawGVoiceRows() };
+  const kl=$('gkeyLoad');
+  if(kl) kl.onclick=async()=>{
+    TTS.gkey=($('gkey').value||'').trim(); store.set('ek_gkey',TTS.gkey);
+    TTS.list=null; TTS.err='betöltés…'; drawGVoiceRows();
+    try{ const l=await gttsList(); TTS.err=''; toast(l.length+' hang elérhető',3000) }
+    catch(e){ TTS.err=(e&&e.message)||'nem sikerült'; toast(TTS.err,7000) }
+    drawGVoiceRows();
+  };
+  drawTts();
+}
+initTts();
 function drawKok(){
   const b=$('kokBtn'), s=$('kokState'); if(!b||!s) return;
   const st=KOK.state;
@@ -3032,7 +3228,8 @@ async function drawKokSize(){
   try{
     const all=await audAll();
     const mb=all.reduce((s,r)=>s+(r.n||0),0)/1048576;
-    const avg=kokAvg()?(' · átlag '+(kokAvg()/1000).toFixed(1)+' s/mondat'):'';
+    /* a mért gyártási idő a helyi Kokoróra vonatkozik; felhős úton félrevezető lenne */
+    const avg=(TTS.prov==='kok'&&kokAvg())?(' · átlag '+(kokAvg()/1000).toFixed(1)+' s/mondat'):'';
     el.textContent=(all.length?(all.length+' mondat · '+mb.toFixed(1)+' MB'):'még semmi nincs legyártva')+avg;
   }catch(e){ el.textContent='' }
 }
@@ -3101,13 +3298,18 @@ let rdPre=false;
    telefonon több másodperc, tehát valós időben nem járható. Vagy van kész hang, vagy
    azonnal a rendszerhang jön — így nincs csend, nincs beragadás, nincs várakozás. */
 async function speakAsync(t,lang,rate){
-  if(t&&kokReady()&&/^en/i.test(lang||'')){
+  /* a helyi Kokoro csak angolt tud; a felhő mindhárom nyelvet */
+  const ok = t && ( cloudOn() ? !!TTS.gvoice[lg2(lang)]
+                              : (TTS.prov==='kok'&&kokReady()&&/^en/i.test(lang||'')) );
+  if(ok){
     let blob=null;
-    try{ blob=await audGet(kokKey(t,rate||1)) }catch(e){}
+    try{ blob=await audGet(audKey(t,lang,rate||1)) }catch(e){}
     if(blob){ try{ await kokPlay(blob); return }catch(e){} }
     else if(!kokHinted){
       kokHinted=true;
-      toast('ez a rész még nincs előgyártva, ezért a rendszerhang mondja — a ⚙ → Hang alatt a „fejezet előgyártása” hozza a szép hangot',6500);
+      toast(cloudOn()
+        ? 'ez a mondat még nincs legyártva, ezért a rendszerhang mondja — a háttérben már készül a szép hang'
+        : 'ez a rész még nincs előgyártva, ezért a rendszerhang mondja — a ⚙ → Hang alatt a „fejezet előgyártása” hozza a szép hangot',6500);
     }
   }
   return speakSys(t,lang,rate);
@@ -3249,7 +3451,8 @@ function startReading(){
   $('player').hidden=false; drawPlayer();
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
   loopRead();                            /* azonnal indul: semmire nem kell várni */
-  if(kokReady()) kokCountReady();        /* csak tájékoztatás: mennyi van előgyártva */
+  if(ttsOn()) kokCountReady();           /* csak tájékoztatás: mennyi van előgyártva */
+  ttsRunAhead();                          /* felhős úton csendben előregyártunk */
 }
 function stopReading(){
   rdOn=false; rdEpoch++;
