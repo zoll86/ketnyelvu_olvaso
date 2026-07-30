@@ -747,6 +747,7 @@ body.railon #study,body.railon #match,body.railon #sent{
       <button class="mini" id="kokBuildBtn">fejezet előgyártása</button>
       <button class="mini" id="kokWavBtn" title="A fejezet hangja egyetlen fájlban">mentés WAV-ba</button>
       <button class="mini" id="kokZipBtn" title="Mondatonként külön fájl, egy zip-ben">zip</button>
+      <button class="mini" id="kokWipeBtn" title="A legyártott hangok törlése (a modell megmarad)">törlés</button>
       <span class="note" style="margin:0" id="kokSize"></span></div>
     <p class="note" style="margin:var(--sp2) 0 var(--sp3)">A modell egyszer töltődik le (kb. 90 MB), utána helyben fut, hálózat nélkül is. Csak az angolt viszi — a dán és a magyar a rendszerhangon szól. A legyártott mondatok megmaradnak, így másodszorra azonnal indulnak.</p>
     <div id="voiceRows"></div>
@@ -842,7 +843,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v75';
+const APP_VER='v76';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -968,19 +969,44 @@ const saveVocab=()=>{store.set('ek_vocab',JSON.stringify(vocab));vocabBadge()};
 vocabBadge();
 
 /* ============ könyvtár: IndexedDB tároló ============ */
+/* Megnyitás úgy, hogy semmilyen körülmények között ne tudjon örökre várni:
+   - a könyvek adatbázisát verziószám NÉLKÜL nyitjuk, így soha nincs frissítés,
+     amit egy másik nyitott példány blokkolhatna (a hang külön adatbázisban van);
+   - a zárolás és a néma elakadás is hibára fut, nem végtelen várakozásra. */
+function idbOpen(name,ver,upgrade){
+  return new Promise((res,rej)=>{
+    let done=false;
+    const fail=m=>{ if(done)return; done=true; clearTimeout(tm); rej(m instanceof Error?m:new Error(m)) };
+    const tm=setTimeout(()=>fail('a tároló nem válaszol — zárd be a program többi ablakát, majd indítsd újra'),8000);
+    let r; try{ r=ver?indexedDB.open(name,ver):indexedDB.open(name) }catch(e){ fail(e); return }
+    r.onupgradeneeded=()=>{ try{ upgrade&&upgrade(r.result) }catch(e){} };
+    r.onblocked=()=>fail('a tároló zárolva van — zárd be a program többi ablakát');
+    r.onerror=()=>fail(r.error||new Error('a tároló nem elérhető'));
+    r.onsuccess=()=>{
+      if(done){ try{r.result.close()}catch(e){} return }
+      done=true; clearTimeout(tm);
+      const d=r.result;
+      d.onversionchange=()=>{ try{d.close()}catch(e){} IDB.p=null };  /* ne blokkoljunk másik példányt */
+      res(d);
+    };
+  });
+}
 const IDB={p:null};
 function idb(){
   if(IDB.p) return IDB.p;
-  IDB.p=new Promise((res,rej)=>{
-    const r=indexedDB.open('olvaso',2);
-    r.onupgradeneeded=()=>{const d=r.result;
-      if(!d.objectStoreNames.contains('books')) d.createObjectStore('books',{keyPath:'id'});
-      if(!d.objectStoreNames.contains('audio')) d.createObjectStore('audio',{keyPath:'k'});};
-    r.onblocked=()=>{};
-    r.onsuccess=()=>res(r.result);
-    r.onerror=()=>rej(r.error||new Error('IndexedDB nem elérhető'));
-  });
+  IDB.p=idbOpen('olvaso',null,d=>{
+    if(!d.objectStoreNames.contains('books')) d.createObjectStore('books',{keyPath:'id'});
+  }).catch(e=>{ IDB.p=null; throw e });
   return IDB.p;
+}
+/* a hang külön adatbázisban: a könyvekhez így hozzá sem kell nyúlni */
+const ADB={p:null};
+function adb(){
+  if(ADB.p) return ADB.p;
+  ADB.p=idbOpen('olvaso-hang',1,d=>{
+    if(!d.objectStoreNames.contains('audio')) d.createObjectStore('audio',{keyPath:'k'});
+  }).catch(e=>{ ADB.p=null; throw e });
+  return ADB.p;
 }
 function idbOp(mode,fn){
   return idb().then(d=>new Promise((res,rej)=>{
@@ -990,21 +1016,21 @@ function idbOp(mode,fn){
     t.onerror=()=>rej(t.error);
   }));
 }
-/* általános tárolóhozzáférés (a hangoknak külön tároló kell) */
-function idbOn(name,mode,fn){
-  return idb().then(d=>new Promise((res,rej)=>{
-    if(!d.objectStoreNames.contains(name)){ res(null); return }
-    const t=d.transaction(name,mode), st=t.objectStore(name);
+/* hangműveletek: hibánál nem dobnak, csak nem adnak semmit — a felolvasás
+   ilyenkor a rendszerhangra esik vissza, de a program működik tovább */
+function audOp(mode,fn){
+  return adb().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction('audio',mode), st=t.objectStore('audio');
     let out; try{ out=fn(st) }catch(e){ rej(e); return }
     t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);
     t.onerror=()=>rej(t.error);
-  }));
+  })).catch(()=>null);
 }
-const audGet=k=>idbOn('audio','readonly',st=>st.get(k)).then(r=>r&&r.blob||null);
-const audPut=(k,blob)=>idbOn('audio','readwrite',st=>st.put({k,blob,n:blob.size,ts:Date.now()}));
-const audAll=()=>idbOn('audio','readonly',st=>st.getAll()).then(r=>r||[]);
-const audDel=k=>idbOn('audio','readwrite',st=>st.delete(k));
-const audClear=()=>idbOn('audio','readwrite',st=>st.clear());
+const audGet=k=>audOp('readonly',st=>st.get(k)).then(r=>(r&&r.blob)||null);
+const audPut=(k,blob)=>audOp('readwrite',st=>st.put({k,blob,n:(blob&&(blob.size||blob.byteLength))||0,ts:Date.now()}));
+const audAll=()=>audOp('readonly',st=>st.getAll()).then(r=>r||[]);
+const audDel=k=>audOp('readwrite',st=>st.delete(k));
+const audClear=()=>audOp('readwrite',st=>st.clear());
 const libPut=rec=>idbOp('readwrite',st=>st.put(rec));
 const libAll=()=>idbOp('readonly',st=>st.getAll());
 const libGet=id=>idbOp('readonly',st=>st.get(id));
@@ -2600,7 +2626,7 @@ const KOK_VOICES=[
  ['am_puck','Puck — amerikai férfi']
 ];
 const KOK={on:store.get('ek_kok')==='1', voice:store.get('ek_kokvoice')||'bm_george',
-  tts:null, state:'off', pct:0, err:'', loader:null, gen:0};
+  tts:null, state:'off', pct:0, err:'', loader:null, gen:0, loaded:0, total:0, file:''};
 let kokAudio=null, kokBusy=false;
 /* folyamatos háttérgyártás: a puffer mélysége és a mért gyártási idők */
 let kokBufTarget=+(store.get('ek_kokbuf')||6);
@@ -2625,7 +2651,18 @@ async function kokLoad(){
   await askPersist();          /* a 92 MB-os modell ne essen ki helyszűkében */
   try{
     const mod=KOK.loader?await KOK.loader():await import(KOK_URL);
-    const prog=p=>{ if(p&&typeof p.progress==='number'){ KOK.pct=Math.round(p.progress); drawKok() } };
+    /* A letöltés több fájlból áll, és a jelzések fájlonként jönnek: ezért összesítve
+       mutatjuk a letöltött MB-ot, különben úgy tűnik, mintha megállt volna. */
+    const files={};
+    const prog=p=>{
+      if(!p) return;
+      if(p.file&&typeof p.loaded==='number'){ files[p.file]={l:p.loaded,t:p.total||0} }
+      let l=0,t=0; Object.values(files).forEach(f=>{l+=f.l;t+=f.t});
+      KOK.loaded=l; KOK.total=t;
+      KOK.pct=t?Math.min(99,Math.round(l/t*100)):(typeof p.progress==='number'?Math.round(p.progress):KOK.pct);
+      KOK.file=(p.file||'').split('/').pop();
+      drawKok();
+    };
     /* q8 mindkét úton: ugyanazok a fájlok (~92 MB), csak a futtatás módja más.
        Ha a WebGPU nem indul el, magától visszaesik WASM-ra — nincs újabb letöltés. */
     const tryDev=async dev=>mod.KokoroTTS.from_pretrained(KOK_MODEL,
@@ -2634,7 +2671,8 @@ async function kokLoad(){
       try{ KOK.tts=await tryDev('webgpu') }
       catch(e){ KOK.tts=await tryDev('wasm') }
     } else KOK.tts=await tryDev('wasm');
-    KOK.state='ready'; KOK.on=true; store.set('ek_kok','1');
+    if(KOK.state!=='loading'){ return false }   /* közben lemondtad */
+    KOK.pct=100; KOK.state='ready'; KOK.on=true; store.set('ek_kok','1');
     drawKok(); toast('neurális angol hang kész',2600);
     return true;
   }catch(e){
@@ -2854,10 +2892,20 @@ function initKok(){
     paint();
     rb.oninput=()=>{ kokBufTarget=+rb.value||6; store.set('ek_kokbuf',String(kokBufTarget)); paint() };
   }
+  const kw=$('kokWipeBtn');
+  if(kw) kw.onclick=async()=>{
+    if(!confirm('Törlöm a legyártott hangokat? A modell megmarad, csak újra kell gyártani a mondatokat.')) return;
+    await audClear(); kokDepth=0; drawKokSize(); toast('legyártott hangok törölve');
+  };
   const wb=$('kokWavBtn'); if(wb) wb.onclick=()=>exportChapterWav('wav');
   const zb=$('kokZipBtn'); if(zb) zb.onclick=()=>exportChapterWav('zip');
   const b=$('kokBtn');
   if(b) b.onclick=async()=>{
+    if(KOK.state==='loading'){                  /* a felület felszabadul; a letöltés a háttérben fut tovább */
+      KOK.state='off'; KOK.err=''; drawKok();
+      toast('rendben, a rendszerhang marad — a megkezdett letöltés a háttérben befejeződik');
+      return;
+    }
     if(KOK.state==='ready'){                    /* csak ki/be kapcsolás, a modell megmarad */
       KOK.on=!KOK.on; store.set('ek_kok',KOK.on?'1':'0'); drawKok();
       toast(KOK.on?'neurális angol hang bekapcsolva':'visszaálltam a rendszerhangra');
@@ -2909,11 +2957,14 @@ const VSAMPLE={en:'This is how this voice sounds.',da:'Sådan lyder denne stemme
 function drawKok(){
   const b=$('kokBtn'), s=$('kokState'); if(!b||!s) return;
   const st=KOK.state;
-  b.textContent = st==='ready'?(KOK.on?'kikapcsol':'bekapcsol') : st==='loading'?'töltés…' : st==='error'?'újra' : 'letöltés';
-  b.disabled = st==='loading';
-  s.textContent = st==='loading'?('modell letöltése… '+KOK.pct+'%')
+  b.textContent = st==='ready'?(KOK.on?'kikapcsol':'bekapcsol') : st==='loading'?'mégse' : st==='error'?'újra' : 'letöltés';
+  b.disabled = false;
+  const mb=x=>(x/1048576).toFixed(0);
+  s.textContent = st==='loading'
+      ? ('letöltés: '+(KOK.total?(mb(KOK.loaded)+'/'+mb(KOK.total)+' MB'):(KOK.pct+'%'))
+         +(KOK.file?(' · '+KOK.file):'')+' — nyugodtan használd közben a programot')
     : st==='ready'?(KOK.on?'bekapcsolva — az angol ezzel szól':'letöltve, kikapcsolva')
-    : st==='error'?('hiba: '+KOK.err) : 'nincs letöltve — most a rendszerhang szól';
+    : st==='error'?('hiba: '+KOK.err) : 'nincs letöltve — most a rendszerhang szól (kb. 90 MB, wifin javasolt)';
   $('kokVoiceRow').hidden = st!=='ready';
   $('kokBuildRow').hidden = st!=='ready';
   $('kokBufRow').hidden = st!=='ready';
@@ -3127,7 +3178,9 @@ function startReading(){
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
   /* neurális hangnál előbb feltöltjük a puffert, hogy ne kelljen a hangra várni */
   if(kokReady()){
-    kokWarmup(all,rdPtr,Math.min(3,kokBufTarget)).then(()=>{ if(rdOn) loopRead() });
+    /* a feltöltésre legfeljebb 8 másodpercet várunk, aztán indul a felolvasás */
+    Promise.race([kokWarmup(all,rdPtr,Math.min(3,kokBufTarget)),sleep(8000)])
+      .then(()=>{ if(rdOn) loopRead() });
   } else loopRead();
 }
 function stopReading(){
