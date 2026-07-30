@@ -58,14 +58,28 @@ button,select,input{font-family:inherit;color:inherit}
 /* ---------- felolvasó ---------- */
 #player{position:fixed;left:50%;transform:translateX(-50%);z-index:46;
   bottom:max(var(--sp3),env(safe-area-inset-bottom));
-  display:flex;flex-direction:column;align-items:center;gap:var(--sp1);
-  padding:var(--sp2) var(--sp3);border-radius:var(--r3);
-  background:rgba(24,19,13,.94);backdrop-filter:blur(16px);
-  border:1px solid var(--line);box-shadow:0 10px 34px rgba(0,0,0,.5)}
-#player .prow{display:flex;gap:var(--sp1);align-items:center}
-#player .prow2{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:center}
-#player .prow2 .mini{padding:5px 9px;font-size:var(--t1)}
-#player .prow2 .mini.on{border-color:rgba(232,182,76,.5);color:var(--gold)}
+  display:flex;flex-direction:column;align-items:stretch;gap:5px;
+  padding:7px 9px;border-radius:14px;min-width:16rem;max-width:min(21rem,92vw);
+  background:rgba(24,19,13,.93);backdrop-filter:blur(16px);
+  border:1px solid var(--line);box-shadow:0 8px 26px rgba(0,0,0,.5)}
+#player .prow{display:flex;gap:5px;align-items:center}
+#player .pbtn{flex:0 0 auto;width:36px;height:32px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line2);border-radius:9px;background:var(--s1);color:var(--txt);
+  font-size:13px;cursor:pointer;transition:transform .12s var(--spring)}
+#player .pbtn:active{transform:scale(.93)}
+#player .pbtn.pri{background:linear-gradient(160deg,var(--gold),#d0a03e);color:#1a1409;border-color:transparent}
+#player .prow2{display:none;gap:2px;align-items:center;flex:1 1 auto;justify-content:flex-end}
+#player.wide .prow2{display:flex}
+#player:not(.wide){min-width:0}
+#player .pbtn.sel{border-color:var(--gold);color:var(--gold)}
+#player .pchip{border:0;background:none;color:var(--faint);font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.01em;padding:5px 5px;cursor:pointer;white-space:nowrap;border-radius:6px}
+#player .pchip.on{color:var(--gold)}
+#player .pchip:active{background:rgba(255,255,255,.07)}
+#player .pstat{font-family:var(--mono);font-size:10px;color:var(--faint);
+  text-align:center;line-height:1.3;padding:0 2px}
+#player .pstat[hidden]{display:none}
+#player .pstat b{color:var(--gold);font-weight:400}
 #player[hidden]{display:none}
 .s.rdnow{background:rgba(232,182,76,.2);border-radius:5px}
 body.reading.rlight .s.rdnow{background:rgba(170,110,20,.24)}
@@ -573,17 +587,19 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <div id="player" hidden>
   <div class="prow">
-    <button class="btn pri" id="plPause" title="Szünet / folytatás">⏸</button>
-    <button class="btn" id="plSkip" title="Következő mondat">⏭</button>
-    <button class="btn" id="plStop" title="Felolvasás leállítása">×</button>
+    <button class="pbtn pri" id="plPause" title="Szünet / folytatás">⏸</button>
+    <button class="pbtn" id="plSkip" title="Következő mondat">⏭</button>
+    <button class="pbtn" id="plMore" title="További beállítások">⚙</button>
+    <button class="pbtn" id="plStop" title="Leállítás">✕</button>
+    <div class="prow2">
+      <button class="pchip" id="plSpeed" title="Az idegen nyelv tempója"></button>
+      <button class="pchip" id="plHu" title="Magyar fordítás felolvasása"></button>
+      <button class="pchip" id="plGap" title="Szünet az idegen mondat után"></button>
+      <button class="pchip" id="plSleep" title="Elalvás-időzítő"></button>
+      <button class="pchip" id="plVoice" title="Váltás a neurális és a rendszerhang között" hidden></button>
+    </div>
   </div>
-  <div class="prow2">
-    <button class="mini" id="plSpeed" title="Tempó"></button>
-    <button class="mini" id="plHu" title="Magyar fordítás felolvasása"></button>
-    <button class="mini" id="plGap" title="Szünet az idegen mondat után — legyen időd fejben lefordítani"></button>
-    <button class="mini" id="plSleep" title="Elalvás-időzítő"></button>
-    <span class="mini" id="plBuf" hidden style="pointer-events:none"></span>
-  </div>
+  <div class="pstat" id="plBuf" hidden></div>
 </div>
 
 <main id="main">
@@ -741,8 +757,6 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow" id="kokVoiceRow" hidden><label>Hangszín</label>
       <select class="inp" id="kokVoice"></select>
       <button class="mini" id="kokTest">próba</button></div>
-    <div class="srow" id="kokBufRow" hidden><label>Előre gyártott mondatok</label>
-      <input type="range" id="rKokBuf" min="2" max="20" step="1"><span class="val" id="vKokBuf"></span></div>
     <div class="srow" id="kokBuildRow" hidden><label>Hangoskönyv</label>
       <button class="mini" id="kokBuildBtn">fejezet előgyártása</button>
       <button class="mini" id="kokWavBtn" title="A fejezet hangja egyetlen fájlban">mentés WAV-ba</button>
@@ -843,7 +857,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v76';
+const APP_VER='v78';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2626,11 +2640,12 @@ const KOK_VOICES=[
  ['am_puck','Puck — amerikai férfi']
 ];
 const KOK={on:store.get('ek_kok')==='1', voice:store.get('ek_kokvoice')||'bm_george',
-  tts:null, state:'off', pct:0, err:'', loader:null, gen:0, loaded:0, total:0, file:''};
+  state:'off', ready:false, pct:0, err:'', loaded:0, total:0, file:'', files:{},
+  wk:null, seq:0, jobs:new Map(), factory:null};   /* factory: teszthez cserélhető szálindító */
 let kokAudio=null, kokBusy=false;
 /* folyamatos háttérgyártás: a puffer mélysége és a mért gyártási idők */
 let kokBufTarget=+(store.get('ek_kokbuf')||6);
-let kokDepth=0, kokMaking='';
+let kokDepth=0, kokMaking='', kokSlowWarned=false;
 let kokTimes=[]; try{ kokTimes=JSON.parse(store.get('ek_koktimes')||'[]') }catch(e){}
 function noteGen(ms){
   kokTimes.push(ms); if(kokTimes.length>20) kokTimes.shift();
@@ -2644,40 +2659,99 @@ const kokCap=()=>+(store.get('ek_audcap')||150)*1048576;   /* tárolási korlát
 const kokWait=()=>+(store.get('ek_kokwait')||20)*1000;
 let kokHinted=false;
 
+/* A modell KÜLÖN SZÁLON fut. Főszálon a WASM-számítás alatt az egész felület megfagy
+   — a gombok sem reagálnak —, ezért a betöltés és minden generálás workerbe kerül. */
+function kokWorkerSrc(){ return `
+let tts=null;
+self.onmessage=async e=>{
+  const m=e.data||{};
+  if(m.t==='load'){
+    try{
+      const mod=await import(m.url);
+      tts=await mod.KokoroTTS.from_pretrained(m.model,{dtype:'q8',device:m.dev,
+        progress_callback:p=>{ try{ self.postMessage({t:'prog',file:p&&p.file,
+          loaded:p&&p.loaded,total:p&&p.total,progress:p&&p.progress}) }catch(x){} }});
+      self.postMessage({t:'ready'});
+    }catch(err){ self.postMessage({t:'err',m:String((err&&err.message)||err)}) }
+    return;
+  }
+  if(m.t==='gen'){
+    const t0=Date.now();
+    try{
+      if(!tts) throw new Error('a modell nincs betoltve');
+      const out=await tts.generate(m.text,{voice:m.voice,speed:m.speed});
+      const buf=await out.toBlob().arrayBuffer();
+      self.postMessage({t:'audio',id:m.id,buf,ms:Date.now()-t0},[buf]);
+    }catch(err){ self.postMessage({t:'genErr',id:m.id,m:String((err&&err.message)||err)}) }
+  }
+};`; }
+function kokWorker(){
+  if(KOK.wk) return KOK.wk;
+  const wk = KOK.factory ? KOK.factory()
+    : new Worker(URL.createObjectURL(new Blob([kokWorkerSrc()],{type:'text/javascript'})),{type:'module'});
+  wk.onmessage=e=>{
+    const m=e.data||{};
+    if(m.t==='prog'){ kokProg(m); return }
+    const key=(m.t==='ready'||m.t==='err')?'load':m.id;
+    const j=KOK.jobs.get(key);
+    if(m.t==='ready'){ KOK.jobs.delete(key); j&&j.res(true); return }
+    if(m.t==='err'){ KOK.jobs.delete(key); j&&j.rej(new Error(m.m)); return }
+    if(m.t==='audio'){ KOK.jobs.delete(key); if(m.ms) noteGen(m.ms);
+      j&&j.res(new Blob([m.buf],{type:'audio/wav'})); return }
+    if(m.t==='genErr'){ KOK.jobs.delete(key); j&&j.rej(new Error(m.m)); return }
+  };
+  wk.onerror=ev=>{
+    const msg=(ev&&ev.message)||'a hangszál hibára futott';
+    KOK.jobs.forEach(j=>j.rej(new Error(msg))); KOK.jobs.clear();
+    KOK.state='error'; KOK.ready=false; KOK.err=msg; drawKok();
+  };
+  KOK.wk=wk; return wk;
+}
+function kokKill(){
+  try{ KOK.wk&&KOK.wk.terminate() }catch(e){}
+  KOK.wk=null; KOK.ready=false;
+  KOK.jobs.forEach(j=>j.rej(new Error('megszakítva'))); KOK.jobs.clear();
+}
+function kokAsk(msg,key,timeout){
+  return new Promise((res,rej)=>{
+    const id=key||('g'+(++KOK.seq));
+    let wk; try{ wk=kokWorker() }
+    catch(e){ rej(new Error('ez a böngésző nem tud külön szálat indítani')); return }
+    KOK.jobs.set(id,{res,rej});
+    if(timeout) setTimeout(()=>{ if(KOK.jobs.has(id)){ KOK.jobs.delete(id); rej(new Error('lassú')) } },timeout);
+    try{ wk.postMessage(Object.assign({id},msg)) }catch(e){ KOK.jobs.delete(id); rej(e) }
+  });
+}
+/* a letöltés több fájlból áll, a jelzések fájlonként jönnek: összesítve mutatjuk */
+function kokProg(p){
+  if(p&&p.file&&typeof p.loaded==='number') KOK.files[p.file]={l:p.loaded,t:p.total||0};
+  let l=0,t=0; Object.keys(KOK.files).forEach(k=>{l+=KOK.files[k].l;t+=KOK.files[k].t});
+  KOK.loaded=l; KOK.total=t;
+  KOK.pct=t?Math.min(99,Math.round(l/t*100)):(typeof (p&&p.progress)==='number'?Math.round(p.progress):KOK.pct);
+  KOK.file=((p&&p.file)||'').split('/').pop();
+  drawKok();
+}
 async function kokLoad(){
   if(KOK.state==='ready') return true;
   if(KOK.state==='loading') return false;
-  KOK.state='loading'; KOK.pct=0; KOK.err=''; drawKok();
+  KOK.state='loading'; KOK.pct=0; KOK.err=''; KOK.files={}; drawKok();
   await askPersist();          /* a 92 MB-os modell ne essen ki helyszűkében */
   try{
-    const mod=KOK.loader?await KOK.loader():await import(KOK_URL);
-    /* A letöltés több fájlból áll, és a jelzések fájlonként jönnek: ezért összesítve
-       mutatjuk a letöltött MB-ot, különben úgy tűnik, mintha megállt volna. */
-    const files={};
-    const prog=p=>{
-      if(!p) return;
-      if(p.file&&typeof p.loaded==='number'){ files[p.file]={l:p.loaded,t:p.total||0} }
-      let l=0,t=0; Object.values(files).forEach(f=>{l+=f.l;t+=f.t});
-      KOK.loaded=l; KOK.total=t;
-      KOK.pct=t?Math.min(99,Math.round(l/t*100)):(typeof p.progress==='number'?Math.round(p.progress):KOK.pct);
-      KOK.file=(p.file||'').split('/').pop();
-      drawKok();
-    };
-    /* q8 mindkét úton: ugyanazok a fájlok (~92 MB), csak a futtatás módja más.
-       Ha a WebGPU nem indul el, magától visszaesik WASM-ra — nincs újabb letöltés. */
-    const tryDev=async dev=>mod.KokoroTTS.from_pretrained(KOK_MODEL,
-      {dtype:'q8',device:dev,progress_callback:prog});
-    if(navigator.gpu){
-      try{ KOK.tts=await tryDev('webgpu') }
-      catch(e){ KOK.tts=await tryDev('wasm') }
-    } else KOK.tts=await tryDev('wasm');
-    if(KOK.state!=='loading'){ return false }   /* közben lemondtad */
-    KOK.pct=100; KOK.state='ready'; KOK.on=true; store.set('ek_kok','1');
-    drawKok(); toast('neurális angol hang kész',2600);
+    /* q8 mindkét úton ugyanazok a fájlok (~92 MB); ha a WebGPU nem indul, WASM-mal újra */
+    const dev=navigator.gpu?'webgpu':'wasm';
+    try{ await kokAsk({t:'load',url:KOK_URL,model:KOK_MODEL,dev},'load') }
+    catch(e){
+      if(dev!=='webgpu'||KOK.state!=='loading') throw e;
+      kokKill();
+      await kokAsk({t:'load',url:KOK_URL,model:KOK_MODEL,dev:'wasm'},'load');
+    }
+    if(KOK.state!=='loading') return false;     /* közben lemondtad */
+    KOK.pct=100; KOK.state='ready'; KOK.ready=true; KOK.on=true; store.set('ek_kok','1');
+    drawKok(); toast('kész — a „próba” gombbal ellenőrizd, elég gyors-e a telefonod',4200);
     return true;
   }catch(e){
     KOK.state='error'; KOK.err=(e&&e.message)||'nem sikerült betölteni';
-    KOK.tts=null; drawKok(); return false;
+    KOK.ready=false; drawKok(); return false;
   }
 }
 function kokKey(t,speed){ return KOK.voice+'|'+speed+'|'+t }
@@ -2692,12 +2766,11 @@ async function audTrim(){
     for(const r of all){ if(total<=cap*0.85) break; await audDel(r.k); total-=(r.n||0) }
   }catch(e){}
 }
-async function kokBlob(text,speed){
+async function kokBlob(text,speed,timeout){
   const k=kokKey(text,speed);
   try{ const hit=await audGet(k); if(hit) return hit }catch(e){}
-  if(!KOK.tts) throw new Error('nincs betöltve');
-  const out=await KOK.tts.generate(text,{voice:KOK.voice,speed:speed||1});
-  const blob=out.toBlob();
+  if(!KOK.ready) throw new Error('nincs betöltve');
+  const blob=await kokAsk({t:'gen',text,voice:KOK.voice,speed:speed||1},null,timeout||0);
   audPut(k,blob).then(audTrim).catch(()=>{});
   return blob;
 }
@@ -2719,42 +2792,17 @@ function kokPlay(blob){
 }
 /* Folyamatos háttérgyártás: a lejátszás előtt mindig legyen néhány kész mondat.
    Amíg az aktuális mondat szól, a következőket gyártja — így a hang nem szakad meg. */
-async function kokAhead(all,from){
-  if(!kokReady()||kokBusy) return;
-  kokBusy=true;
-  try{
-    let depth=0;
-    for(let k=from+1;k<Math.min(from+1+kokBufTarget,all.length);k++){
-      if(!rdOn||!kokReady()) break;
-      const t=(all[k].textContent||'').trim(); if(!t) continue;
-      const key=kokKey(t,rdSpeed);
-      let have=false; try{ have=!!(await audGet(key)) }catch(e){}
-      if(have){ depth++; kokDepth=depth; continue }
-      kokMaking=(k-from)+'/'+kokBufTarget; drawPlayer();
-      const t0=Date.now();
-      try{ await kokBlob(t,rdSpeed) }catch(e){ break }
-      noteGen(Date.now()-t0);
-      depth++; kokDepth=depth; kokMaking=''; drawPlayer();
-    }
-    kokDepth=depth;
-  } finally { kokBusy=false; kokMaking=''; drawPlayer() }
+/* Mennyi mondat hangja van kész ebből a fejezetből — ezt írja ki a lejátszó. */
+let kokTotal=0;
+async function kokCountReady(){
+  if(!kokReady()){ kokDepth=0; kokTotal=0; drawPlayer(); return }
+  const all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
+  let n=0;
+  for(const t of all){ try{ if(await audGet(kokKey(t,rdSpeed))) n++ }catch(e){} }
+  kokDepth=n; kokTotal=all.length; drawPlayer();
 }
 /* indítás előtti feltöltés, hogy az első mondatokra ne kelljen várni */
-async function kokWarmup(all,from,want){
-  if(!kokReady()) return;
-  for(let k=from;k<Math.min(from+want,all.length);k++){
-    if(!rdOn) return;
-    const t=(all[k].textContent||'').trim(); if(!t) continue;
-    let have=false; try{ have=!!(await audGet(kokKey(t,rdSpeed))) }catch(e){}
-    if(have){ kokDepth=k-from+1; continue }
-    kokMaking='indítás '+(k-from+1)+'/'+want; drawPlayer();
-    const t0=Date.now();
-    try{ await kokBlob(t,rdSpeed) }catch(e){ break }
-    noteGen(Date.now()-t0); kokDepth=k-from+1;
-  }
-  kokMaking=''; drawPlayer();
-}
-const kokReady=()=>KOK.on&&KOK.state==='ready'&&!!KOK.tts;
+const kokReady=()=>KOK.on&&KOK.state==='ready'&&KOK.ready;
 /* ---- WAV-összefűzés: a mondatok hangjából egyetlen hangoskönyv-fájl ----
    A RIFF-darabokat végigjárjuk (nem feltételezzük a 44 bájtos fejlécet), a PCM-et
    egymás után fűzzük, és új fejlécet írunk. Csak azonos formátumú részek fűzhetők. */
@@ -2869,10 +2917,16 @@ async function exportChapterWav(mode){
 }
 
 async function kokTest(){
-  if(!kokReady()) return;
+  if(KOK.state!=='ready') return;
+  const t0=Date.now();
+  toast('próba: egy mondat legyártása…',2000);
   try{
-    const blob=await kokBlob('The road goes ever on and on, down from the door where it began.',1);
+    const blob=await kokBlob('The road goes ever on and on, down from the door where it began.',1,60000);
+    const s=(Date.now()-t0)/1000;
     await kokPlay(blob);
+    drawKokSize();
+    toast(s<0.1?'gyorsítótárból szólt':('legyártás: '+s.toFixed(1)+' s — '
+      +(s<3?'valós időben is jó':s<8?'hallgatáshoz szűkös, előgyártás javasolt':'valós időben kevés: használj előgyártást vagy rendszerhangot')),6000);
   }catch(e){ toast('a próba nem sikerült: '+((e&&e.message)||'')) }
 }
 function initKok(){
@@ -2886,12 +2940,6 @@ function initKok(){
   }
   const test=$('kokTest'); if(test) test.onclick=()=>kokTest();
   const bb=$('kokBuildBtn'); if(bb) bb.onclick=()=>kokBuildChapter();
-  const rb=$('rKokBuf');
-  if(rb){
-    const paint=()=>{ $('vKokBuf').textContent=kokBufTarget+' mondat'; rb.value=kokBufTarget };
-    paint();
-    rb.oninput=()=>{ kokBufTarget=+rb.value||6; store.set('ek_kokbuf',String(kokBufTarget)); paint() };
-  }
   const kw=$('kokWipeBtn');
   if(kw) kw.onclick=async()=>{
     if(!confirm('Törlöm a legyártott hangokat? A modell megmarad, csak újra kell gyártani a mondatokat.')) return;
@@ -2901,9 +2949,9 @@ function initKok(){
   const zb=$('kokZipBtn'); if(zb) zb.onclick=()=>exportChapterWav('zip');
   const b=$('kokBtn');
   if(b) b.onclick=async()=>{
-    if(KOK.state==='loading'){                  /* a felület felszabadul; a letöltés a háttérben fut tovább */
-      KOK.state='off'; KOK.err=''; drawKok();
-      toast('rendben, a rendszerhang marad — a megkezdett letöltés a háttérben befejeződik');
+    if(KOK.state==='loading'){                  /* megszakítás: a szálat is leállítjuk */
+      KOK.state='off'; KOK.err=''; kokKill(); drawKok();
+      toast('rendben, a rendszerhang marad');
       return;
     }
     if(KOK.state==='ready'){                    /* csak ki/be kapcsolás, a modell megmarad */
@@ -2967,7 +3015,6 @@ function drawKok(){
     : st==='error'?('hiba: '+KOK.err) : 'nincs letöltve — most a rendszerhang szól (kb. 90 MB, wifin javasolt)';
   $('kokVoiceRow').hidden = st!=='ready';
   $('kokBuildRow').hidden = st!=='ready';
-  $('kokBufRow').hidden = st!=='ready';
   if(st==='ready'){ drawKokSize() }
 }
 async function drawKokSize(){
@@ -3040,19 +3087,17 @@ const RD_SLEEPS=[0,15,30,45,60];
 let rdPre=false;
 /* angolra a neurális hang, ha kész; ha lassú vagy hibázik, a rendszerhang veszi át,
    hogy a felolvasás soha ne akadjon meg */
+/* Olvasás közben SOHA nem gyártunk hangot és nem várunk rá: egy mondat legyártása
+   telefonon több másodperc, tehát valós időben nem járható. Vagy van kész hang, vagy
+   azonnal a rendszerhang jön — így nincs csend, nincs beragadás, nincs várakozás. */
 async function speakAsync(t,lang,rate){
   if(t&&kokReady()&&/^en/i.test(lang||'')){
-    try{
-      const blob=await Promise.race([
-        kokBlob(t,rate||1),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('lassú')),kokWait()))
-      ]);
-      if(blob){ await kokPlay(blob); return }
-    }catch(e){
-      if((e&&e.message)==='lassú'&&!kokHinted){
-        kokHinted=true;
-        toast('a telefon nem bírja valós időben a neurális hangot — a ⚙-ben a „fejezet előgyártása” megoldja',5600);
-      }
+    let blob=null;
+    try{ blob=await audGet(kokKey(t,rate||1)) }catch(e){}
+    if(blob){ try{ await kokPlay(blob); return }catch(e){} }
+    else if(!kokHinted){
+      kokHinted=true;
+      toast('ez a rész még nincs előgyártva, ezért a rendszerhang mondja — a ⚙ → Hang alatt a „fejezet előgyártása” hozza a szép hangot',6500);
     }
   }
   return speakSys(t,lang,rate);
@@ -3126,28 +3171,38 @@ async function rdWake(on){
 }
 function drawPlayer(){
   $('plPause').textContent=rdOn?'⏸':'▶';
-  const g=$('plGap'); if(g){ g.textContent=rdGap?('szünet '+rdGap+'s'):'szünet ki';
+  const g=$('plGap'); if(g){ g.textContent=rdGap?('⏸'+rdGap+'s'):'⏸–';
+    g.title=rdGap?('szünet a magyar előtt: '+rdGap+' másodperc'):'nincs szünet a magyar előtt';
     g.classList.toggle('on',!!rdGap) }
   const s=$('plSleep');
   if(s){
     if(rdSleepEnd){
       const left=Math.max(0,Math.round((rdSleepEnd-Date.now())/60000));
-      s.textContent='⏾ '+left+' perc'; s.classList.add('on');
-    } else { s.textContent='⏾ időzítő'; s.classList.remove('on') }
+      s.textContent='⏾'+left; s.title='elalvás-időzítő: '+left+' perc van hátra'; s.classList.add('on');
+    } else { s.textContent='⏾–'; s.title='elalvás-időzítő (ki)'; s.classList.remove('on') }
   }
   $('plSpeed').textContent=(src||'en').toUpperCase()+' '+String(rdSpeed).replace('.',',')+'×';
   $('plSpeed').title='Az idegen nyelv tempója \u2014 a magyar mindig normál (1\u00d7)';
-  $('plHu').textContent=rdHu?'HU: be':'HU: ki';
+  $('plHu').textContent=rdHu?'HU':'HU̶';
+  $('plHu').title=rdHu?'a magyar fordítás is elhangzik':'csak az idegen nyelv szól';
   $('plHu').classList.toggle('on',rdHu);
+  const vc=$('plVoice');
+  if(vc){
+    vc.hidden=(KOK.state!=='ready');
+    vc.textContent=KOK.on?'♪neurális':'♪gépi';
+    vc.title=KOK.on?'most a neurális hang szól — koppints a gyors rendszerhangra váltáshoz'
+                   :'most a rendszerhang szól — koppints a neurális hangra';
+    vc.classList.toggle('on',KOK.on);
+  }
   const bf=$('plBuf');
   if(bf){
-    if(!kokReady()) bf.hidden=true;
+    if(!kokReady()||!kokTotal) bf.hidden=true;
     else{
       bf.hidden=false;
-      bf.textContent=kokMaking?('hang készül… '+kokMaking):('⛁ '+kokDepth);
-      bf.title=kokMaking?'a következő mondatok hangja most készül'
-        :(kokDepth+' mondat hangja van előre készen'+(kokAvg()?(' · átlag '+(kokAvg()/1000).toFixed(1)+' s/mondat'):''));
-      bf.classList.toggle('on',!!kokMaking);
+      const full=kokDepth>=kokTotal;
+      bf.textContent=full?('⛁ a fejezet elő van gyártva — a szép hang szól')
+                         :('⛁ '+kokDepth+'/'+kokTotal+' előgyártva · a többit a rendszerhang mondja');
+      bf.classList.toggle('on',full);
     }
   }
 }
@@ -3176,12 +3231,8 @@ function startReading(){
   rdOn=true; rdEpoch++;
   $('player').hidden=false; drawPlayer();
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
-  /* neurális hangnál előbb feltöltjük a puffert, hogy ne kelljen a hangra várni */
-  if(kokReady()){
-    /* a feltöltésre legfeljebb 8 másodpercet várunk, aztán indul a felolvasás */
-    Promise.race([kokWarmup(all,rdPtr,Math.min(3,kokBufTarget)),sleep(8000)])
-      .then(()=>{ if(rdOn) loopRead() });
-  } else loopRead();
+  loopRead();                            /* azonnal indul: semmire nem kell várni */
+  if(kokReady()) kokCountReady();        /* csak tájékoztatás: mennyi van előgyártva */
 }
 function stopReading(){
   rdOn=false; rdEpoch++;
@@ -3213,7 +3264,6 @@ async function loopRead(){
       try{speechSynthesis.cancel()}catch(x){}
       drawPlayer();                          /* az időzítő hátralévő ideje frissül */
       rdPrefetch(all,rdPtr);                 /* a következő mondatok magyarja a háttérben készül */
-      kokAhead(all,rdPtr);                   /* és a neurális hangjuk is, ha be van kapcsolva */
       await speakAsync(sent, src==='da'?'da-DK':'en-US', rdSpeed);
       if(!rdOn) break;
       if(e!==rdEpoch) continue;              /* ⏭: a magyar rész kimarad */
@@ -3248,6 +3298,18 @@ $('plSpeed').onclick=()=>{
   store.set('ek_rdspeed',String(rdSpeed)); drawPlayer();
 };
 $('plHu').onclick=()=>{ rdHu=!rdHu; store.set('ek_rdhu',rdHu?'1':'0'); drawPlayer() };
+$('plVoice').onclick=()=>{
+  if(KOK.state!=='ready') return;
+  KOK.on=!KOK.on; store.set('ek_kok',KOK.on?'1':'0');
+  kokMaking=''; drawPlayer();
+  toast(KOK.on?'neurális hang':'rendszerhang — azonnali, de gépies');
+};
+$('plMore').onclick=()=>{
+  const p=$('player'), open=!p.classList.contains('wide');
+  p.classList.toggle('wide',open); $('plMore').classList.toggle('sel',open);
+  store.set('ek_plwide',open?'1':'0'); drawPlayer();
+};
+if(store.get('ek_plwide')==='1'){ $('player').classList.add('wide'); $('plMore').classList.add('sel') }
 $('plGap').onclick=()=>{
   rdGap=RD_GAPS[(RD_GAPS.indexOf(rdGap)+1)%RD_GAPS.length];
   store.set('ek_rdgap',String(rdGap)); drawPlayer();
