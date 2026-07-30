@@ -492,6 +492,12 @@ body.reading.rlight .tr .err{color:#a8352a}
 .qtile:active{transform:scale(.95)}
 .qans .qtile{border-color:rgba(232,182,76,.45)}
 .qbank .qtile.used{opacity:.22;pointer-events:none}
+.qans.ontrack{border-bottom-color:rgba(87,217,163,.55)}
+.qans.off{border-bottom-color:var(--red)}
+.qans.off::before{content:'⌫ vedd vissza az utolsó szót — így nem folytatható';display:block;width:100%;
+  color:var(--red);font-size:var(--t1);font-family:var(--mono);margin-bottom:4px}
+.qtile.hint{animation:hintp 1s ease 3;border-color:var(--gold)}
+@keyframes hintp{50%{transform:scale(1.12);box-shadow:0 0 16px rgba(232,182,76,.5)}}
 #toast{position:fixed;left:50%;bottom:1.4rem;transform:translate(-50%,2rem);opacity:0;
   background:rgba(20,14,9,.96);border:1px solid var(--line2);border-radius:var(--r2);
   padding:var(--sp3) var(--sp4);font-size:var(--t2);z-index:60;pointer-events:none;
@@ -613,10 +619,11 @@ body.reading.rlight .tr .err{color:#a8352a}
     <p>Ugyanitt a <b>kifejezések</b> a nyitott fejezetből vonzatos igéket, idiómákat és állandó fordulatokat gyűjtenek, a nyelvbeli gyakoriság szerint rangsorolva. Ez csak Claude vagy saját API mellett működik, mert gépi fordító nem tudja megítélni, mi hasznos.</p>
     <h4>Gyakorlás</h4>
     <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban körönként négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót. A játék a teljes szótáradon végigmegy — elöl az esedékes szavakkal —, de bármikor kiléphetsz; a jól álló szavak ütemezését nem rontja el.</p>
-    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell begépelned. A mondatcsomagot JSON fájlból töltöd be (Claude generálja). Két mód van: az <b>összerakás</b>ban a megadott szavakra koppintasz helyes sorrendben (pár beugrató szóval), a <b>beírás</b>ban gépeled a fordítást. Az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
+    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell begépelned. A mondatcsomagot JSON fájlból töltöd be (Claude generálja). Két mód van: az <b>összerakás</b>ban a megadott szavakra koppintasz helyes sorrendben (pár beugrató szóval), a <b>beírás</b>ban gépeled a fordítást. Összerakásnál a vonal színe mutatja, jó úton jársz-e (zöld = folytatható, piros = az utolsó szót vissza kell venni), a <b>💡 súgás</b> pedig megvillantja a következő helyes szót. Az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
+    <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
     <h4>Olvasás</h4>
     <p>A ⋯ gombbal lehozod a menüsávot: egyetlen felső sávban van a kilépés a könyvtárba, a fejezetválasztó, a haladás, a betűméret, a <b>szókincs</b>, a <b>szótár</b> és a ⚙ — keskeny kijelzőn az eszközök a ☰ gomb mögé kerülnek. Minden tartós beállítás — forrásnyelv, fordítómotor, előtöltés, napi adagok — a ⚙ panelben van, szakaszokra bontva. A ⚙ panelben háttér, betűtípus, sortávolság és hasábszélesség állítható. A haladás mondatszinten mentődik, tehát betűméret-váltás után is ott nyílik ki, ahol abbahagytad.</p>
@@ -764,7 +771,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v65';
+const APP_VER='v67';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -2416,17 +2423,67 @@ function speakCardBack(){
 let rdOn=false, rdPtr=0, rdEpoch=0, rdLoop=false, rdWl=null;
 let rdSpeed=+(store.get('ek_rdspeed')||1);
 let rdHu=store.get('ek_rdhu')!=='0';
-const RD_SPEEDS=[1,.9,.75,1.25];
+const RD_SPEEDS=[1,.9,.75,.6,1.25];   /* csak az idegen nyelvre hat, a magyar mindig 1x */
 function speakAsync(t,lang,rate){
   return new Promise(res=>{
     if(!t){res();return}
+    let done=false, iv=0;
+    const fin=()=>{ if(done)return; done=true; clearInterval(iv); res() };
     try{
       const u=new SpeechSynthesisUtterance(t);
       u.lang=lang; u.rate=rate;
-      u.onend=res; u.onerror=res;
+      u.onend=fin; u.onerror=fin;
       speechSynthesis.speak(u);
-    }catch(e){res()}
+    }catch(e){ fin(); return }
+    /* lezárt kijelzőn a rendszer néha elnyeli az onend jelzést; ez a figyelő
+       gondoskodik róla, hogy a felolvasás akkor se álljon meg örökre */
+    const est=(t.length/(11*Math.max(rate,.4)))*1000+2500;   /* ~11 karakter/másodperc */
+    const t0=Date.now(); let quiet=0;
+    iv=setInterval(()=>{
+      if(done){ clearInterval(iv); return }
+      let busy=true; try{ busy=speechSynthesis.speaking||speechSynthesis.pending }catch(e){}
+      quiet=busy?0:quiet+1;
+      if((quiet>=3&&Date.now()-t0>1500)||Date.now()-t0>est*4+20000) fin();
+    },400);
   });
+}
+/* A böngésző csak akkor tartja életben a lapot lezárt kijelzőnél, ha az „médiát játszik”:
+   ezért a felolvasás alatt egy néma hangsáv szól végtelen ismétlésben. */
+let rdKeep=null;
+function silentWavUrl(){
+  const sr=8000,n=sr,b=new Uint8Array(44+n),dv=new DataView(b.buffer);
+  const put=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i)};
+  put(0,'RIFF'); dv.setUint32(4,36+n,true); put(8,'WAVEfmt ');
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,sr,true); dv.setUint32(28,sr,true); dv.setUint16(32,1,true); dv.setUint16(34,8,true);
+  put(36,'data'); dv.setUint32(40,n,true); b.fill(128,44);   /* 8 bites PCM-ben a 128 a csend */
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+}
+function keepAudio(on){
+  try{
+    if(on){
+      if(!rdKeep){ rdKeep=new Audio(silentWavUrl()); rdKeep.loop=true; rdKeep.volume=.001 }
+      const p=rdKeep.play(); if(p&&p.catch) p.catch(()=>{});
+    } else if(rdKeep){ rdKeep.pause() }
+  }catch(e){}
+}
+/* zárolt kijelzőn is kezelhető legyen: rendszerszintű lejátszásvezérlő */
+function mediaSess(state){
+  if(!('mediaSession' in navigator)) return;
+  try{
+    if(state==='playing'&&window.MediaMetadata){
+      navigator.mediaSession.metadata=new MediaMetadata({
+        title:(book&&book.title)||'Kétnyelvű olvasó',
+        artist:(LANG[src]?LANG[src].name:'')+' \u2192 magyar felolvasás',
+        album:'Kétnyelvű olvasó'});
+    }
+    navigator.mediaSession.playbackState=state;
+    const H=(n,f)=>{ try{navigator.mediaSession.setActionHandler(n,f)}catch(e){} };
+    H('play',()=>{ if(!rdOn){ rdOn=true; rdEpoch++; keepAudio(true); loopRead(); drawPlayer(); mediaSess('playing') } });
+    H('pause',()=>{ if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} drawPlayer(); mediaSess('paused') } });
+    H('nexttrack',()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} });
+    H('stop',()=>stopReading());
+  }catch(e){}
 }
 async function rdWake(on){
   try{
@@ -2436,7 +2493,8 @@ async function rdWake(on){
 }
 function drawPlayer(){
   $('plPause').textContent=rdOn?'⏸':'▶';
-  $('plSpeed').textContent=String(rdSpeed).replace('.',',')+'×';
+  $('plSpeed').textContent=(src||'en').toUpperCase()+' '+String(rdSpeed).replace('.',',')+'×';
+  $('plSpeed').title='Az idegen nyelv tempója \u2014 a magyar mindig normál (1\u00d7)';
   $('plHu').textContent=rdHu?'HU: be':'HU: ki';
 }
 function startReading(){
@@ -2449,14 +2507,14 @@ function startReading(){
   rdPtr=i<0?0:i;
   rdOn=true; rdEpoch++;
   $('player').hidden=false; drawPlayer();
-  setChrome(false); rdWake(true);
+  setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
   loopRead();
 }
 function stopReading(){
   rdOn=false; rdEpoch++;
   try{speechSynthesis.cancel()}catch(e){}
   sentList().forEach(s=>s.classList.remove('rdnow'));
-  $('player').hidden=true; rdWake(false);
+  $('player').hidden=true; rdWake(false); keepAudio(false); mediaSess('none');
 }
 async function loopRead(){
   if(rdLoop) return; rdLoop=true;
@@ -2485,7 +2543,7 @@ async function loopRead(){
         if(!hu){ try{ hu=await freeTranslate(sent) }catch(x){ hu='' }
                  if(hu){ cache[ck(sent)]=hu; saveCache() } }
         if(!rdOn) break;
-        if(e===rdEpoch&&hu) await speakAsync(hu,'hu-HU',rdSpeed);
+        if(e===rdEpoch&&hu) await speakAsync(hu,'hu-HU',1);   /* a magyar mindig normál tempó */
       }
       sp.classList.remove('rdnow');
       if(!rdOn) break;
@@ -2495,8 +2553,8 @@ async function loopRead(){
 }
 $('readBtn').onclick=()=>startReading();
 $('plPause').onclick=()=>{
-  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} }
-  else { rdOn=true; rdEpoch++; loopRead(); rdWake(true) }
+  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} keepAudio(false); mediaSess('paused') }
+  else { rdOn=true; rdEpoch++; keepAudio(true); mediaSess('playing'); loopRead(); rdWake(true) }
   drawPlayer();
 };
 $('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} };
@@ -2506,8 +2564,12 @@ $('plSpeed').onclick=()=>{
 };
 $('plHu').onclick=()=>{ rdHu=!rdHu; store.set('ek_rdhu',rdHu?'1':'0'); drawPlayer() };
 $('plStop').onclick=()=>stopReading();
-document.addEventListener('visibilitychange',()=>{      /* háttérbe téve elnémulna: inkább szünetel */
-  if(document.hidden&&rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} drawPlayer() }
+/* Zárolt kijelzőn és háttérben is folytatja: a néma hangsáv tartja életben a lapot,
+   a felolvasót pedig meg kell lökni, mert egyes böngészők felfüggesztik. */
+document.addEventListener('visibilitychange',()=>{
+  if(!rdOn) return;
+  if(document.hidden){ keepAudio(true); try{speechSynthesis.resume()}catch(e){} }
+  else { rdWake(true); try{speechSynthesis.resume()}catch(e){} }
 });
 /* ============ szótár panel + export ============ */
 function importTsv(text,fname){
@@ -3048,6 +3110,29 @@ function qDistractors(m,n){
   return out;
 }
 function qBuilt(){ return [...document.querySelectorAll('#qAns .qtile')].map(t=>t.textContent).join(' ') }
+/* jó úton jár-e: az eddig lerakott szavak valamelyik elfogadott válasz elejét adják-e ki */
+function qOnTrack(){
+  const b=qNorm(qBuilt()); if(!b) return true;
+  return qCur.m.en.some(a=>{const n=qNorm(a);return n===b||n.indexOf(b+' ')===0});
+}
+function qPaint(){
+  const ans=$('qAns'); if(!ans) return;
+  const ok=qOnTrack();
+  ans.classList.toggle('off',!ok);
+  ans.classList.toggle('ontrack',ok&&!!ans.firstChild);
+}
+/* súgás: a következő helyes szó csempéjét megvillantja; tévúton a válaszsávot jelzi */
+function qHint(){
+  if(!qOnTrack()){ qPaint(); return }
+  const b=qNorm(qBuilt());
+  const a=qCur.m.en.find(x=>{const n=qNorm(x);return !b||n.indexOf(b+' ')===0||n===b});
+  if(!a) return;
+  const words=qWords(a), idx=qBuilt()?qBuilt().split(/\s+/).length:0;
+  if(idx>=words.length) return toast('kész a mondat — nyomd meg az ellenőrzést');
+  const want=qNorm(words[idx]);
+  const tile=[...document.querySelectorAll('#qBank .qtile')].find(t=>!t.classList.contains('used')&&qNorm(t.textContent)===want);
+  if(tile){ tile.classList.remove('hint'); void tile.offsetWidth; tile.classList.add('hint') }
+}
 function qNext(){
   qCur=qQueue.shift();
   if(!qCur){ qDone(); return }
@@ -3067,8 +3152,8 @@ function qNext(){
       t.onclick=()=>{
         if(t.parentNode===bank){ t.classList.add('used');
           const c=document.createElement('button'); c.className='qtile'; c.textContent=word;
-          c.onclick=()=>{ c.remove(); t.classList.remove('used') };
-          ans.appendChild(c);
+          c.onclick=()=>{ c.remove(); t.classList.remove('used'); qPaint() };
+          ans.appendChild(c); qPaint();
         }
       };
       bank.appendChild(t);
@@ -3085,6 +3170,10 @@ function qNext(){
   b.onclick=qCheck; $('qBtns').appendChild(b);
   const sk=document.createElement('button'); sk.className='btn'; sk.textContent='nem tudom';
   sk.onclick=()=>qFeedback(false,qMode==='tap'?qBuilt():''); $('qBtns').appendChild(sk);
+  if(qMode==='tap'){
+    const hb=document.createElement('button'); hb.className='btn'; hb.textContent='💡 súgás';
+    hb.onclick=qHint; $('qBtns').appendChild(hb);
+  }
 }
 
 function qCheck(){
