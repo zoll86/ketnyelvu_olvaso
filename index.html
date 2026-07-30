@@ -63,17 +63,24 @@ button,select,input{font-family:inherit;color:inherit}
   background:rgba(24,19,13,.93);backdrop-filter:blur(16px);
   border:1px solid var(--line);box-shadow:0 8px 26px rgba(0,0,0,.5)}
 #player .prow{display:flex;gap:5px;align-items:center}
-#player .pbtn{flex:0 0 auto;width:36px;height:32px;display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--line2);border-radius:9px;background:var(--s1);color:var(--txt);
-  font-size:13px;cursor:pointer;transition:transform .12s var(--spring)}
+#player .pbtn{flex:1 1 0;min-width:52px;height:44px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line2);border-radius:11px;background:var(--s1);color:var(--txt);
+  font-size:15px;cursor:pointer;transition:transform .12s var(--spring)}
 #player .pbtn:active{transform:scale(.93)}
 #player .pbtn.pri{background:linear-gradient(160deg,var(--gold),#d0a03e);color:#1a1409;border-color:transparent}
-#player .prow2{display:none;gap:2px;align-items:center;flex:1 1 auto;justify-content:flex-end}
-#player.wide .prow2{display:flex}
+/* A kapcsolók egymás alatt, teljes szélességben, kiírt névvel: így nem lóghatnak ki,
+   és nem kell fejben megfejteni, mit jelent egy „⏸–”. */
+#player .prow2{display:none}
+#player.wide .prow2{display:flex;flex-direction:column;align-items:stretch;gap:2px;
+  margin-top:4px;padding-top:5px;border-top:1px solid var(--line)}
 #player:not(.wide){min-width:0}
-#player .pbtn.sel{border-color:var(--gold);color:var(--gold)}
-#player .pchip{border:0;background:none;color:var(--faint);font-family:var(--mono);
-  font-size:10.5px;letter-spacing:.01em;padding:5px 5px;cursor:pointer;white-space:nowrap;border-radius:6px}
+#player .pbtn.sel{color:var(--gold)}
+#player .pchip{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);
+  width:100%;min-height:44px;border:0;background:none;cursor:pointer;text-align:left;
+  padding:0 8px;border-radius:8px;color:var(--dim);font-size:12.5px}
+#player .pchip b{font-family:var(--mono);font-size:12px;color:var(--txt);font-weight:400;white-space:nowrap}
+#player .pchip.on b{color:var(--gold)}
+#player .pchip:active{background:rgba(255,255,255,.05)}
 #player .pchip.on{color:var(--gold)}
 #player .pchip:active{background:rgba(255,255,255,.07)}
 #player .pstat{font-family:var(--mono);font-size:10px;color:var(--faint);
@@ -142,7 +149,8 @@ body.reading #dots{display:grid}
 body.chrome #dots{opacity:1}
 .btn{
   border:1px solid var(--line2); background:var(--s1); color:var(--dim);
-  border-radius:var(--r1); padding:7px 11px; font-size:var(--t2); cursor:pointer;
+  border-radius:var(--r1); padding:10px 13px; min-height:40px; font-size:var(--t2); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
   transition:transform .2s var(--spring),background .2s,color .2s,border-color .2s; white-space:nowrap;
 }
 .btn:hover{background:var(--s2);color:var(--txt);border-color:var(--line)}
@@ -216,7 +224,8 @@ body.reading.rlight .tr .err{color:#a8352a}
 .tr .hu{color:var(--txt)}
 .tr .row{display:flex;gap:.4rem;align-items:center;margin-top:.65rem;flex-wrap:wrap}
 .mini{border:1px solid var(--line2);background:var(--s1);color:var(--dim);
-  border-radius:var(--r1);padding:5px 9px;font-size:var(--t1);cursor:pointer;
+  border-radius:var(--r1);padding:8px 11px;min-height:36px;font-size:var(--t1);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
   letter-spacing:.02em;
   transition:transform .2s var(--spring),color .2s,border-color .2s,background .2s}
 .mini:hover{color:var(--txt);background:var(--s2);border-color:var(--line)}
@@ -409,7 +418,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 #setts h3{font-size:var(--t4);font-weight:600;margin:0;color:var(--txt);letter-spacing:-.01em}
 .ssec{font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
   margin:var(--sp4) 0 var(--sp2)}
-.srow{display:flex;align-items:center;gap:var(--sp3);margin-top:var(--sp4);font-size:var(--t2)}
+.srow{display:flex;align-items:center;gap:var(--sp3);margin-top:var(--sp4);font-size:var(--t2);flex-wrap:wrap}
 .srow>label{color:var(--dim);min-width:6.6rem;font-size:var(--t2)}
 .srow input[type=range]{flex:1;accent-color:var(--gold);background:transparent}
 .mono{font-family:var(--mono);font-size:var(--t2);color:var(--txt);flex:1}
@@ -419,7 +428,8 @@ body.reading.rlight .tr .err{color:#a8352a}
 .val{font-family:var(--mono);font-size:var(--t1);color:var(--faint);min-width:2.6rem;text-align:right}
 .seg{display:flex;gap:.3rem;flex-wrap:wrap;flex:1}
 .seg button{border:1px solid var(--line2);background:var(--s1);color:var(--dim);
-  border-radius:var(--r1);padding:6px 10px;font-size:var(--t2);cursor:pointer;transition:all .2s var(--spring)}
+  border-radius:var(--r1);padding:9px 12px;min-height:38px;font-size:var(--t2);cursor:pointer;
+  transition:all .2s var(--spring)}
 .seg button:hover{transform:translateY(-1px);color:var(--txt)}
 .seg button.sel{border-color:transparent;color:#1a1206;background:var(--gold);font-weight:500}
 #match{position:fixed;inset:0;z-index:71;display:none;flex-direction:column;
@@ -591,13 +601,13 @@ body.railon #study,body.railon #match,body.railon #sent{
     <button class="pbtn" id="plSkip" title="Következő mondat">⏭</button>
     <button class="pbtn" id="plMore" title="További beállítások">⚙</button>
     <button class="pbtn" id="plStop" title="Leállítás">✕</button>
-    <div class="prow2">
+  </div>
+  <div class="prow2">
       <button class="pchip" id="plSpeed" title="Az idegen nyelv tempója"></button>
       <button class="pchip" id="plHu" title="Magyar fordítás felolvasása"></button>
       <button class="pchip" id="plGap" title="Szünet az idegen mondat után"></button>
       <button class="pchip" id="plSleep" title="Elalvás-időzítő"></button>
-      <button class="pchip" id="plVoice" title="Váltás a neurális és a rendszerhang között" hidden></button>
-    </div>
+    <button class="pchip" id="plVoice" title="Váltás a neurális és a rendszerhang között" hidden></button>
   </div>
   <div class="pstat" id="plBuf" hidden></div>
 </div>
@@ -857,7 +867,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v78';
+const APP_VER='v79';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3171,28 +3181,26 @@ async function rdWake(on){
 }
 function drawPlayer(){
   $('plPause').textContent=rdOn?'⏸':'▶';
-  const g=$('plGap'); if(g){ g.textContent=rdGap?('⏸'+rdGap+'s'):'⏸–';
-    g.title=rdGap?('szünet a magyar előtt: '+rdGap+' másodperc'):'nincs szünet a magyar előtt';
-    g.classList.toggle('on',!!rdGap) }
-  const s=$('plSleep');
-  if(s){
-    if(rdSleepEnd){
-      const left=Math.max(0,Math.round((rdSleepEnd-Date.now())/60000));
-      s.textContent='⏾'+left; s.title='elalvás-időzítő: '+left+' perc van hátra'; s.classList.add('on');
-    } else { s.textContent='⏾–'; s.title='elalvás-időzítő (ki)'; s.classList.remove('on') }
-  }
-  $('plSpeed').textContent=(src||'en').toUpperCase()+' '+String(rdSpeed).replace('.',',')+'×';
-  $('plSpeed').title='Az idegen nyelv tempója \u2014 a magyar mindig normál (1\u00d7)';
-  $('plHu').textContent=rdHu?'HU':'HU̶';
-  $('plHu').title=rdHu?'a magyar fordítás is elhangzik':'csak az idegen nyelv szól';
-  $('plHu').classList.toggle('on',rdHu);
+  /* Minden kapcsoló kiírja, mi ő és mi az állása — nincs kitalálandó jelkép. */
+  const chip=(id,nev,ertek,aktiv,sugo)=>{
+    const e=$(id); if(!e) return;
+    e.innerHTML=nev+'<b>'+ertek+'</b>';
+    e.title=sugo||''; e.classList.toggle('on',!!aktiv);
+  };
+  chip('plSpeed','Tempó',(src||'en').toUpperCase()+' '+String(rdSpeed).replace('.',',')+'×',rdSpeed!==1,
+       'Az idegen nyelv tempója — a magyar mindig normál');
+  chip('plHu','Magyar fordítás',rdHu?'be':'ki',rdHu,
+       rdHu?'a magyar fordítás is elhangzik':'csak az idegen nyelv szól');
+  chip('plGap','Szünet a magyar előtt',rdGap?(rdGap+' s'):'nincs',!!rdGap,
+       'ennyi csend, hogy legyen időd fejben lefordítani');
+  const left=rdSleepEnd?Math.max(0,Math.round((rdSleepEnd-Date.now())/60000)):0;
+  chip('plSleep','Elalvás-időzítő',rdSleepEnd?(left+' perc'):'ki',!!rdSleepEnd,
+       'ennyi idő után magától leáll');
   const vc=$('plVoice');
   if(vc){
     vc.hidden=(KOK.state!=='ready');
-    vc.textContent=KOK.on?'♪neurális':'♪gépi';
-    vc.title=KOK.on?'most a neurális hang szól — koppints a gyors rendszerhangra váltáshoz'
-                   :'most a rendszerhang szól — koppints a neurális hangra';
-    vc.classList.toggle('on',KOK.on);
+    chip('plVoice','Hang',KOK.on?'neurális':'rendszer',KOK.on,
+      KOK.on?'koppints a gyors rendszerhangra váltáshoz':'koppints a neurális hangra');
   }
   const bf=$('plBuf');
   if(bf){
@@ -3200,8 +3208,8 @@ function drawPlayer(){
     else{
       bf.hidden=false;
       const full=kokDepth>=kokTotal;
-      bf.textContent=full?('⛁ a fejezet elő van gyártva — a szép hang szól')
-                         :('⛁ '+kokDepth+'/'+kokTotal+' előgyártva · a többit a rendszerhang mondja');
+      bf.textContent=full?'a fejezet hangja kész'
+                         :(kokDepth+'/'+kokTotal+' mondat hangja kész');
       bf.classList.toggle('on',full);
     }
   }
