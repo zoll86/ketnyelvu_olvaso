@@ -642,7 +642,7 @@ body.reading.rlight .tr .err{color:#a8352a}
     <h4>Gyakorlás</h4>
     <p>A kezdőlapon egy vékony csík mutatja a <b>napi haladást</b>: a lángnál a napi sorozat, mellette a mai helyes válaszok a napi célból, a végén az utolsó hét nap. Minden gyakorlattípus ugyanabba a számlálóba dolgozik — ismétlő, párosítás, mondatok —, tehát mindegy, mivel gyakorolsz. A napi cél a ⚙-ben állítható, és egy kihagyott nap még nem szakítja meg a sorozatot.</p>
     <p>A kezdőlap tetején a <b>Gyakorlás</b> és a <b>Párosítás</b> könyv nélkül is indul. A párosításban körönként négy idegen szó és négy magyar jelentés van összekeverve, koppintásra fel is olvassa a szót. A játék a teljes szótáradon végigmegy — elöl a korábban nehéznek bizonyult és az esedékes szavakkal —, de bármikor kiléphetsz; a jól álló szavak ütemezését nem rontja el. Minden szó <b>legalább kétszer</b> visszatér a játékban, hogy rögzüljön, a hibázott szavak háromszor és sűrűbben. Tévesztésnél <b>mindkét</b> érintett szó nehéznek számít, mert a másikat legközelebb csak kizárásos alapon tudnád. A kör utolsó párja nem számít találatnak — az kikövetkeztethető —, ezért az a szó később valódi próbát kap.</p>
-    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell begépelned. A mondatcsomagot JSON fájlból töltöd be (Claude generálja). Két mód van: az <b>összerakás</b>ban a megadott szavakra koppintasz helyes sorrendben (pár beugrató szóval), a <b>beírás</b>ban gépeled a fordítást. Összerakásnál a vonal színe mutatja, jó úton jársz-e (zöld = folytatható, piros = az utolsó szót vissza kell venni), a <b>💡 súgás</b> pedig megvillantja a következő helyes szót. Az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
+    <p>A <b>Mondatok</b> gyakorlóban magyar mondatot látsz, és angolul kell visszaadnod. A <b>📖 mondatok a könyvből</b> gomb a nyitott könyvedből gyűjt gyakorlóanyagot: nem generál semmit, hanem az író saját mondatait válogatja ki — így az angol biztosan helyes —, a magyar oldalt pedig a már meglévő fordításokból és az ingyenes motorból teszi hozzá, API nélkül. A rövid, régies szavaktól és tulajdonnevektől mentes mondatokat választja, nyelvtani kategóriákba sorolva. Ha egy fordítás mégis félresikerült, a <b>⚑</b> gombbal örökre kihagyható. Készíthető külön mondatcsomag JSON fájlból is. Két mód van: az <b>összerakás</b>ban a megadott szavakra koppintasz helyes sorrendben (pár beugrató szóval), a <b>beírás</b>ban gépeled a fordítást. Összerakásnál a vonal színe mutatja, jó úton jársz-e (zöld = folytatható, piros = az utolsó szót vissza kell venni), a <b>💡 súgás</b> pedig megvillantja a következő helyes szót. Az elrontott mondatok a kör végén visszajönnek, a gyengéket külön is kérheted. A kis- és nagybetű, az írásjelek és az összevont alakok (don't = do not) nem számítanak hibának.</p>
     <p>A szótárban a <b>gyakorlás</b> beépített ismétlőt indít. Minden szó két kártya: egyszer az idegen szót látod és a magyart kell tudnod, egyszer fordítva — külön ütemezéssel, mert a két irány nem egyformán megy. Visszafelé a példamondat is megjelenik, a keresett szó helyén aláhúzással. A négy válasz (újra / nehéz / jó / könnyű) szabja meg, mikor jön vissza a szó.</p>
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
@@ -799,7 +799,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v68';
+const APP_VER='v69';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3144,6 +3144,123 @@ function drawStats(){
     },60);
   }
 }
+/* ============ mondataratás a könyvből ============
+   Nem generálunk mondatot: a könyvben már ott vannak, hibátlan angolsággal, írótól.
+   Csak kiválogatjuk a tanulásra alkalmasakat, és a magyar oldalt a meglévő
+   fordítás-gyorsítótárból vagy az ingyenes motorral tesszük hozzá. API nem kell. */
+let qSkip=new Set(JSON.parse(store.get('ek_qbad')||'[]'));
+function saveQSkip(){ store.set('ek_qbad',JSON.stringify([...qSkip].slice(-800))) }
+/* régies alakok — irodalmi szövegben sok van, tanulásra viszont félrevezető */
+const ARCH=/\b(thou|thee|thy|thine|ye|ere|nay|yea|hath|doth|shalt|wilt|unto|whither|whence|alas|aught|naught|oft|thence|hither|methinks|prithee|nigh|betwixt|yonder|folk|lo)\b|'(?:tis|twas|er|neath)\b/i;
+const IRREG_PAST=(()=>{ const s=new Set();
+  try{ Object.keys(IRREG).forEach(k=>s.add(IRREG[k][0])) }catch(e){}
+  return s; })();
+const IRREG_PP=(()=>{ const s=new Set();
+  try{ Object.keys(IRREG).forEach(k=>s.add(IRREG[k][1])) }catch(e){}
+  return s; })();
+function qWordsOf(s){ return s.replace(/[^A-Za-z' ]/g,' ').split(/\s+/).filter(Boolean) }
+/* kategória a meglévő nyelvtani mintákkal + igealak-felismeréssel */
+function bookKat(s){
+  const t=' '+s.toLowerCase()+' ';
+  /* befejezett alak: -ed/-en végű vagy a rendhagyó tábla 3. alakja (lost, seen, done…) */
+  const perf=t.match(/\b(?:have|has)\s+(?:just\s+|already\s+|never\s+|not\s+|ever\s+)?([a-z]+)\b/);
+  if(perf&&(/(?:ed|en|ne|wn)$/.test(perf[1])||IRREG_PP.has(perf[1]))) return 'G';
+  if(/\?\s*$/.test(s)||/n't\b|\b(do|does|did|will)\s+not\b/.test(t)) return 'F';
+  if(/\bwill\s+[a-z]+/.test(t)) return 'E';
+  const w=qWordsOf(s).map(x=>x.toLowerCase());
+  if(w.some(x=>IRREG_PAST.has(x))) return 'D';
+  if(w.some(x=>/[a-z]{3,}ed$/.test(x))) return 'C';
+  if(/\b(am|is|are|was|were)\b/.test(t)||/\b(have|has|had)\s+(a|an|the|no|some|two|three)\b/.test(t)) return 'B';
+  return 'A';
+}
+/* a tanulásra alkalmas mondatok szűrése */
+/* bekezdésenként, nem egyben: két bekezdés szövege összeérve
+   „…a light.Did you see…” alakot adna, amit a mondatbontó nem tud kettévágni */
+function chapterBlocks(ch){
+  const out=[];
+  try{
+    const blocks=BLOCK.split(',');
+    const walk=node=>{
+      for(const c of [...node.children]){
+        const tag=c.tagName.toLowerCase();
+        if(blocks.includes(tag)){
+          const t=(c.textContent||'').replace(/\s+/g,' ').trim();
+          if(t) out.push(t); else walk(c);
+        } else walk(c);
+      }
+    };
+    walk(ch.body);
+    if(!out.length){ const t=(ch.body.textContent||'').replace(/\s+/g,' ').trim(); if(t) out.push(t) }
+  }catch(e){}
+  return out;
+}
+function harvestSentences(maxWords){
+  const out=[], seen=new Set();
+  for(const ch of chapters){
+   for(const txt of chapterBlocks(ch)){
+    for(const raw of splitSentences(txt)){
+      let s=raw.replace(/^[\s"'“”‘’«»\-–—]+/,'').replace(/[\s"'“”‘’«»]+$/,'').trim();
+      if(!/[.!?]$/.test(s)) s=s.replace(/[,;:]$/,'')+'.';
+      if(!/^[A-Z]/.test(s)) continue;                 /* mondat közepéről vágott töredék */
+      const w=qWordsOf(s);
+      if(w.length<4||w.length>(maxWords||12)) continue;
+      if(ARCH.test(s)) continue;                      /* régies nyelv */
+      if(/[0-9]|\bch(apter)?\b|\bpart\b/i.test(s)) continue;
+      if(/[;:—–]/.test(s)) continue;                  /* összetett, nehezen fordítható */
+      /* tulajdonnév-túlsúly: a mondat közepén legfeljebb egy nagy kezdőbetűs szó */
+      const caps=w.slice(1).filter(x=>/^[A-Z]/.test(x)&&x!=='I').length;
+      if(caps>1) continue;
+      const key=s.toLowerCase();
+      if(seen.has(key)||qSkip.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+    }
+   }
+  }
+  return out;
+}
+/* csomag összeállítása: elöl a már lefordított mondatok (azokat te is láttad olvasás közben) */
+async function buildBookPack(count){
+  const all=harvestSentences(12);
+  if(all.length<8){ toast('ebből a könyvből nem sikerült elég mondatot kigyűjteni'); return null }
+  const withHu=[], without=[];
+  all.forEach(s=>{ (cache[ck(s)]?withHu:without).push(s) });
+  /* kategóriánként arányosan válogatunk, hogy ne csak jelen idő legyen */
+  const pick=[], byKat={};
+  const feed=withHu.sort(()=>Math.random()-.5).concat(without.sort(()=>Math.random()-.5));
+  for(const s of feed){
+    const k=bookKat(s);
+    byKat[k]=(byKat[k]||0);
+    if(byKat[k]>=Math.ceil(count/4)) continue;        /* egy kategória se nyomja el a többit */
+    byKat[k]++; pick.push(s);
+    if(pick.length>=count) break;
+  }
+  while(pick.length<count&&feed.length>pick.length){
+    const s=feed[pick.length]; if(s&&!pick.includes(s)) pick.push(s); else break;
+  }
+  /* magyar oldal: cache-ből ingyen, ami hiányzik, azt az ingyenes motor hozza */
+  const need=pick.filter(s=>!cache[ck(s)]);
+  const w=$('qWrap');
+  for(let i=0;i<need.length;i++){
+    if(!$('sent').classList.contains('open')) return null;   /* közben kiléptél */
+    w.innerHTML='<div class="sdone"><b>Mondatok gyűjtése a könyvből…</b><br>'+
+      'fordítás: '+(i+1)+' / '+need.length+'<br><span style="font-size:var(--t2);color:var(--dim)">'+
+      'ingyenes motorral, API nélkül</span></div>';
+    try{ const hu=await freeTranslate(need[i]); if(hu){ cache[ck(need[i])]=hu; } }catch(e){}
+    if(i%10===9) saveCache();
+  }
+  saveCache();
+  const mondatok=[];
+  pick.forEach((s,ix)=>{
+    const hu=cache[ck(s)];
+    if(!hu||hu.length<3) return;
+    mondatok.push({id:'K'+String(ix+1).padStart(3,'0'),kat:bookKat(s),hu,en:[s],
+                   mgy:'A könyvből: '+((book&&book.title)||'')});
+  });
+  if(mondatok.length<6){ toast('a fordítások nem jöttek meg — próbáld később'); return null }
+  return {tipus:'mondat_gyakorlo',verzio:1,konyv:(book&&book.title)||'',
+          nev:'A könyvből: '+((book&&book.title)||'saját könyv'),mondatok};
+}
 /* ============ mondatgyakorló: magyar mondat -> beírt angol fordítás ============ */
 let sentBank=null; try{sentBank=JSON.parse(store.get('ek_sent')||'null')}catch(e){}
 let sentSt={};     try{sentSt=JSON.parse(store.get('ek_sentst')||'{}')}catch(e){}
@@ -3180,7 +3297,9 @@ function qMenu(){
       '<span style="font-size:var(--t2)">A csomagot Claude generálja; formátum: {mondatok:[{id,kat,hu,tipp,en:[],mgy}]}</span>';
     w.appendChild(d);
     const b=document.createElement('button'); b.className='btn pri'; b.textContent='JSON betöltése';
-    b.onclick=()=>$('sentFile').click(); box.appendChild(b); w.appendChild(box);
+    b.onclick=()=>$('sentFile').click(); box.appendChild(b);
+    addBookBtn(box);
+    w.appendChild(box);
     return;
   }
   const M=sentBank.mondatok;
@@ -3210,7 +3329,22 @@ function qMenu(){
   mk('Vegyesen mindenből',M,M.length+' db');
   const weak=M.filter(m=>{const s=qStat(m.id);return s.bad>0&&s.bad>=s.ok});
   if(weak.length) mk('Csak a gyengék',weak,weak.length+' db');
+  addBookBtn(box);
   w.appendChild(box);
+}
+/* „a nyitott könyvből” — csak akkor van értelme, ha épp olvasol egy könyvet */
+function addBookBtn(box){
+  if(!chapters.length) return;
+  const b=document.createElement('button'); b.className='btn';
+  b.innerHTML='<span>📖 mondatok a könyvből</span><small>'+((book&&book.title)||'')+'</small>';
+  b.onclick=async()=>{
+    const pack=await buildBookPack(60);
+    if(!pack) { qMenu(); return }
+    sentBank=pack; store.set('ek_sent',JSON.stringify(pack));
+    toast(pack.mondatok.length+' mondat a könyvedből',3000);
+    qMenu();
+  };
+  box.appendChild(b);
 }
 
 function qStart(items){
@@ -3303,6 +3437,17 @@ function qNext(){
     const hb=document.createElement('button'); hb.className='btn'; hb.textContent='💡 súgás';
     hb.onclick=qHint; $('qBtns').appendChild(hb);
   }
+  /* gépi fordítás néha félresikerül: egy koppintással kitehető a csomagból */
+  const fb=document.createElement('button'); fb.className='btn'; fb.textContent='⚑';
+  fb.title='Rossz mondat vagy rossz fordítás — kihagyás végleg';
+  fb.onclick=()=>{
+    qSkip.add(m.en[0].toLowerCase()); saveQSkip();
+    if(sentBank){ sentBank.mondatok=sentBank.mondatok.filter(x=>x.id!==m.id);
+      store.set('ek_sent',JSON.stringify(sentBank)) }
+    qQueue=qQueue.filter(x=>x.m.id!==m.id); qTotal=Math.max(1,qTotal-1);
+    toast('kihagyva — többé nem kérdezem'); qNext();
+  };
+  $('qBtns').appendChild(fb);
 }
 
 function qCheck(){

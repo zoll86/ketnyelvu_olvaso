@@ -5,7 +5,7 @@
    - ikonok, manifest, betűtípusok: cache először (ezek ritkán változnak).
    - fordítókérések: soha nem cache-elve. */
 
-const VER   = 'olvaso-v68';
+const VER   = 'olvaso-v69';
 const SHELL = [
   './',
   './index.html',
