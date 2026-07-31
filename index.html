@@ -604,6 +604,8 @@ body.railon #study,body.railon #match,body.railon #sent{
   color:var(--red);font-size:var(--t1);font-family:var(--mono);margin-bottom:4px}
 .qtile.hint{animation:hintp 1s ease 3;border-color:var(--gold)}
 @keyframes hintp{50%{transform:scale(1.12);box-shadow:0 0 16px rgba(232,182,76,.5)}}
+/* koreainál a szó közepén tilos törni — a böngésző alapból megtenné */
+body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
 #toast{position:fixed;left:50%;bottom:1.4rem;transform:translate(-50%,2rem);opacity:0;
   background:rgba(20,14,9,.96);border:1px solid var(--line2);border-radius:var(--r2);
   padding:var(--sp3) var(--sp4);font-size:var(--t2);z-index:60;pointer-events:none;
@@ -940,7 +942,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v92';
+const APP_VER='v93';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -993,7 +995,9 @@ const OAI=Object.assign({url:'https://api.moonshot.ai/v1',model:'kimi-k2.6',key:
   JSON.parse(store.get('ek_oai')||'{}'));
 let src=store.get('ek_src')||'en';           // 'en' | 'da'
 const LANG={en:{name:'angol',en:'English',tts:'en-US',dict:true},
-            da:{name:'dán',  en:'Danish', tts:'da-DK',dict:false}};
+            da:{name:'dán',  en:'Danish', tts:'da-DK',dict:false},
+            ko:{name:'koreai',en:'Korean',tts:'ko-KR',dict:false,cjk:true}};
+const LANG_ORDER=['en','da','ko'];
 const ck=t=>src+'|'+t;
 let cache=JSON.parse(store.get('ek_cache')||'{}');       // mondat -> fordítás
 let vocab=JSON.parse(store.get('ek_vocab')||'[]');       // {en,hu,note,src}
@@ -1747,6 +1751,7 @@ const GRAM_DA=[
   'Az -ere végződés vagy a mere + melléknév hasonlít, az „end” a magyar „mint”.']
 ];
 function grammarHints(sent){
+  if(src!=='en'&&src!=='da') return [];      /* koreaira nincs mintakészletünk */
   const list=src==='da'?GRAM_DA:GRAM_EN, out=[];
   for(const [re,name,hu] of list){
     let m=null; try{ m=sent.match(new RegExp(re,'i')) }catch(e){}
@@ -1786,7 +1791,8 @@ const ABBR_DA=new Set(['bl.a','fx','f.eks','dvs','osv','ca','hr','fru','frk','kl
 const ENDERS=new Set(['p.m','a.m','u.s','u.k','etc','a.d','b.c']); // pont után is jöhet új mondat
 function splitSentences(text){
   const t=text.replace(/\s+/g,' ').trim(); if(!t) return [];
-  const out=[]; let start=0; const re=/([.!?…]+)(["'”’»)\]]*)(\s+)/g; let m;
+  /* a záró jelek közt a koreai 」 és 』 is szerepel, különben a párbeszéd egyben marad */
+  const out=[]; let start=0; const re=/([.!?…]+)(["'”’»)\]\u300D\u300F]*)(\s+)/g; let m;
   while((m=re.exec(t))!==null){
     const end=m.index+m[1].length+m[2].length;
     const before=t.slice(start,m.index);
@@ -1795,7 +1801,9 @@ function splitSentences(text){
     const abbrSet=src==='da'?ABBR_DA:ABBR;
     const isAbbr=m[1]==='.'&&!ENDERS.has(lw)&&(abbrSet.has(lw)||ABBR_DA.has(lw)||/^[a-z]$/.test(lw)||dotted);
     const next=t[end+m[3].length]||'';
-    const starts=/[A-ZÆØÅ“"'‘(\u00C0-\u017F0-9—]/.test(next);
+    /* a koreaiban nincs kis- és nagybetű: a hangul és a koreai nyitó
+       párbeszédjelek is mondatkezdésnek számítanak */
+    const starts=/[A-ZÆØÅ“"'‘(\u00C0-\u017F0-9—\uAC00-\uD7A3\u300C\u300E]/.test(next);
     if(isAbbr||!starts) continue;
     out.push(t.slice(start,end).trim()); start=end+m[3].length;
   }
@@ -1954,7 +1962,7 @@ async function loadEpub(f){
   if(bookHu) setTimeout(()=>toast('A könyv magyarnak tűnik — a magyar hang olvassa, fordítás nélkül. A ⚙ → Hang alatt átállítható.',5200),1400);
   const guess=sniffLang(probe);
   if(!bookHu&&guess!==src){src=guess;store.set('ek_src',src);drawLang();
-    setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+(src==='da'?'DA':'EN')+'→HU-ra',3400),1200)}
+    setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+src.toUpperCase()+'→HU-ra',3400),1200)}
   $('start').style.display='none'; $('reader').style.display='';
   document.body.classList.add('reading'); setChrome(false);
   try{ history.pushState({book:1},'') }catch(e){}
@@ -2208,7 +2216,7 @@ function addVocab(en,hu,note,sr,srHu,dat){
   toast('«'+en.slice(0,28)+'» a szótárba került');
 }
 function speak(t){
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANG[src].tts;applyVoice(u,src);u.rate=src==='da'?.85:.9;speechSynthesis.speak(u)}
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANG[src].tts;applyVoice(u,src);u.rate=(src==='da'||src==='ko')?.85:.9;speechSynthesis.speak(u)}
   catch(e){toast('ez a böngésző nem tud felolvasni')}
 }
 /* előtöltés: a következő 3 mondat a háttérben */
@@ -3034,13 +3042,14 @@ function drawTts(){
 }
 const GSAMPLE={en:'The road goes ever on and on, down from the door where it began.',
   da:'Vejen går altid videre, ned fra døren hvor den begyndte.',
+  ko:'오늘은 날씨가 좋습니다. 우리는 집으로 갑니다.',
   hu:'Az út mindig továbbmegy, le a kaputól, ahol elkezdődött.'};
 async function drawGVoiceRows(){
   const box=$('gVoiceRows'); if(!box) return;
   if(!TTS.gkey){ box.innerHTML='<p class="note" style="margin:0">Írd be a kulcsot, aztán „hangok betöltése”.</p>'; return }
   if(!TTS.list){ box.innerHTML='<p class="note" style="margin:0">'+(TTS.err||'nyomd meg a „hangok betöltése” gombot')+'</p>'; return }
   box.innerHTML='';
-  for(const [lg,label] of [['en','Angol'],['da','Dán'],['hu','Magyar']]){
+  for(const [lg,label] of [['en','Angol'],['da','Dán'],['ko','Koreai'],['hu','Magyar']]){
     const list=await gVoicesFor(lg);
     const row=document.createElement('div'); row.className='srow';
     const lab=document.createElement('label'); lab.textContent=label+' hang'; row.appendChild(lab);
@@ -3306,7 +3315,7 @@ function speakLang(t,lg){
   if(!t) return;
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);
     u.lang=lg==='hu'?'hu-HU':lg==='da'?'da-DK':'en-US'; applyVoice(u,lg);
-    u.rate=lg==='hu'?.95:lg==='da'?.85:.9;speechSynthesis.speak(u)}catch(e){}
+    u.rate=lg==='hu'?.95:(lg==='da'||lg==='ko')?.85:.9;speechSynthesis.speak(u)}catch(e){}
 }
 /* automatikus felolvasás a gyakorlásban: elöl a kérdés, felfedéskor a válasz nyelvén */
 let autoTts=store.get('ek_autotts')==='1';
@@ -4289,6 +4298,7 @@ function qMenu(){
 /* Mindig látszik: ha épp olvasol, a nyitott könyvből gyűjt, ha nem, előbb
    választhatsz a könyvtáradból — ott keresi az ember, ezért ott is legyen. */
 function addBookBtn(box){
+  if(src!=='en') return;      /* a szűrés és a besorolás angol nyelvtanra épül */
   const b=document.createElement('button'); b.className='btn';
   const has=chapters.length>0;
   b.innerHTML='<span>📖 mondatok a könyvből</span><small>'+
@@ -5091,14 +5101,22 @@ document.addEventListener('pointerdown',e=>{
      vc.classList.remove('open');
 },true);
 applyRead();
-function drawLang(){$('langBtn').textContent=(src==='da'?'DA':'EN')+'\u2192HU';
-  $('langBtn').classList.toggle('on',src==='da')}
+function drawLang(){
+  $('langBtn').textContent=src.toUpperCase()+'\u2192HU';
+  $('langBtn').classList.toggle('on',src!=='en');
+  document.body.classList.toggle('cjk',!!(LANG[src]&&LANG[src].cjk));
+}
 drawLang();
-$('langBtn').onclick=()=>{src=src==='da'?'en':'da';store.set('ek_src',src);drawLang();
+$('langBtn').onclick=()=>{
+  src=LANG_ORDER[(LANG_ORDER.indexOf(src)+1)%LANG_ORDER.length];
+  store.set('ek_src',src);drawLang();
   toast(LANG[src].name+' \u2192 magyar');
   if(chapters.length){const y=$('main').scrollTop;renderChapter(curChap);$('main').scrollTop=y}};
 function sniffLang(text){
-  const t=' '+text.toLowerCase().slice(0,4000)+' ';
+  const sample=text.slice(0,4000);
+  /* a hangul félreérthetetlen jel: nincs szükség szólistás találgatásra */
+  if(((sample.match(/[\uAC00-\uD7A3]/g)||[]).length)>sample.length*0.15) return 'ko';
+  const t=' '+sample.toLowerCase()+' ';
   let da=(t.match(/[æøå]/g)||[]).length*3;
   ['ikke','og','til','som','det','jeg','han','hun','der','med','var','skal','hvad'].forEach(w=>{
     da+=(t.match(new RegExp('\\s'+w+'\\s','g'))||[]).length});
