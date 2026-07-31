@@ -831,7 +831,7 @@ body.railon #study,body.railon #match,body.railon #sent{
       <span class="note" style="margin:0" id="narTxt"></span></div>
     <div class="srow"><label>A könyv magyar</label>
       <button class="mini" id="huBtn">be/ki</button>
-      <span class="note" style="margin:0">magyar nyelvű műnél: nincs fordítás, a magyar hang olvassa</span></div>
+      <span class="note" style="margin:0" id="huNote">magyar nyelvű műnél: nincs fordítás, a magyar hang olvassa</span></div>
     <div class="srow"><label>Hangoskönyv mód</label>
       <button class="mini" id="lisBtn">be/ki</button>
       <span class="note" style="margin:0" id="lisTxt"></span></div>
@@ -940,7 +940,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v91';
+const APP_VER='v92';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1256,8 +1256,14 @@ async function transWith(p,sent,ctx){
   const hu=p.t==='oai'?await oaiCall(sys,user,700):await claude(sys,user,700);
   lastEngine=p.name; return hu;
 }
+/* Magyar könyvnél SEMMILYEN fordítómotor nem indulhat el — se az ingyenes, se a
+   Claude. A v89 csak a felolvasó ciklusát zárta el; egy mondatra koppintva viszont
+   még mindig lefordította volna a magyart magyarra, és fogyasztott volna kvótát.
+   Ez a zár központi: ha később bárki új helyről hívja a translate-et, az sem szivárog. */
+const trOn=()=>!bookHu;
 async function translate(sent,ctx){
   if(cache[ck(sent)]) return cache[ck(sent)];
+  if(!trOn()) throw new Error('a könyv magyar nyelvű, ezért nincs mit fordítani');
   let hu;
   if(engine!=='free'){
     hu=await llm(SYS_TR_BASE(LANG[src].en),'CONTEXT (do not translate):\n'+(ctx||'—')+'\n\nTARGET SENTENCE:\n'+sent,700);
@@ -2081,6 +2087,17 @@ function contextOf(sp){
 }
 $('reader').addEventListener('click',e=>{
   const sp=e.target.closest('.s'); if(!sp) return;
+  /* Magyar könyvnél a fordítópanel értelmetlen. A koppintás így hasznosabbat tesz:
+     innentől olvassa fel — ez a hangoskönyv-használat természetes mozdulata. */
+  if(!trOn()){
+    const i=sentList().indexOf(sp);
+    if(i<0) return;
+    rdPtr=i; rdFrom=i;
+    if(rdOn){ rdEpoch++; try{speechSynthesis.cancel()}catch(x){} ttsStop() }
+    else startReading();
+    toast('felolvasás innen',1800);
+    return;
+  }
   // már nyitva? -> zárás
   const existing=sp._panel;
   if(existing&&existing.isConnected){existing.remove();sp._panel=null;sp.classList.remove('act');return}
@@ -2197,13 +2214,14 @@ function speak(t){
 /* előtöltés: a következő 3 mondat a háttérben */
 let pq=[],pRun=false;
 function queuePrefetch(sp){
+  if(!trOn()) return;                    /* magyar könyvnél nincs mit előtölteni */
   const all=sentList(); const i=all.indexOf(sp);
   all.slice(i+1,i+4).forEach(s=>{const t=s.textContent.trim();if(!cache[ck(t)])pq.push([t,contextOf(s),s])});
   runQueue();
 }
 async function runQueue(){
   if(pRun) return; pRun=true;
-  while(pq.length&&prefetch){
+  while(pq.length&&prefetch&&trOn()){
     const [t,c,el]=pq.shift();
     try{ await translate(t,c); el.classList.add('seen') }catch(e){}
     await new Promise(r=>setTimeout(r,300));
@@ -3196,6 +3214,10 @@ function drawNar(){
   const b=$('narBtn'), t=$('narTxt'), hb=$('huBtn');
   if(hb){ hb.classList.toggle('on',bookHu); hb.disabled=!book }
   if(b){ b.textContent=bookHu?'magyar mű':NARN[rdNar]; b.classList.toggle('on',rdNar!=='src'&&!bookHu); b.disabled=bookHu }
+  const hn=$('huNote');
+  if(hn) hn.textContent=bookHu
+    ? 'be — egyetlen fordítómotor sem indul el, se az ingyenes, se a Claude. Egy mondatra koppintva onnantól olvas fel.'
+    : 'magyar nyelvű műnél: nincs fordítás, a magyar hang olvassa';
   if(t) t.textContent=bookHu
     ? 'a könyv magyar, tehát a magyar hang olvassa végig'
     : (rdNar==='hu'?'a fordítás szól hangoskönyvként, az eredeti nem'
@@ -3308,6 +3330,10 @@ let rdOn=false, rdPtr=0, rdEpoch=0, rdWl=null;
    amint a beragadt await feloldódik, magától kilép. Egyetlen boolean kapu helyett
    ez azért kell, mert egy elakadt kapu csak app-újraindítással nyílt ki. */
 let rdRun=0, rdLoopRun=-1;
+/* Koppintással kért kezdőmondat. A startReading egyébként a látható elsőtől indul,
+   és a hangoskönyv mód a mentett pontot részesíti előnyben — a szándékos koppintás
+   mindkettőnél erősebb, de csak egyetlen indításra érvényes. */
+let rdFrom=-1;
 let rdSpeed=+(store.get('ek_rdspeed')||1);
 /* ---- Felolvasás módja -------------------------------------------------------
    'both' idegen + magyar (nyelvtanulás) · 'src' csak az eredeti · 'hu' csak magyar.
@@ -3491,7 +3517,8 @@ function startReading(){
   const top=$('main').scrollTop+70;
   let i=all.findIndex(s=>s.offsetTop>=top);
   rdPtr=i<0?0:i;
-  if(lisMode){
+  if(rdFrom>=0&&rdFrom<all.length){ rdPtr=rdFrom; rdFrom=-1 }
+  else if(lisMode){
     const p=lisGet();
     if(p&&p.c===curChap&&p.s>=0&&p.s<all.length&&lisOnScreen(p.s)&&p.s!==rdPtr){
       rdPtr=p.s;
@@ -4166,7 +4193,7 @@ async function buildBookPack(count){
     const s=feed[pick.length]; if(s&&!pick.includes(s)) pick.push(s); else break;
   }
   /* magyar oldal: cache-ből ingyen, ami hiányzik, azt az ingyenes motor hozza */
-  const need=pick.filter(s=>!cache[ck(s)]);
+  const need=trOn()?pick.filter(s=>!cache[ck(s)]):[];
   const w=$('qWrap');
   for(let i=0;i<need.length;i++){
     if(!$('sent').classList.contains('open')) return null;   /* közben kiléptél */
