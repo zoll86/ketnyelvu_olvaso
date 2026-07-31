@@ -299,7 +299,8 @@ body.reading.rlight .tr .err{color:#a8352a}
 #gysheet.open{transform:translateY(0)}
 #gysheet>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
   padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);padding-left:var(--sp4);
-  padding-right:var(--sp4);background:inherit;border-bottom:1px solid var(--line)}
+  padding-right:var(--sp4);background:rgba(24,19,14,.97);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line2)}
 #gysheet>.shead b{font-size:var(--t3);font-weight:600}
 /* a lapon a négy gyakorlat egymás alatt, azonos ritmusban — ismétlés és egység */
 #gyList{display:grid;gap:var(--sp2);padding:var(--sp4) 0 var(--sp2)}
@@ -927,7 +928,7 @@ body.railon #study,body.railon #match,body.railon #sent{
   <span class="rtoday" id="dNum">0/30</span>
 </div>
 
-<section id="gysheet" class="panel" aria-label="Gyakorlás">
+<section id="gysheet" class="glass sheet" aria-label="Gyakorlás">
   <div class="shead"><b>Gyakorlás</b><span style="flex:1"></span>
     <button class="mini" id="gyClose">bezár</button></div>
   <div id="gyList"></div>
@@ -939,7 +940,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v90';
+const APP_VER='v91';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
