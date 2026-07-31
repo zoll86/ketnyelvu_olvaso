@@ -193,6 +193,10 @@ body.reading.rlight .tr .err{color:#a8352a}
   font-size:var(--rfs,1.55rem);line-height:var(--rlh,1.34);font-weight:400;
   letter-spacing:var(--rls,0);word-spacing:var(--rws,0)}
 #reader p{margin:0;text-indent:1.45em}
+/* Sorkizárás elválasztással. Elválasztás nélkül a magyar és a dán szöveg csúnya
+   folyókat kap, ezért a #reader lang attribútuma is állítódik (applyJust). */
+#reader.just p,#reader.just li,#reader.just blockquote{text-align:justify;
+  -webkit-hyphens:auto;hyphens:auto}
 #reader p.lead{text-indent:0}
 #reader p.lead::first-letter{font-weight:700}
 #reader li{margin:0 0 .25em;text-indent:0}
@@ -419,6 +423,22 @@ body.reading.rlight .tr .err{color:#a8352a}
 .ssec{font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
   margin:var(--sp4) 0 var(--sp2)}
 .srow{display:flex;align-items:center;gap:var(--sp3);margin-top:var(--sp4);font-size:var(--t2);flex-wrap:wrap}
+/* Összecsukható szakaszok. A jelölés érintetlen: a foldSettings() futáskor rendezi
+   át a panelt, így egyetlen sor és egyetlen azonosító sem mozdult el a helyéről. */
+.sfold{border-top:1px solid var(--line);margin:0}
+.sfold[open]{padding-bottom:var(--sp4)}
+.sfold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0;font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);user-select:none}
+.sfold>summary::-webkit-details-marker{display:none}
+.sfold>summary::after{content:'';margin-left:auto;width:.5rem;height:.5rem;
+  border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);
+  transform:rotate(45deg);transition:transform .22s var(--spring)}
+.sfold[open]>summary::after{transform:rotate(-135deg)}
+.sfold[open]>summary{color:var(--gold)}
+.sfold>summary:active{opacity:.6}
+.sfold .srow:first-of-type{margin-top:var(--sp2)}
+#setts .ssec{display:none}          /* a címet a summary viszi */
 .srow>label{color:var(--dim);min-width:6.6rem;font-size:var(--t2)}
 .srow input[type=range]{flex:1;accent-color:var(--gold);background:transparent}
 .mono{font-family:var(--mono);font-size:var(--t2);color:var(--txt);flex:1}
@@ -750,6 +770,9 @@ body.railon #study,body.railon #match,body.railon #sent{
   <div class="srow"><label>Sortávolság</label><input type="range" id="rLh" min="1.05" max="2" step=".02"><span class="val" id="vLh"></span></div>
   <div class="srow"><label>Betűköz</label><input type="range" id="rLs" min="0" max="0.08" step=".005"><span class="val" id="vLs"></span></div>
   <div class="srow"><label>Hasábszélesség</label><input type="range" id="rW" min="26" max="60" step="1"><span class="val" id="vW"></span></div>
+  <div class="srow"><label>Sorkizárás</label>
+    <button class="mini" id="justBtn">be/ki</button>
+    <span class="note" style="margin:0">elválasztással, a szöveg nyelve szerint</span></div>
   <div style="margin-top:var(--sp5);padding-top:var(--sp4);border-top:1px solid var(--line2)">
     <div class="ssec">Gyakorlás</div>
     <div class="srow"><label>Új szó naponta</label>
@@ -761,7 +784,7 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
       <button class="mini" id="dueReset">mai számláló nullázása</button></div>
     <div class="ssec">Hang</div>
-    <div class="srow"><label>Hangforrás</label>
+    <div class="srow" id="rowTtsProv"><label>Hangforrás</label>
       <select class="inp" id="ttsProv">
         <option value="sys">rendszerhang — ingyenes, azonnali</option>
         <option value="cloud">Google felhő — hangoskönyv-minőség</option>
@@ -775,7 +798,10 @@ body.railon #study,body.railon #match,body.railon #sent{
       <p class="note" style="margin:var(--sp2) 0 0" id="gUsage"></p>
       <p class="note" style="margin:var(--sp2) 0 0">A zárójeles ár tájékoztató: ennyi egymillió karakter. Egy Tolkien-fejezet nagyjából negyvenezer karakter, tehát a Chirp3 HD-n úgy egy dollár — de a havi ingyenes keret ennél a szintnél is egymillió karakter, vagyis kb. huszonöt fejezet minden hónapban, ingyen. A legyártott hang itt marad a telefonon, másodszorra hálózat nélkül is szól, és a Chirp3 HD a dánt meg a magyart is viszi. A magyarhoz érdemes más hangot választani, mert akkor a nyelvváltást a hangváltás is jelzi. A „mind” gomb ugyanazt a mondatot elmondja minden azonos szintű hanggal, sorban.</p>
     </div>
-    <div class="srow" id="ttsBuildRow" hidden><label>Hangoskönyv</label>
+    <div class="srow"><label>Hangoskönyv mód</label>
+      <button class="mini" id="lisBtn">be/ki</button>
+      <span class="note" style="margin:0" id="lisTxt"></span></div>
+    <div class="srow" id="ttsBuildRow" hidden><label>Előgyártás</label>
       <button class="mini" id="ttsBuildBtn">fejezet előgyártása</button>
       <button class="mini" id="ttsWipeBtn" title="A legyártott hangok törlése (a modell megmarad)">törlés</button>
       <span class="note" style="margin:0" id="ttsSize"></span></div>
@@ -786,7 +812,7 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="srow"><label>Forrásnyelv</label>
       <button class="btn" id="langBtn" title="A könyv nyelve">EN→HU</button>
       <span class="note" style="margin:0;flex:1">betöltéskor magától felismeri</span></div>
-    <div class="srow"><label>Fordítómotor</label><div class="seg" id="segEng"></div></div>
+    <div class="srow" id="rowEngine"><label>Fordítómotor</label><div class="seg" id="segEng"></div></div>
     <div id="cfgClaude" hidden>
       <div class="srow"><label>Claude modell</label><div class="seg" id="segModel"></div></div>
       <div class="srow"><label>Claude kulcs</label><input id="key" type="password" class="inp" placeholder="sk-ant-..." autocomplete="off"><button class="mini" id="keySave">ment</button></div>
@@ -799,10 +825,10 @@ body.railon #study,body.railon #match,body.railon #sent{
       <div class="srow"><label>Ar $/M be-ki</label><input id="oPin" class="inp" type="number" step=".05" style="max-width:5rem"><input id="oPout" class="inp" type="number" step=".05" style="max-width:5rem"><button class="mini" id="oSave">ment</button></div>
       <p class="note" style="margin:var(--sp2) 0 var(--sp3)">Barmelyik OpenAI-kompatibilis szolgaltato: Moonshot (Kimi), OpenRouter, DeepSeek, helyi Ollama. Csak akkor mukodik, ha a szolgaltato engedi a bongeszobol erkezo hivast - az OpenRouter engedi, sok masik nem.</p>
     </div>
-    <div class="srow"><label>Előtöltés</label>
+    <div class="srow" id="rowPrefetch"><label>Előtöltés</label>
       <button class="btn on" id="prefBtn" title="Előre lefordítja a következő mondatokat">bekapcsolva</button>
       <span class="note" style="margin:0;flex:1">a következő 3 mondat előre elkészül</span></div>
-    <div class="srow"><label>Eddigi költség</label><span id="spendTxt" class="mono"></span>
+    <div class="srow" id="rowSpend"><label>Eddigi költség</label><span id="spendTxt" class="mono"></span>
       <button class="mini" id="spendReset">nulláz</button></div>
   </div>
   <div>
@@ -873,7 +899,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v87';
+const APP_VER='v88';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1963,6 +1989,37 @@ function savePos(){
 
 /* ============ mondat koppintás ============ */
 function sentList(){return [...$('reader').querySelectorAll('.s')]}
+/* ---- Hangoskönyv mód -------------------------------------------------------
+   Nyelvtanuláshoz az a jó, ha a felolvasás onnan indul, ahol épp nézed. Órákig
+   hallgatva viszont az kell, hogy ott folytassa, ahol abbahagytad — akkor is, ha
+   közben visszalapoztál megnézni valamit, vagy bezártad az appot.
+   A szabály ezért nem vak felülírás: ha a mentett mondat LÁTSZIK a képernyőn,
+   onnan folytatjuk; ha nem, akkor szándékosan elnavigáltál, és a látható mondattól
+   indulunk. Így egyik szokás sem sérül. */
+let lisMode=store.get('ek_lismode')==='1';
+const lisKey=()=>book?('ek_lis_'+book.id):'';
+function lisGet(){
+  if(!book) return null;
+  try{ const r=store.get(lisKey()); return r?JSON.parse(r):null }catch(e){ return null }
+}
+function lisSave(){
+  if(!book||!lisMode) return;
+  store.set(lisKey(),JSON.stringify({c:curChap,s:rdPtr,t:Date.now()}));
+}
+function lisOnScreen(i){
+  const all=sentList(); const el=all[i]; if(!el) return false;
+  const r=el.getBoundingClientRect();
+  return r.bottom>0 && r.top<(window.innerHeight||800);
+}
+function drawLis(){
+  const t=$('lisTxt'); const b=$('lisBtn');
+  if(b) b.classList.toggle('on',lisMode);
+  if(!t) return;
+  if(!lisMode){ t.textContent='ki — a felolvasás onnan indul, ahol épp nézed'; return }
+  const p=lisGet();
+  t.textContent=p?('be — folytatás: '+(p.c+1)+'. fejezet, '+(p.s+1)+'. mondat')
+                 :'be — a felolvasás ott folytatódik, ahol abbahagytad';
+}
 function contextOf(sp){
   const all=sentList(); const i=all.indexOf(sp);
   return all.slice(Math.max(0,i-2),i).map(s=>s.textContent).join(' ')||'(a fejezet eleje)';
@@ -3017,6 +3074,75 @@ function initTts(){
   drawTts();
 }
 initTts();
+
+/* A beállítások panel futáskori átrendezése. Kilapítjuk (a szakaszok jelenleg két
+   névtelen burkolóban is laknak), szakaszhatárok szerint csoportosítjuk, és minden
+   csoport egy <details> lesz. Azért futáskor és nem a jelölésben: így egyetlen
+   azonosító sem mozdul el, a $('...') hívások és a .hidden váltások érintetlenek. */
+const DEVROWS=['rowTtsProv','ttsCloud','ttsBuildRow','rowEngine','cfgClaude','cfgOai','rowPrefetch','rowSpend'];
+function foldSettings(){
+  const p=$('setts'); if(!p||p.dataset.folded) return;
+  const head=p.querySelector('.shead'); if(!head) return;
+  const flat=[];
+  const walk=el=>{ [...el.children].forEach(c=>{
+    if(c===head) return;
+    if(c.querySelector&&c.querySelector('.ssec')) walk(c);   /* névtelen burkoló */
+    else flat.push(c);
+  })};
+  walk(p);
+  const groups=[]; let cur=null;
+  flat.forEach(el=>{
+    if(el.classList&&el.classList.contains('ssec')){
+      cur={title:(el.textContent||'').trim(),items:[]}; groups.push(cur);
+    } else if(cur) cur.items.push(el);
+  });
+  if(!groups.length) return;
+  /* a kulcsot és pénzt igénylő sorok külön, leghátra */
+  const dev=[];
+  groups.forEach(g=>{
+    g.items=g.items.filter(el=>{
+      if(el.id&&DEVROWS.includes(el.id)){ dev.push(el); return false }
+      return true;
+    });
+  });
+  const keep=groups.filter(g=>g.items.length);
+  if(dev.length) keep.push({title:'Fejlesztői beállítások',items:dev,dev:true});
+  [...p.children].forEach(c=>{ if(c!==head) c.remove() });
+  keep.forEach(g=>{
+    const det=document.createElement('details'); det.className='sfold';
+    const sum=document.createElement('summary'); sum.textContent=g.title;
+    det.appendChild(sum);
+    if(g.dev){
+      const n=document.createElement('p'); n.className='note'; n.style.margin='0 0 var(--sp2)';
+      n.textContent='Ami saját API-kulcsot kér és pénzbe kerülhet. Ezek nélkül az alkalmazás teljesen működik: a rendszerhang és az ingyenes fordítómotor kulcs nélkül is megy.';
+      det.appendChild(n);
+    }
+    g.items.forEach(el=>det.appendChild(el));
+    det.open = store.get('ek_fold_'+g.title)==='1';
+    det.addEventListener('toggle',()=>store.set('ek_fold_'+g.title,det.open?'1':'0'));
+    p.appendChild(det);
+  });
+  p.dataset.folded='1';
+}
+foldSettings();
+
+/* sorkizárás */
+let justOn=store.get('ek_just')==='1';
+function applyJust(){
+  const r=$('reader'); if(!r) return;
+  r.classList.toggle('just',justOn);
+  r.lang = src==='da'?'da':src==='hu'?'hu':'en';   /* az elválasztáshoz kell a nyelv */
+  const b=$('justBtn'); if(b) b.classList.toggle('on',justOn);
+}
+$('justBtn').onclick=()=>{ justOn=!justOn; store.set('ek_just',justOn?'1':'0'); applyJust();
+  toast(justOn?'sorkizárt':'balra zárt') };
+applyJust();
+
+$('lisBtn').onclick=()=>{
+  lisMode=!lisMode; store.set('ek_lismode',lisMode?'1':'0'); drawLis();
+  toast(lisMode?'hangoskönyv mód: ott folytatja, ahol abbahagytad':'hangoskönyv mód ki');
+};
+drawLis();
 function chapChars(){
   const list=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
   const fg=list.reduce((a,t)=>a+t.length,0);
@@ -3267,6 +3393,13 @@ function startReading(){
   const top=$('main').scrollTop+70;
   let i=all.findIndex(s=>s.offsetTop>=top);
   rdPtr=i<0?0:i;
+  if(lisMode){
+    const p=lisGet();
+    if(p&&p.c===curChap&&p.s>=0&&p.s<all.length&&lisOnScreen(p.s)&&p.s!==rdPtr){
+      rdPtr=p.s;
+      toast('folytatás a '+(p.s+1)+'. mondattól',2600);
+    }
+  }
   rdOn=true; rdEpoch++; rdRun++;
   $('player').hidden=false; drawPlayer();
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
@@ -3275,6 +3408,7 @@ function startReading(){
   ttsRunAhead();                          /* felhős úton csendben előregyártunk */
 }
 function stopReading(){
+  lisSave();                             /* a hallgatási pont azonnal rögzül */
   rdOn=false; rdEpoch++; rdRun++;
   try{speechSynthesis.cancel()}catch(e){} ttsStop();
   sentList().forEach(s=>s.classList.remove('rdnow'));
@@ -3324,7 +3458,7 @@ async function loopRead(){
       }
       sp.classList.remove('rdnow');
       if(!rdOn||my!==rdRun) break;
-      if(e===rdEpoch) rdPtr++;
+      if(e===rdEpoch){ rdPtr++; lisSave() }
     }
   } finally { if(rdLoopRun===my) rdLoopRun=-1 }
 }
