@@ -798,6 +798,12 @@ body.railon #study,body.railon #match,body.railon #sent{
       <p class="note" style="margin:var(--sp2) 0 0" id="gUsage"></p>
       <p class="note" style="margin:var(--sp2) 0 0">A zárójeles ár tájékoztató: ennyi egymillió karakter. Egy Tolkien-fejezet nagyjából negyvenezer karakter, tehát a Chirp3 HD-n úgy egy dollár — de a havi ingyenes keret ennél a szintnél is egymillió karakter, vagyis kb. huszonöt fejezet minden hónapban, ingyen. A legyártott hang itt marad a telefonon, másodszorra hálózat nélkül is szól, és a Chirp3 HD a dánt meg a magyart is viszi. A magyarhoz érdemes más hangot választani, mert akkor a nyelvváltást a hangváltás is jelzi. A „mind” gomb ugyanazt a mondatot elmondja minden azonos szintű hanggal, sorban.</p>
     </div>
+    <div class="srow"><label>Felolvasás</label>
+      <button class="mini" id="narBtn">idegen + magyar</button>
+      <span class="note" style="margin:0" id="narTxt"></span></div>
+    <div class="srow"><label>A könyv magyar</label>
+      <button class="mini" id="huBtn">be/ki</button>
+      <span class="note" style="margin:0">magyar nyelvű műnél: nincs fordítás, a magyar hang olvassa</span></div>
     <div class="srow"><label>Hangoskönyv mód</label>
       <button class="mini" id="lisBtn">be/ki</button>
       <span class="note" style="margin:0" id="lisTxt"></span></div>
@@ -899,7 +905,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v88';
+const APP_VER='v89';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1891,8 +1897,15 @@ async function loadEpub(f){
   const sel=$('chapSel'); sel.innerHTML=''; sel.style.display='';
   chapters.forEach((c,i)=>{const o=document.createElement('option');o.value=i;
     o.textContent=(i+1)+'.'+(c.name?'  '+c.name:'');sel.appendChild(o)});
-  const guess=sniffLang(chapters.map(c=>c.body.textContent).join(' ').slice(0,6000));
-  if(guess!==src){src=guess;store.set('ek_src',src);drawLang();
+  const probe=chapters.map(c=>c.body.textContent).join(' ').slice(0,6000);
+  /* magyar könyv: a korábbi döntés erősebb a felismerésnél */
+  const savedHu=store.get(huKey());
+  bookHu = savedHu!=null ? savedHu==='1' : sniffHu(probe);
+  if(savedHu==null) store.set(huKey(),bookHu?'1':'0');
+  huMissWarned=false; drawNar();
+  if(bookHu) setTimeout(()=>toast('A könyv magyarnak tűnik — a magyar hang olvassa, fordítás nélkül. A ⚙ → Hang alatt átállítható.',5200),1400);
+  const guess=sniffLang(probe);
+  if(!bookHu&&guess!==src){src=guess;store.set('ek_src',src);drawLang();
     setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+(src==='da'?'DA':'EN')+'→HU-ra',3400),1200)}
   $('start').style.display='none'; $('reader').style.display='';
   document.body.classList.add('reading'); setChrome(false);
@@ -2884,7 +2897,7 @@ async function ttsCountReady(){
   if(!ttsOn()){ ttsDepth=0; ttsTotal=0; drawPlayer(); return }
   const all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
   let n=0;
-  const lang=src==='da'?'da-DK':'en-US';
+  const lang=srcTts();
   for(const t of all){ try{ if(await audGet(audKey(t,lang,rdSpeed))) n++ }catch(e){} }
   ttsDepth=n; ttsTotal=all.length; drawPlayer();
 }
@@ -2895,7 +2908,7 @@ async function ttsBuildChapter(from,limit,quiet){
   if(!ttsOn()) return toast('előbb válassz hangforrást a ⚙ → Hang alatt');
   if(ttsBuilding){ ttsBuilding=false; return }
   let all=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
-  const lang=src==='da'?'da-DK':'en-US';
+  const lang=srcTts();
   if(from) all=all.slice(from);
   if(limit) all=all.slice(0,limit);
   if(!all.length) return quiet||toast('nincs mit legyártani ebben a fejezetben');
@@ -2903,7 +2916,8 @@ async function ttsBuildChapter(from,limit,quiet){
   for(const t of all){
     if(!ttsBuilding) break;
     done++;
-    let have=false; try{ have=!!(await audGet(audKey(t,lang,rdSpeed))) }catch(e){}
+    let have=!narSrc();                    /* amit nem olvasunk fel, azt nem gyártjuk le */
+    if(narSrc()){ try{ have=!!(await audGet(audKey(t,lang,rdSpeed))) }catch(e){} }
     if(!have){
       try{ await ttsBlob(t,lang,rdSpeed); made++; fail=0 }
       catch(e){ fail++; lastErr=(e&&e.message)||''; 
@@ -2911,7 +2925,7 @@ async function ttsBuildChapter(from,limit,quiet){
         if(fail>=3){ ttsBuilding=false; if(!quiet) toast('leállt: '+lastErr,6000); break }
       }
     }
-    if(rdHu){                              /* a magyar fordítás hangja is kell a kétnyelvű hallgatáshoz */
+    if(narHu()){                           /* a magyar fordítás hangja is kell a kétnyelvű hallgatáshoz */
       const hu=cache[ck(t)];
       if(hu&&cloudOn()&&TTS.gvoice.hu){
         let h2=false; try{ h2=!!(await audGet(audKey(hu,'hu-HU',1))) }catch(e){}
@@ -3124,30 +3138,49 @@ function foldSettings(){
   });
   p.dataset.folded='1';
 }
-foldSettings();
 
 /* sorkizárás */
 let justOn=store.get('ek_just')==='1';
 function applyJust(){
   const r=$('reader'); if(!r) return;
   r.classList.toggle('just',justOn);
-  r.lang = src==='da'?'da':src==='hu'?'hu':'en';   /* az elválasztáshoz kell a nyelv */
+  r.lang = srcLg();                               /* az elválasztáshoz kell a nyelv */
   const b=$('justBtn'); if(b) b.classList.toggle('on',justOn);
 }
 $('justBtn').onclick=()=>{ justOn=!justOn; store.set('ek_just',justOn?'1':'0'); applyJust();
   toast(justOn?'sorkizárt':'balra zárt') };
-applyJust();
 
+function drawNar(){
+  const b=$('narBtn'), t=$('narTxt'), hb=$('huBtn');
+  if(hb){ hb.classList.toggle('on',bookHu); hb.disabled=!book }
+  if(b){ b.textContent=bookHu?'magyar mű':NARN[rdNar]; b.classList.toggle('on',rdNar!=='src'&&!bookHu); b.disabled=bookHu }
+  if(t) t.textContent=bookHu
+    ? 'a könyv magyar, tehát a magyar hang olvassa végig'
+    : (rdNar==='hu'?'a fordítás szól hangoskönyvként, az eredeti nem'
+      :rdNar==='src'?'csak az eredeti nyelv, fordítás nélkül'
+      :'mondatonként: eredeti, majd magyar');
+}
+$('narBtn').onclick=()=>{
+  if(bookHu) return toast('a könyv magyar nyelvű — nincs mit fordítani');
+  rdNar=NAR[(NAR.indexOf(rdNar)+1)%NAR.length];
+  store.set('ek_rdnar',rdNar); huMissWarned=false;
+  drawNar(); drawPlayer(); drawTtsSize(); toast('felolvasás: '+NARN[rdNar]);
+};
+$('huBtn').onclick=()=>{
+  if(!book) return toast('előbb nyiss meg egy könyvet');
+  bookHu=!bookHu; store.set(huKey(),bookHu?'1':'0'); huMissWarned=false;
+  drawNar(); drawPlayer(); drawTtsSize(); applyJust();
+  toast(bookHu?'magyar mű: a magyar hang olvassa, fordítás nélkül':'idegen nyelvű mű');
+};
 $('lisBtn').onclick=()=>{
   lisMode=!lisMode; store.set('ek_lismode',lisMode?'1':'0'); drawLis();
   toast(lisMode?'hangoskönyv mód: ott folytatja, ahol abbahagytad':'hangoskönyv mód ki');
 };
-drawLis();
 function chapChars(){
   const list=sentList().map(s=>(s.textContent||'').trim()).filter(Boolean);
-  const fg=list.reduce((a,t)=>a+t.length,0);
+  const fg=narSrc()?list.reduce((a,t)=>a+t.length,0):0;
   let hu=0;
-  if(rdHu) list.forEach(t=>{ const x=cache[ck(t)]; if(x) hu+=x.length });
+  if(narHu()) list.forEach(t=>{ const x=cache[ck(t)]; if(x) hu+=x.length });
   return {fg,hu,n:fg+hu,db:list.length};
 }
 /* Az idegen nyelv és a magyar KÜLÖN szinten lehet — és érdemes is, mert a magyar
@@ -3156,7 +3189,7 @@ function chapChars(){
 function chapCost(){
   const c=chapChars();
   const rate=n=>n?(+gTier(n)[1].replace(/[^0-9.]/g,'')||0):0;
-  const fgN=TTS.gvoice[src==='da'?'da':'en']||'', huN=TTS.gvoice.hu||'';
+  const fgN=TTS.gvoice[srcLg()]||'', huN=TTS.gvoice.hu||'';
   const parts=[];
   if(c.fg) parts.push(gTier(fgN)[0]+' '+gFmt(c.fg));
   if(c.hu&&huN) parts.push(gTier(huN)[0]+' '+gFmt(c.hu));
@@ -3234,7 +3267,23 @@ let rdOn=false, rdPtr=0, rdEpoch=0, rdWl=null;
    ez azért kell, mert egy elakadt kapu csak app-újraindítással nyílt ki. */
 let rdRun=0, rdLoopRun=-1;
 let rdSpeed=+(store.get('ek_rdspeed')||1);
-let rdHu=store.get('ek_rdhu')!=='0';
+/* ---- Felolvasás módja -------------------------------------------------------
+   'both' idegen + magyar (nyelvtanulás) · 'src' csak az eredeti · 'hu' csak magyar.
+   A régi kétállású „magyar be/ki” beállításból átveszi az értéket. */
+const NAR=['both','src','hu'];
+const NARN={both:'idegen + magyar',src:'csak az eredeti',hu:'csak magyar'};
+let rdNar=store.get('ek_rdnar')||(store.get('ek_rdhu')==='0'?'src':'both');
+if(!NAR.includes(rdNar)) rdNar='both';
+/* A nyitott könyv magyar nyelvű-e. Könyvenként tárolt, mert könyvenként más. */
+let bookHu=false;
+const huKey=()=>book?('ek_hu_'+book.id):'';
+/* Magyar könyvnél az „eredeti” maga a magyar, tehát fordítani nincs mit:
+   ilyenkor a mód mindig 'src', és a magyar hang szólal meg. */
+const narSrc=()=>bookHu||rdNar!=='hu';
+const narHu=()=>!bookHu&&rdNar!=='src';
+const srcTts=()=>bookHu?'hu-HU':LANG[src].tts;
+const srcLg=()=>bookHu?'hu':src;
+let huMissWarned=false;
 const RD_SPEEDS=[1,.9,.75,.6,1.25];   /* csak az idegen nyelvre hat, a magyar mindig 1x */
 /* hangoskönyv mód: szünet a nyelvek között + elalvás-időzítő + fordítás-előtöltés */
 let rdGap=+(store.get('ek_rdgap')||0);
@@ -3346,8 +3395,15 @@ function drawPlayer(){
   };
   chip('plSpeed','Tempó',(src||'en').toUpperCase()+' '+String(rdSpeed).replace('.',',')+'×',rdSpeed!==1,
        'Az idegen nyelv tempója — a magyar mindig normál');
-  chip('plHu','Magyar fordítás',rdHu?'be':'ki',rdHu,
-       rdHu?'a magyar fordítás is elhangzik':'csak az idegen nyelv szól');
+  if(bookHu){
+    chip('plHu','Felolvasás','magyar mű',true,
+         'a könyv magyar nyelvű, tehát nincs mit fordítani — a magyar hang olvassa');
+  } else {
+    chip('plHu','Felolvasás',NARN[rdNar],rdNar!=='src',
+         rdNar==='both'?'előbb az idegen mondat, utána a magyar fordítása'
+         :rdNar==='src'?'csak az eredeti nyelv szól'
+         :'csak a magyar fordítás szól — hangoskönyvként');
+  }
   chip('plGap','Szünet a magyar előtt',rdGap?(rdGap+' s'):'nincs',!!rdGap,
        'ennyi csend, hogy legyen időd fejben lefordítani');
   const left=rdSleepEnd?Math.max(0,Math.round((rdSleepEnd-Date.now())/60000)):0;
@@ -3377,7 +3433,7 @@ async function rdPrefetch(all,from){
   if(rdPre) return; rdPre=true;
   try{
     for(let k=from+1;k<Math.min(from+7,all.length);k++){
-      if(!rdOn||!rdHu) break;
+      if(!rdOn||!narHu()) break;
       const t=(all[k].textContent||'').trim();
       if(!t||cache[ck(t)]) continue;
       try{ const hu=await freeTranslate(t); if(hu){ cache[ck(t)]=hu; saveCache() } }catch(e){}
@@ -3439,11 +3495,14 @@ async function loopRead(){
       try{speechSynthesis.cancel()}catch(x){}
       drawPlayer();                          /* az időzítő hátralévő ideje frissül */
       rdPrefetch(all,rdPtr);                 /* a következő mondatok magyarja a háttérben készül */
-      await speakAsync(sent, src==='da'?'da-DK':'en-US', rdSpeed);
-      if(!rdOn||my!==rdRun) break;
-      if(e!==rdEpoch) continue;              /* ⏭: a magyar rész kimarad */
-      if(rdHu){
-        if(rdGap){                           /* csend: van időd fejben lefordítani */
+      if(narSrc()){
+        await speakAsync(sent, srcTts(), rdSpeed);
+        if(!rdOn||my!==rdRun) break;
+        if(e!==rdEpoch) continue;            /* ⏭: a magyar rész kimarad */
+      }
+      if(narHu()){
+        /* csak magyar módban nincs mit lefordítani fejben, tehát nincs szünet sem */
+        if(rdGap&&narSrc()){                 /* csend: van időd fejben lefordítani */
           await sleep(rdGap*1000);
           if(my!==rdRun) break;
           if(!rdOn||e!==rdEpoch) continue;
@@ -3455,6 +3514,12 @@ async function loopRead(){
                  if(hu){ cache[ck(sent)]=hu; saveCache() } }
         if(!rdOn||my!==rdRun) break;
         if(e===rdEpoch&&hu) await speakAsync(hu,'hu-HU',1);   /* a magyar mindig normál tempó */
+        /* csak magyar módban egy sikertelen fordítás néma mondatot jelentene:
+           erről szólni kell, különben úgy tűnik, mintha megállt volna a felolvasás */
+        else if(!hu&&!narSrc()&&!huMissWarned){
+          huMissWarned=true;
+          toast('ehhez a mondathoz nincs magyar fordítás, ezért kimaradt — a Fordítás szakaszban az előtöltés segít',6500);
+        }
       }
       sp.classList.remove('rdnow');
       if(!rdOn||my!==rdRun) break;
@@ -3473,7 +3538,13 @@ $('plSpeed').onclick=()=>{
   rdSpeed=RD_SPEEDS[(RD_SPEEDS.indexOf(rdSpeed)+1)%RD_SPEEDS.length];
   store.set('ek_rdspeed',String(rdSpeed)); drawPlayer();
 };
-$('plHu').onclick=()=>{ rdHu=!rdHu; store.set('ek_rdhu',rdHu?'1':'0'); drawPlayer() };
+$('plHu').onclick=()=>{
+  if(bookHu) return toast('a könyv magyar nyelvű — nincs mit fordítani');
+  rdNar=NAR[(NAR.indexOf(rdNar)+1)%NAR.length];
+  store.set('ek_rdnar',rdNar); huMissWarned=false;
+  drawPlayer(); drawNar(); drawTtsSize();
+  toast('felolvasás: '+NARN[rdNar]);
+};
 $('plVoice').onclick=()=>{
   if(!TTS.gkey) return;                 /* kulcs nélkül nincs mire váltani */
   TTS.prov=(TTS.prov==='cloud')?'sys':'cloud'; store.set('ek_ttsprov',TTS.prov);
@@ -4966,6 +5037,18 @@ function sniffLang(text){
     en+=(t.match(new RegExp('\\s'+w+'\\s','g'))||[]).length});
   return da>en*1.2?'da':'en';
 }
+/* Magyar könyv felismerése. Külön függvény, és NEM a `src`-et állítja: a `src`
+   maradhat 'en'|'da', mert ahhoz kötődik a szótár, a szókincs és a nyelvtan. Egy
+   magyar könyvnél ezekre nincs szükség, csak felolvasásra. */
+function sniffHu(text){
+  const t=' '+text.toLowerCase().slice(0,4000)+' ';
+  let hu=(t.match(/[őűáéíóöúü]/g)||[]).length;
+  ['és','hogy','nem','egy','van','volt','csak','már','ha','vagy','meg','mint','ezt','azt','ő','még','de']
+    .forEach(w=>{ hu+=(t.match(new RegExp('\\s'+w+'\\s','g'))||[]).length*3 });
+  let other=0; ['the','and','was','that','with','ikke','og','til','som','det']
+    .forEach(w=>{ other+=(t.match(new RegExp('\\s'+w+'\\s','g'))||[]).length*3 });
+  return hu>other*1.5&&hu>20;
+}
 function drawEngine(){
   const eb=document.getElementById('engBtn');
   if(eb){ eb.textContent=ENGN[engine]; eb.classList.toggle('on',engine!=='free') }
@@ -5071,6 +5154,16 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'&&curChap<chapters.length-1) renderChapter(curChap+1);
   if(e.key==='ArrowLeft'&&curChap>0) renderChapter(curChap-1);
 });
+
+/* ---- induló kirajzolás -----------------------------------------------------
+   A legvégén, egyetlen helyen. Ezek a függvények olyan `const`/`let` értékekre
+   támaszkodnak (srcLg, rdNar, bookHu, rdPtr), amelyek a fájlban lentebb jönnek
+   létre; korábban meghívva „Cannot access before initialization” hibát adnának,
+   és a szkript ott elhalna — az egész felület működésképtelenül. */
+foldSettings();
+applyJust();
+drawNar();
+drawLis();
 </script>
 </body>
 </html>
