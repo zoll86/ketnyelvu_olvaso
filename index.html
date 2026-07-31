@@ -253,7 +253,7 @@ body.reading.rlight .tr .err{color:#a8352a}
 
 /* ---------- kezdőállapot ---------- */
 #start{max-width:32rem;margin:auto;padding:2rem 1.3rem;text-align:center}
-#lib{text-align:left;margin:calc(var(--sp6) + 16px) 0 0}
+#lib{text-align:left;margin:calc(var(--sp6)*2) 0 0}
 .libhead{display:flex;align-items:center;gap:var(--sp2);
   font-size:var(--t1);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
   margin-bottom:var(--sp2)}
@@ -286,6 +286,30 @@ body.reading.rlight .tr .err{color:#a8352a}
 .hero-btn small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .hero-btn small{font-size:var(--t1);font-family:var(--mono);opacity:.7;letter-spacing:0}
 .startrow{display:flex;gap:var(--sp2);justify-content:center;flex-wrap:wrap;margin-top:var(--sp4)}
+/* Egyetlen elsődleges gomb a kezdőoldalon. A hierarchia akkor működik, ha egy
+   belépési pont van, nem öt egyenrangú: a gyakorlás három fajtája egy lapra kerül.
+   A gomb körüli üres terület nem hiány, hanem ez emeli ki. */
+.hero-one{margin-top:var(--sp6)}
+.hero-one .btn{width:100%;padding:20px 16px;font-size:var(--t4);font-weight:600;
+  display:flex;flex-direction:column;align-items:center;gap:3px}
+.hero-one .btn small{font-family:var(--mono);font-size:var(--t1);opacity:.72;letter-spacing:0;font-weight:400}
+#gysheet{position:fixed;inset:auto 0 0 0;z-index:46;border-radius:var(--r3) var(--r3) 0 0;
+  padding:0 var(--sp4) max(var(--sp4),env(safe-area-inset-bottom));transform:translateY(101%);
+  transition:transform .42s var(--spring);box-shadow:var(--shadow);max-height:86vh;overflow-y:auto}
+#gysheet.open{transform:translateY(0)}
+#gysheet>.shead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--sp3);
+  padding:var(--sp4) 0 var(--sp3);margin:0 calc(var(--sp4)*-1);padding-left:var(--sp4);
+  padding-right:var(--sp4);background:inherit;border-bottom:1px solid var(--line)}
+#gysheet>.shead b{font-size:var(--t3);font-weight:600}
+/* a lapon a négy gyakorlat egymás alatt, azonos ritmusban — ismétlés és egység */
+#gyList{display:grid;gap:var(--sp2);padding:var(--sp4) 0 var(--sp2)}
+#gyList .btn{width:100%;text-align:left;align-items:flex-start;padding:14px 16px}
+#gyList .hero-btn{align-items:flex-start}
+#gyList .hero-btn small{white-space:normal}
+/* a beállítások ikonja a felső sávban: nincs kiírva, nem visz helyet a lapról */
+#rail .railicon{margin-left:var(--sp3);padding:6px 10px;font-size:15px;line-height:1;
+  background:transparent;border:1px solid var(--line);border-radius:var(--r1);color:var(--dim)}
+#rail .railicon:active{transform:scale(.94)}
 .lgroup{grid-column:1/-1;font-size:var(--t2);color:var(--gold);font-weight:500;
   margin:var(--sp3) 0 0;padding-bottom:var(--sp1);border-bottom:1px solid var(--line2)}
 .lgroup span{color:var(--faint);font-family:var(--mono);font-size:var(--t1);margin-left:var(--sp2)}
@@ -635,12 +659,15 @@ body.railon #study,body.railon #match,body.railon #sent{
 <main id="main">
   <section id="start">
     <h1>Kétnyelvű olvasó</h1>
-    <div class="hero">
-      <button class="btn pri hero-btn" id="studyTop">Gyakorlás<small id="studyTopSub">&nbsp;</small></button>
+    <div class="hero-one">
+      <button class="btn pri" id="gyBtn">Gyakorlás<small id="gySub">&nbsp;</small></button>
+    </div>
+    <div class="hero" hidden>
+      <button class="btn pri hero-btn" id="studyTop">Kártyák<small id="studyTopSub">&nbsp;</small></button>
       <button class="btn hero-btn" id="matchTop">Párosítás<small>végig a szótáradon</small></button>
       <button class="btn hero-btn" id="sentTop">Mondatok<small>fordítás beírással</small></button>
     </div>
-    <div class="startrow">
+    <div class="startrow" hidden>
       <button class="mini" id="vocabTop">szótár</button>
       <button class="mini" id="setTop">⚙ beállítások</button>
     </div>
@@ -899,13 +926,20 @@ body.railon #study,body.railon #match,body.railon #sent{
   <span class="rstreak" id="dStreak">0<span>nap</span></span>
   <span class="rtoday" id="dNum">0/30</span>
 </div>
+
+<section id="gysheet" class="panel" aria-label="Gyakorlás">
+  <div class="shead"><b>Gyakorlás</b><span style="flex:1"></span>
+    <button class="mini" id="gyClose">bezár</button></div>
+  <div id="gyList"></div>
+  <p class="note" id="gyNote" style="margin:0 0 var(--sp4)"></p>
+</section>
 <div id="toast"></div>
 <input type="file" id="file" accept=".epub,application/epub+zip" multiple style="display:none">
 <input type="file" id="sentFile" accept=".json,application/json" style="display:none">
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v89';
+const APP_VER='v90';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1006,6 +1040,13 @@ function heroLabel(){
   const b=$('studyTopSub'); if(!b) return;
   let d=0; try{ d=dueCount() }catch(e){ d=0 }
   b.textContent=vocab.length?(d?d+' esedékes':'ma nincs esedékes'):'még üres a szótár';
+  /* ugyanaz a szám a kezdőoldal egyetlen gombján is */
+  const gs=$('gySub');
+  if(gs) gs.textContent=vocab.length?(d?d+' esedékes':'ma nincs esedékes'):'még üres a szótár';
+  const gn=$('gyNote');
+  if(gn) gn.textContent=vocab.length
+    ? 'Minden gyakorlat a napi haladásba számol.'
+    : 'A szótár még üres — olvasás közben koppints egy szóra, és mentsd el.';
   /* állapotfüggő hierarchia: üres szótárnál a gyakorlás nem hívogat arannyal */
   const st=$('studyTop'), mt=$('matchTop');
   if(st) st.classList.toggle('pri',vocab.length>0);
@@ -5113,6 +5154,47 @@ $('qImport').onclick=()=>$('sentFile').click();
 $('sentFile').onchange=qImportFile;
 $('vocabTop').onclick=()=>$('vocabBtn').onclick();
 $('setTop').onclick=()=>$('setBtn').onclick();
+
+/* ---- Kezdőoldal: egy belépési pont a gyakorlásnak --------------------------
+   A négy gyakorlat gombját nem újraírjuk, hanem FUTÁSKOR átmozgatjuk a lapra, és
+   a beállítások gombját a felső sávba. Így minden meglévő onclick a helyén marad
+   (öt kezelőt kellett volna újrahuzalozni), és nincs kettős igazság a jelölésben. */
+function initStartLayout(){
+  const list=$('gyList'); if(!list||list.dataset.ready) return;
+  ['studyTop','matchTop','sentTop','vocabTop'].forEach(id=>{
+    const el=$(id); if(!el) return;
+    if(id==='vocabTop'){ el.className='btn hero-btn'; el.innerHTML='Szótár<small>a mentett szavaid</small>' }
+    list.appendChild(el);
+  });
+  list.dataset.ready='1';
+  /* a beállítások a felső sávba, csak ikonként */
+  const st=$('setTop'), rail=$('rail');
+  if(st&&rail){
+    st.className='mini railicon'; st.textContent='⚙'; st.title='Beállítások';
+    st.setAttribute('aria-label','Beállítások');
+    st.addEventListener('click',e=>e.stopPropagation());   /* a sáv maga is kattintható */
+    rail.appendChild(st);
+  }
+  const sb2=$('setBtn2'); if(sb2) sb2.hidden=true;          /* ne legyen két helyen */
+  const hero=document.querySelector('#start .hero'); if(hero) hero.remove();
+  const rows=[...document.querySelectorAll('#start .startrow')];
+  rows.forEach(r=>{ if(!r.children.length||[...r.children].every(c=>c.hidden)) r.remove() });
+}
+function gyOpen(){ initStartLayout(); heroLabel(); $('gysheet').classList.add('open') }
+function gyClose(){ $('gysheet').classList.remove('open') }
+$('gyBtn').onclick=gyOpen;
+$('gyClose').onclick=gyClose;
+$('gysheet').addEventListener('click',e=>{
+  /* bármelyik gyakorlat indítása után a lap becsukódik */
+  const b=e.target.closest&&e.target.closest('#gyList .btn');
+  if(b&&!b.disabled) setTimeout(gyClose,120);
+});
+document.addEventListener('click',e=>{
+  const sh=$('gysheet');
+  if(!sh.classList.contains('open')) return;
+  if(sh.contains(e.target)||e.target===$('gyBtn')||$('gyBtn').contains(e.target)) return;
+  gyClose();
+});
 $('mClose').onclick=closeMatch;
 const openStats=()=>{$('vocab').classList.remove('open');$('setts').classList.remove('open');
   $('about').classList.remove('open');drawStats();$('stats').classList.add('open')};
@@ -5143,6 +5225,7 @@ $('key').addEventListener('keydown',e=>{if(e.key==='Enter')$('keySave').click()}
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
   if(e.key==='h'||e.key==='H'){setChrome(!document.body.classList.contains('chrome'));return}
+  if(e.key==='Escape'&&$('gysheet').classList.contains('open')){gyClose();return}
   if(e.key==='Escape'&&$('study').classList.contains('open')){closeStudy();return}
   if($('study').classList.contains('open')){
     if(e.key===' '||e.key==='Enter'){e.preventDefault(); if($('sBack').hidden){reveal()}else{answer(2)} return}
@@ -5160,6 +5243,7 @@ document.addEventListener('keydown',e=>{
    támaszkodnak (srcLg, rdNar, bookHu, rdPtr), amelyek a fájlban lentebb jönnek
    létre; korábban meghívva „Cannot access before initialization” hibát adnának,
    és a szkript ott elhalna — az egész felület működésképtelenül. */
+initStartLayout();
 foldSettings();
 applyJust();
 drawNar();
