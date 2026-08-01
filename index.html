@@ -606,6 +606,35 @@ body.railon #study,body.railon #match,body.railon #sent{
 @keyframes hintp{50%{transform:scale(1.12);box-shadow:0 0 16px rgba(232,182,76,.5)}}
 /* koreainál a szó közepén tilos törni — a böngésző alapból megtenné */
 body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
+
+/* ---------- karaoke / hangoskönyv mód ---------- */
+#kar{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;
+  background:radial-gradient(1100px 700px at 50% 0%,#1d1710,#100c08 60%,#0a0806);
+  padding:max(var(--sp3),env(safe-area-inset-top)) var(--sp4) max(var(--sp3),env(safe-area-inset-bottom))}
+#kar.open{display:flex}
+#kar .khead{display:flex;align-items:center;gap:var(--sp2);flex:0 0 auto}
+#kar .kch{font-family:var(--mono);font-size:var(--t1);color:var(--faint);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+#kar .kbar{height:3px;border-radius:999px;background:rgba(255,255,255,.09);margin-top:8px;flex:0 0 auto}
+#kar .kbar i{display:block;height:100%;width:0;border-radius:999px;background:var(--gold);
+  transition:width .25s linear}
+#kar .kmid{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;
+  gap:var(--sp4);overflow:hidden;padding:var(--sp3) 0}
+#kar .ksent{font-size:clamp(21px,5.6vw,30px);line-height:1.42;color:var(--txt);
+  text-align:center;font-weight:500;transition:opacity .2s}
+#kar .khu{font-size:clamp(15px,4vw,20px);line-height:1.45;color:var(--dim);text-align:center;
+  padding-top:var(--sp3);border-top:1px solid var(--line)}
+#kar .kprev,#kar .knext{font-size:14px;line-height:1.4;color:rgba(255,255,255,.16);
+  text-align:center;max-height:2.9em;overflow:hidden}
+#kar .kctl{flex:0 0 auto;display:flex;gap:var(--sp2);justify-content:center;align-items:center;
+  padding-top:var(--sp3)}
+#kar .kctl .kb{width:52px;height:52px;border-radius:50%;border:1px solid var(--line2);
+  background:var(--s1);color:var(--txt);font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:transform .14s var(--spring)}
+#kar .kctl .kb:active{transform:scale(.92)}
+#kar .kctl .kb.pri{width:62px;height:62px;font-size:21px;
+  background:linear-gradient(160deg,var(--gold),#d19f34);color:#1a1408;border-color:transparent}
+#kar .krow2{flex:0 0 auto;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding-top:var(--sp2)}
 #toast{position:fixed;left:50%;bottom:1.4rem;transform:translate(-50%,2rem);opacity:0;
   background:rgba(20,14,9,.96);border:1px solid var(--line2);border-radius:var(--r2);
   padding:var(--sp3) var(--sp4);font-size:var(--t2);z-index:60;pointer-events:none;
@@ -747,6 +776,8 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
     <h4>Nyelvtan</h4>
     <p>A felolvasás alapból a <b>rendszerhangon</b> szól: azonnali, ingyenes, de gépies. A ⚙ → Hang alatt átállítható <b>Google felhőre</b>, ami hangoskönyvhöz közelítő minőséget ad, és mind a három nyelvet viszi — az angolt, a dánt és a magyart is. Ehhez egy saját Google TTS kulcs kell; a hangok listája a kulcs beírása után magától betöltődik, és nyelvenként külön választható. A <b>mind</b> gombbal ugyanaz a mondat végighallgatható minden azonos szintű hangon, hogy füllel dönthess. Érdemes a magyarhoz más hangot választani: akkor a nyelvváltást a hangváltás is jelzi. A legördülőben minden hang mellett ott az ára; a panel kiírja, mennyi karaktert használtál el ebben a hónapban, és a nyitott fejezet mérete is látszik, mielőtt legyártatnád. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali; ami egyszer legyártódott, a telefonon marad. Olvasás közben a program soha nem várakozik hangra: ami már kész, azt szólaltatja meg, ami nem, azt a rendszerhang mondja, miközben a háttérben előregyárt. A lejátszóban a <b>⛁</b> szám mutatja, hány mondat hangja van készen.</p>
     <p><b>Audio ebook (EPUB 3 Media Overlays).</b> Ha a könyvbe eredeti hangfelvétel van csomagolva, a program azt használja gépi hang helyett: a ▶ felolvasás a narrátor hangján szólal meg, kétnyelvű módban pedig a felvétel után jön a magyar fordítás gépi hanggal. A lejátszóban az <b>Eredeti narráció</b> kapcsolóval váltható, és csak akkor jelenik meg, ha a könyv tartalmaz felvételt. Ha egy mondathoz nincs hang (például fejezetcímhez), azt a gépi hang mondja. Ilyen fájl a saját e-könyvedből és hangoskönyvedből is készíthető, például a Storyteller nevű nyílt eszközzel.</p>
+    <p><b>Hangoskönyv (karaoke) mód.</b> Ha a könyvben van hangfelvétel, a fejlécben megjelenik a <b>🎧 hangoskönyv mód</b> gomb. Ebben a nézetben egyszerre egy mondat áll a képernyőn nagy betűvel, alatta a fordítása — nem folyamatos szöveg, csak az, ami épp szól. A hang <b>magyar felolvasás nélkül teljesen folyamatosan</b> megy, egyetlen vágás nélkül: csak a kijelzett mondat vált, a felvétel sértetlen, mint egy igazi hangoskönyvben. A <b>magyar hang</b> bekapcsolásával mondatonként megáll és felolvassa a fordítást is. A ⏮ ⏭ mondatra ugrik, a ⏸ szünetel (folytatásnál onnan megy tovább, ahol megállt), és beállítható a tempó, illetve hogy látszódjon-e a magyar szöveg.</p>
+    <p>Ha a felvétel időzítése pontatlan és a mondat végébe belecsúszik a következő első szava, a ⚙ → Hang alatt a <b>Mondatvég finomítása</b> csúszkával korábbra hozható a vágás (alapból −80 ms). A karaoke módban erre nincs szükség, mert ott nincs vágás.</p>
     <p><b>Koreai.</b> A nyelvváltó gomb három forrásnyelv között jár körbe: EN → DA → KO. A koreai a kétnyelvű olvasáshoz és a hangoskönyv-módhoz működik (mondatbontás a koreai írásjelekkel és párbeszédjelekkel, ko-KR felolvasás, helyes koreai sortörés) — a szótanuló funkciók viszont nem, mert a koreai ragozott szóalakokból szótő nélkül nem lehet szótárt építeni.</p>
     <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
     <p><b>Hangoskönyvként hallgatva</b> két dolog segít: a <b>szünet</b> gombbal beállítható, mennyi csend legyen az idegen mondat után (1–5 másodperc), hogy legyen időd fejben lefordítani, mielőtt megjön a magyar; az <b>⏾ időzítő</b> pedig 15–60 perc után magától leállítja a felolvasást, ha elalszol. A magyar fordítások a következő mondatokra előre elkészülnek a háttérben, ingyenes motorral, így nincs szünet a két nyelv között — és ami egyszer elkészült, offline is megszólal.</p>
@@ -817,6 +848,8 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
     <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
       <button class="mini" id="dueReset">mai számláló nullázása</button></div>
     <div class="ssec">Hang</div>
+    <div class="srow" id="moTrimRow" hidden><label>Mondatvég finomítása</label>
+      <input type="range" id="rMoTrim" min="-60" max="20" step="2"><span class="val" id="vMoTrim"></span></div>
     <div class="srow"><label>Audio ebook</label>
       <span class="note" style="margin:0;flex:1" id="moDiag">—</span>
       <button class="mini" id="moDiagBtn">részletek</button></div>
@@ -836,7 +869,7 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
     </div>
     <div class="srow"><label>Felolvasás</label>
       <button class="mini" id="narBtn">idegen + magyar</button>
-      <span class="mini" id="moBadge" hidden style="pointer-events:none;border-color:rgba(232,182,76,.5);color:var(--gold)"></span>
+      <button class="mini" id="moBadge" hidden style="border-color:rgba(232,182,76,.5);color:var(--gold)"></button>
       <span class="note" style="margin:0" id="narTxt"></span></div>
     <div class="srow"><label>A könyv magyar</label>
       <button class="mini" id="huBtn">be/ki</button>
@@ -943,13 +976,36 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
   <div id="gyList"></div>
   <p class="note" id="gyNote" style="margin:0 0 var(--sp4)"></p>
 </section>
+<div id="kar">
+  <div class="khead">
+    <span class="kch" id="karCh"></span>
+    <button class="mini" id="karClose">kilép</button>
+  </div>
+  <div class="kbar"><i id="karFill"></i></div>
+  <div class="kmid">
+    <div class="kprev" id="karPrev"></div>
+    <div class="ksent" id="karSent">…</div>
+    <div class="khu" id="karHu"></div>
+    <div class="knext" id="karNext"></div>
+  </div>
+  <div class="kctl">
+    <button class="kb" id="karBack" title="előző mondat">⏮</button>
+    <button class="kb pri" id="karPlay" title="szünet / folytatás">⏸</button>
+    <button class="kb" id="karFwd" title="következő mondat">⏭</button>
+  </div>
+  <div class="krow2">
+    <button class="mini" id="karHuBtn" title="magyar fordítás felolvasása"></button>
+    <button class="mini" id="karSpeed" title="tempó"></button>
+    <button class="mini" id="karAuto" title="a magyar szöveg megjelenítése"></button>
+  </div>
+</div>
 <div id="toast"></div>
 <input type="file" id="file" accept=".epub,application/epub+zip" multiple style="display:none">
 <input type="file" id="sentFile" accept=".json,application/json" style="display:none">
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v95';
+const APP_VER='v96';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3290,7 +3346,17 @@ $('justBtn').onclick=()=>{ justOn=!justOn; store.set('ek_just',justOn?'1':'0'); 
 
 /* Diagnosztika: ha egy valódi audio ebook nem szólal meg, itt látszik, hol áll meg —
    van-e SMIL a könyvben, kicsomagolódott-e a hang, és sikerült-e mondatokhoz párosítani. */
+function drawMoTrim(){
+  const r=$('rMoTrim'), v=$('vMoTrim'), row=$('moTrimRow');
+  if(!r||!row) return;
+  const pairs=chapters.reduce((n,c)=>n+((c.mo&&c.mo.length)||0),0);
+  row.hidden=!pairs;
+  r.value=Math.round(MO.trim*100);
+  v.textContent=(MO.trim>0?'+':'')+Math.round(MO.trim*1000)+' ms'+
+    (MO.trim<0?' (korábban vág)':MO.trim>0?' (később vág)':'');
+}
 function drawMoDiag(){
+  try{ drawMoTrim() }catch(e){}
   const el=$('moDiag'); if(!el) return;
   if(!chapters.length){ el.textContent='nincs nyitott könyv'; return }
   const pairs=chapters.reduce((n,c)=>n+((c.mo&&c.mo.length)||0),0);
@@ -3322,8 +3388,8 @@ function drawNar(){
   if(mb){
     const pairs=chapters.reduce((n,c)=>n+((c.mo&&c.mo.length)||0),0);
     mb.hidden=!pairs;
-    if(pairs){ mb.textContent='🎧 eredeti hang'+(MO.on?'':' (ki)');
-      mb.title=pairs+' mondathoz van felvétel a könyvben' }
+    if(pairs){ mb.textContent='🎧 hangoskönyv mód';
+      mb.title=pairs+' mondathoz van felvétel — koppints a karaoke módhoz' }
   }
   const b=$('narBtn'), t=$('narTxt'), hb=$('huBtn');
   if(hb){ hb.classList.toggle('on',bookHu); hb.disabled=!book }
@@ -3338,6 +3404,11 @@ function drawNar(){
       :rdNar==='src'?'csak az eredeti nyelv, fordítás nélkül'
       :'mondatonként: eredeti, majd magyar');
 }
+(function(){
+  const r=$('rMoTrim'); if(!r) return;
+  r.oninput=()=>{ MO.trim=(+r.value||0)/100; store.set('ek_motrim',String(MO.trim)); drawMoTrim() };
+})();
+$('moBadge').onclick=()=>karOpen();
 $('moDiagBtn').onclick=()=>{ try{ moDiagDetails() }catch(e){ toast('nem sikerült: '+e.message) } };
 $('narBtn').onclick=()=>{
   if(bookHu) return toast('a könyv magyar nyelvű — nincs mit fordítani');
@@ -3468,7 +3539,13 @@ const narHu=()=>!bookHu&&rdNar!=='src';
 /* ============ Media Overlays: eredeti narráció (audio ebook) ============
    A könyvbe csomagolt hangfelvétel mondatonkénti lejátszása. Ez nem gépi hang:
    a felvételt ember mondta, csak az időzítést kapjuk a SMIL fájlból. */
-const MO={au:{}, el:null, on:store.get('ek_mo')!=='0', plan:null, cnt:0};
+const MO={au:{}, el:null, on:store.get('ek_mo')!=='0', plan:null, cnt:0,
+  /* A könyvek időzítése nem mindig pontos (a gépi igazítás jellemzően késik),
+     ezért a mondatvég finomhangolható. Negatív = korábban vág. */
+  trim:+(store.get('ek_motrim')||-0.08),
+  /* a hangelem közös: minden lejátszás jegyet kap, és csak a jegy birtokosa
+     állíthatja le — így egy korábbi menet elkésett figyelője nem szól bele */
+  token:0};
 /* SMIL óraformátumok: "0:00:12.345", "12.345s", "1:30", "90ms" */
 function clockSec(v){
   if(!v) return 0;
@@ -3544,16 +3621,25 @@ function buildMoPlan(){
 }
 const moSlice=i=>(moHas()&&MO.plan[i])||null;
 function moStop(){
+  MO.token++;                     /* minden futó figyelő elveszti a jogát */
   try{ if(MO.el){ MO.el.pause(); MO.el.onended=null; MO.el.ontimeupdate=null; MO.el.onerror=null } }catch(e){}
 }
 /* egy hangszelet lejátszása: odaugrik, és a végénél megáll */
 function moPlay(sl,rate){
   return new Promise(res=>{
+    /* a mondatvég finomítása: a szelet nem lehet rövidebb a felénél */
+    if(MO.trim){
+      const len=sl.e-sl.b;
+      sl={...sl, e:Math.max(sl.b+len*0.5, sl.e+MO.trim)};
+    }
     const url=MO.au[sl.au];
     if(!url){ res(false); return }
+    const mine=++MO.token;
     let done=false, iv=0;
     const fin=ok=>{ if(done)return; done=true; clearInterval(iv);
-      try{ MO.el.pause(); MO.el.ontimeupdate=null; MO.el.onended=null; MO.el.onerror=null }catch(e){}
+      if(MO.token===mine){        /* csak akkor nyúlunk a hanghoz, ha még miénk */
+        try{ MO.el.pause(); MO.el.ontimeupdate=null; MO.el.onended=null; MO.el.onerror=null }catch(e){}
+      }
       res(ok!==false) };
     try{
       if(!MO.el){ MO.el=new Audio(); MO.el.preload='auto' }
@@ -3837,6 +3923,172 @@ async function loopRead(){
     }
   } finally { if(rdLoopRun===my) rdLoopRun=-1 }
 }
+
+/* ============ karaoke / hangoskönyv mód ============
+   Egy mondat nagyban, alatta a fordítása, a hang pedig — ha a magyar felolvasás
+   ki van kapcsolva — FOLYAMATOSAN szól. Ez a lényeg: így egyáltalán nincs vágás,
+   tehát nem csúszhat bele a következő mondat első szava. Csak a kijelzett mondat
+   vált, a hangfolyam sértetlen, mint egy igazi hangoskönyvben. */
+const KAR={on:false, i:0, run:0, timer:0, hu:store.get('ek_karhu')==='1',
+           show:store.get('ek_karshow')!=='0', paused:false};
+function karOpen(){
+  if(!moHas()){ toast('ehhez a fejezethez nincs hangfelvétel a könyvben'); return }
+  if(rdOn) stopReading();
+  KAR.on=true; KAR.paused=false; $('kar').classList.add('open');
+  let start=Math.max(0,rdPtr);
+  while(start<MO.plan.length&&!MO.plan[start]) start++;
+  if(start>=MO.plan.length) start=MO.plan.findIndex(Boolean);
+  KAR.i=Math.max(0,start);
+  rdWake(true); keepAudio(true); mediaSess('playing');
+  karDraw(); karRun();
+}
+function karClose(){
+  KAR.on=false; KAR.run++; clearInterval(KAR.timer); KAR.timer=0;
+  moStop(); try{speechSynthesis.cancel()}catch(e){}
+  $('kar').classList.remove('open');
+  rdWake(false); keepAudio(false); mediaSess('none');
+  rdPtr=KAR.i; try{ lisSave() }catch(e){}
+}
+const karText=i=>{ const a=sentList(); return (a[i]&&a[i].textContent.trim())||'' };
+function karDraw(){
+  if(!KAR.on) return;
+  const all=sentList();
+  $('karCh').textContent=((book&&book.title)||'')+' · '+((chapters[curChap]&&chapters[curChap].name)||'');
+  $('karSent').textContent=karText(KAR.i)||'…';
+  $('karPrev').textContent=KAR.i>0?karText(KAR.i-1):'';
+  $('karNext').textContent=KAR.i+1<all.length?karText(KAR.i+1):'';
+  const hu=KAR.show?(cache[ck(karText(KAR.i))]||''):'';
+  $('karHu').textContent=hu;
+  $('karHu').style.display=(KAR.show&&hu)?'':'none';
+  $('karFill').style.width=(all.length?Math.min(100,(KAR.i+1)/all.length*100):0)+'%';
+  $('karPlay').textContent=KAR.paused?'\u25b6':'\u23f8';
+  $('karHuBtn').textContent='magyar hang: '+(KAR.hu?'be':'ki');
+  $('karHuBtn').classList.toggle('on',KAR.hu);
+  $('karSpeed').textContent=String(rdSpeed).replace('.',',')+'\u00d7';
+  $('karAuto').textContent='magyar szöveg: '+(KAR.show?'be':'ki');
+  $('karAuto').classList.toggle('on',KAR.show);
+}
+async function karAhead(){
+  const all=sentList();
+  for(let k=KAR.i;k<Math.min(KAR.i+4,all.length);k++){
+    const t=karText(k); if(!t||cache[ck(t)]) continue;
+    try{ const hu=await freeTranslate(t);
+      if(hu){ cache[ck(t)]=hu; saveCache(); if(k===KAR.i) karDraw() } }catch(e){}
+  }
+}
+function karJump(d){
+  const all=sentList();
+  let j=KAR.i+d;
+  while(j>=0&&j<all.length&&!(MO.plan&&MO.plan[j])) j+=d;
+  if(j<0||j>=all.length) return;
+  KAR.i=j; KAR.run++; clearInterval(KAR.timer); KAR.timer=0;
+  moStop(); try{speechSynthesis.cancel()}catch(e){}
+  karDraw(); if(!KAR.paused) karRun();
+}
+async function karRun(){
+  const my=++KAR.run;
+  clearInterval(KAR.timer); KAR.timer=0;
+  karAhead();
+  while(KAR.on&&my===KAR.run&&!KAR.paused){
+    const all=sentList();
+    if(!MO.plan||KAR.i>=all.length){
+      if(curChap<chapters.length-1){
+        renderChapter(curChap+1); await sleep(400);
+        if(!moHas()){ toast('a következő fejezethez nincs felvétel'); karClose(); return }
+        const f=MO.plan.findIndex(Boolean); if(f<0){ karClose(); return }
+        KAR.i=f; karDraw(); continue;
+      }
+      toast('a könyv vége'); karClose(); return;
+    }
+    if(!MO.plan[KAR.i]){ KAR.i++; continue }
+    karDraw();
+    if(KAR.hu){
+      const okp=await moPlay(MO.plan[KAR.i],rdSpeed);
+      if(!KAR.on||my!==KAR.run||KAR.paused) return;
+      if(!okp){ toast('a hangfelvétel nem szólalt meg'); karClose(); return }
+      let hu=cache[ck(karText(KAR.i))];
+      if(!hu){ try{ hu=await freeTranslate(karText(KAR.i)) }catch(e){}
+        if(hu){ cache[ck(karText(KAR.i))]=hu; saveCache(); karDraw() } }
+      if(!KAR.on||my!==KAR.run||KAR.paused) return;
+      if(hu) await speakAsync(hu,'hu-HU',1);
+      if(!KAR.on||my!==KAR.run||KAR.paused) return;
+      KAR.i++; try{ lisSave() }catch(e){}
+      continue;
+    }
+    const ok=await karFlow(my);
+    if(!ok) return;
+  }
+}
+/* Egy hangfájl folyamatos lejátszása a KAR.i mondattól: a hangot nem szakítjuk
+   meg, csak figyeljük, hol tart, és eszerint váltjuk a kijelzett mondatot. */
+function karFlow(my){
+  return new Promise(res=>{
+    const all=sentList(), first=MO.plan[KAR.i];
+    if(!first){ res(true); return }
+    const au=first.au, url=MO.au[au];
+    if(!url){ res(true); return }
+    let last=KAR.i;
+    while(last+1<all.length&&MO.plan[last+1]&&MO.plan[last+1].au===au) last++;
+    const endAt=MO.plan[last].e;
+    const mine=++MO.token;
+    let fin=false;
+    const stop=ok=>{ if(fin)return; fin=true;
+      clearInterval(KAR.timer); KAR.timer=0;
+      if(MO.token===mine){ try{ MO.el.onended=null; MO.el.onerror=null }catch(e){} }
+      res(ok) };
+    try{
+      if(!MO.el){ MO.el=new Audio(); MO.el.preload='auto' }
+      const a=MO.el;
+      if(a.dataset.url!==url){ a.src=url; a.dataset.url=url }
+      a.playbackRate=Math.max(.5,Math.min(2,rdSpeed||1));
+      const go=()=>{
+        /* Csak akkor ugrunk, ha nem ott vagyunk: szünet utáni folytatásnál így
+           onnan megy tovább, ahol megállt, nem a mondat elejétől. */
+        /* Csak akkor hagyjuk ott a fejet, ha ÉPP az aktuális mondat belsejében
+           vagyunk (szünet utáni folytatás). Máskülönben odaugrunk a mondat elejére —
+           különben egy korábbi lejátszás pozíciójáról indulnánk. */
+        const t=a.currentTime;
+        const inside=t>=first.b-0.1&&t<first.e-0.05;
+        if(!inside){ try{ a.currentTime=first.b }catch(e){} }
+        a.onerror=()=>stop(false);
+        a.onended=()=>{ KAR.i=last+1; stop(true) };
+        const p=a.play(); if(p&&p.catch) p.catch(()=>stop(false));
+        KAR.timer=setInterval(()=>{
+          if(MO.token!==mine){ stop(false); return }      /* átvette más */
+          if(!KAR.on||my!==KAR.run||KAR.paused){ stop(false); return }
+          const t=a.currentTime;
+          let j=KAR.i;
+          while(j+1<=last&&MO.plan[j+1]&&t>=MO.plan[j+1].b-0.05) j++;
+          if(j!==KAR.i){ KAR.i=j; karDraw(); karAhead(); try{lisSave()}catch(e){} }
+          if(isFinite(endAt)&&t>=endAt-0.02){ KAR.i=last+1; stop(true) }
+        },120);
+      };
+      if(a.readyState>=1) go(); else { a.onloadedmetadata=go; a.load() }
+    }catch(e){ stop(false) }
+  });
+}
+function karToggle(){
+  KAR.paused=!KAR.paused;
+  if(KAR.paused){ KAR.run++; clearInterval(KAR.timer); KAR.timer=0;
+    try{ MO.el&&MO.el.pause() }catch(e){}
+    try{speechSynthesis.cancel()}catch(e){} }
+  else karRun();
+  karDraw();
+}
+$('karClose').onclick=karClose;
+$('karPlay').onclick=karToggle;
+$('karBack').onclick=()=>karJump(-1);
+$('karFwd').onclick=()=>karJump(1);
+$('karHuBtn').onclick=()=>{ KAR.hu=!KAR.hu; store.set('ek_karhu',KAR.hu?'1':'0');
+  KAR.run++; clearInterval(KAR.timer); KAR.timer=0; moStop();
+  try{speechSynthesis.cancel()}catch(e){}
+  karDraw(); if(!KAR.paused) karRun();
+  toast(KAR.hu?'magyar felolvasás be — mondatonként áll meg':'folyamatos hang, magyar felolvasás nélkül'); };
+$('karAuto').onclick=()=>{ KAR.show=!KAR.show; store.set('ek_karshow',KAR.show?'1':'0'); karDraw() };
+$('karSpeed').onclick=()=>{ rdSpeed=RD_SPEEDS[(RD_SPEEDS.indexOf(rdSpeed)+1)%RD_SPEEDS.length];
+  store.set('ek_rdspeed',String(rdSpeed));
+  if(MO.el) MO.el.playbackRate=Math.max(.5,Math.min(2,rdSpeed)); karDraw(); };
+
 $('readBtn').onclick=()=>startReading();
 $('plPause').onclick=()=>{
   if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} ttsStop(); moStop(); keepAudio(false); mediaSess('paused') }
