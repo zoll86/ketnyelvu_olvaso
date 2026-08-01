@@ -817,6 +817,9 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
     <div class="srow"><label>Ma</label><span class="mono" id="todayTxt"></span>
       <button class="mini" id="dueReset">mai számláló nullázása</button></div>
     <div class="ssec">Hang</div>
+    <div class="srow"><label>Audio ebook</label>
+      <span class="note" style="margin:0;flex:1" id="moDiag">—</span>
+      <button class="mini" id="moDiagBtn">részletek</button></div>
     <div class="srow" id="rowTtsProv"><label>Hangforrás</label>
       <select class="inp" id="ttsProv">
         <option value="sys">rendszerhang — ingyenes, azonnali</option>
@@ -833,6 +836,7 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
     </div>
     <div class="srow"><label>Felolvasás</label>
       <button class="mini" id="narBtn">idegen + magyar</button>
+      <span class="mini" id="moBadge" hidden style="pointer-events:none;border-color:rgba(232,182,76,.5);color:var(--gold)"></span>
       <span class="note" style="margin:0" id="narTxt"></span></div>
     <div class="srow"><label>A könyv magyar</label>
       <button class="mini" id="huBtn">be/ki</button>
@@ -945,7 +949,7 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v94';
+const APP_VER='v95';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -1977,8 +1981,12 @@ async function loadEpub(f){
             const frag=(tx.getAttribute('src')||'').split('#')[1];
             const ah=resolve(sdir,au.getAttribute('src')||'');
             if(!frag||!ah) continue;
-            list.push({id:frag,au:ah,b:clockSec(au.getAttribute('clipBegin')),
-                       e:clockSec(au.getAttribute('clipEnd'))});
+            /* néhány könyvben nincs clipEnd (a szelet a fájl végéig tart), és
+               előfordul clipBegin nélküli pár is — mindkettőt elfogadjuk */
+            const cb=clockSec(au.getAttribute('clipBegin'));
+            let ce=clockSec(au.getAttribute('clipEnd'));
+            if(!ce||ce<=cb) ce=Number.MAX_SAFE_INTEGER;
+            list.push({id:frag,au:ah,b:cb,e:ce});
           }
           if(list.length){
             mo=list;
@@ -2005,9 +2013,13 @@ async function loadEpub(f){
   if(bookHu) setTimeout(()=>toast('A könyv magyarnak tűnik — a magyar hang olvassa, fordítás nélkül. A ⚙ → Hang alatt átállítható.',5200),1400);
   const guess=sniffLang(probe);
   if(!bookHu&&guess!==src){src=guess;store.set('ek_src',src);drawLang();
-    if(chapters.some(c=>c.mo&&c.mo.length))
-      setTimeout(()=>toast('Ez a könyv eredeti hangfelvételt tartalmaz — a ▶ felolvasás azt fogja használni',5000),2400);
     setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+src.toUpperCase()+'→HU-ra',3400),1200)}
+  /* audio ebook: minden megnyitásnál jelezzük, ne csak nyelvváltáskor */
+  {
+    const pairs=chapters.reduce((n,c)=>n+((c.mo&&c.mo.length)||0),0);
+    if(pairs) setTimeout(()=>toast('🎧 Ez a könyv eredeti hangfelvételt tartalmaz ('+pairs+
+      ' mondathoz) — a ▶ felolvasás a narrátor hangján szól',5600),2500);
+  }
   $('start').style.display='none'; $('reader').style.display='';
   document.body.classList.add('reading'); setChrome(false);
   try{ history.pushState({book:1},'') }catch(e){}
@@ -2077,7 +2089,7 @@ function renderChapter(idx,sIdx){
     b.onclick=()=>{renderChapter(idx+1);$('main').scrollTop=0};nav.appendChild(b)}
   r.appendChild(nav);
   try{ buildMoPlan() }catch(e){ MO.plan=null; MO.cnt=0 }
-  try{ drawPlayer() }catch(e){}
+  try{ drawPlayer(); drawNar() }catch(e){}
   $('main').scrollTop=0;
   if(sIdx>0){
     const all=sentList();
@@ -3276,7 +3288,43 @@ function applyJust(){
 $('justBtn').onclick=()=>{ justOn=!justOn; store.set('ek_just',justOn?'1':'0'); applyJust();
   toast(justOn?'sorkizárt':'balra zárt') };
 
+/* Diagnosztika: ha egy valódi audio ebook nem szólal meg, itt látszik, hol áll meg —
+   van-e SMIL a könyvben, kicsomagolódott-e a hang, és sikerült-e mondatokhoz párosítani. */
+function drawMoDiag(){
+  const el=$('moDiag'); if(!el) return;
+  if(!chapters.length){ el.textContent='nincs nyitott könyv'; return }
+  const pairs=chapters.reduce((n,c)=>n+((c.mo&&c.mo.length)||0),0);
+  const chs=chapters.filter(c=>c.mo&&c.mo.length).length;
+  if(!pairs){ el.textContent='ez a könyv nem tartalmaz hangfelvételt (nincs Media Overlay)'; return }
+  el.textContent=chs+' fejezetben '+pairs+' hangszelet · '+Object.keys(MO.au).length+
+    ' hangfájl · ebben a fejezetben '+MO.cnt+' mondat párosítva';
+}
+function moDiagDetails(){
+  const L=[];
+  L.push('Nyitott könyv: '+((book&&book.title)||'—'));
+  L.push('Fejezetek: '+chapters.length);
+  chapters.forEach((c,i)=>{ if(c.mo&&c.mo.length)
+    L.push('  '+(i+1)+'. fejezet: '+c.mo.length+' szelet, első: '+c.mo[0].id+
+           ' @'+c.mo[0].b.toFixed(2)+'s → '+(c.mo[0].e>1e9?'fájl vége':c.mo[0].e.toFixed(2)+'s')) });
+  L.push('Kicsomagolt hangfájlok:');
+  Object.keys(MO.au).forEach(k=>L.push('  '+k));
+  if(!Object.keys(MO.au).length) L.push('  (egy sem — a SMIL hangútvonala nem volt megtalálható a zipben)');
+  L.push('Ebben a fejezetben párosított mondat: '+MO.cnt+' / '+sentList().length);
+  if(chapters[curChap]&&chapters[curChap].mo&&!MO.cnt)
+    L.push('FIGYELEM: van felvétel, de egyetlen mondathoz sem sikerült párosítani — '
+      +'a SMIL azonosítói vagy a szövegtördelés nem egyezik.');
+  L.push('Narráció bekapcsolva: '+(MO.on?'igen':'nem'));
+  alert(L.join('\n'));
+}
 function drawNar(){
+  /* audio ebook jelző: akkor is látszik, amikor a lejátszó rejtve van */
+  const mb=$('moBadge');
+  if(mb){
+    const pairs=chapters.reduce((n,c)=>n+((c.mo&&c.mo.length)||0),0);
+    mb.hidden=!pairs;
+    if(pairs){ mb.textContent='🎧 eredeti hang'+(MO.on?'':' (ki)');
+      mb.title=pairs+' mondathoz van felvétel a könyvben' }
+  }
   const b=$('narBtn'), t=$('narTxt'), hb=$('huBtn');
   if(hb){ hb.classList.toggle('on',bookHu); hb.disabled=!book }
   if(b){ b.textContent=bookHu?'magyar mű':NARN[rdNar]; b.classList.toggle('on',rdNar!=='src'&&!bookHu); b.disabled=bookHu }
@@ -3290,6 +3338,7 @@ function drawNar(){
       :rdNar==='src'?'csak az eredeti nyelv, fordítás nélkül'
       :'mondatonként: eredeti, majd magyar');
 }
+$('moDiagBtn').onclick=()=>{ try{ moDiagDetails() }catch(e){ toast('nem sikerült: '+e.message) } };
 $('narBtn').onclick=()=>{
   if(bookHu) return toast('a könyv magyar nyelvű — nincs mit fordítani');
   rdNar=NAR[(NAR.indexOf(rdNar)+1)%NAR.length];
@@ -3515,6 +3564,7 @@ function moPlay(sl,rate){
         try{ a.currentTime=sl.b }catch(e){}
         a.onended=()=>fin(true);
         a.onerror=()=>fin(false);
+        if(sl.e===Number.MAX_SAFE_INTEGER&&isFinite(a.duration)) sl={...sl,e:a.duration};
         const p=a.play(); if(p&&p.catch) p.catch(()=>fin(false));
         /* Sűrű figyelés: a timeupdate csak ~250 ms-onként jelez, ami mondathatáron
            hallhatóan túlfutna a következő mondatba. A második ág biztonsági határ,
@@ -3820,7 +3870,7 @@ if(store.get('ek_plwide')==='1'){ $('player').classList.add('wide'); $('plMore')
 $('plNarr').onclick=()=>{
   MO.on=!MO.on; store.set('ek_mo',MO.on?'1':'0');
   if(MO.on){ try{ buildMoPlan() }catch(e){} } else moStop();
-  drawPlayer();
+  drawPlayer(); try{ drawNar() }catch(e){}
   toast(MO.on?'eredeti narráció bekapcsolva':'visszaálltam a gépi hangra');
 };
 $('plGap').onclick=()=>{
@@ -5273,7 +5323,8 @@ $('rLh').oninput=e=>{RD.lh=+e.target.value;applyRead()};
 $('rLs').oninput=e=>{RD.ls=+e.target.value;applyRead()};
 $('rW').oninput=e=>{RD.w=+e.target.value;applyRead()};
 $('setBtn').onclick=()=>{$('vocab').classList.remove('open');$('setts').classList.toggle('open');
-  if($('setts').classList.contains('open')){ drawSrs(); drawStorage(); drawVoiceRows() }};
+  if($('setts').classList.contains('open')){ try{drawMoDiag()}catch(e){}
+ drawSrs(); drawStorage(); drawVoiceRows() }};
 function bumpFs(d){ RD.fs=Math.min(2.6,Math.max(1,+(RD.fs+d).toFixed(2))); applyRead();
   toast(Math.round(RD.fs*16)+' px',900) }
 $('fsUp').onclick=()=>bumpFs(.08);
