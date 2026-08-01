@@ -1005,7 +1005,7 @@ body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v96';
+const APP_VER='v97';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -3625,6 +3625,22 @@ function moStop(){
   try{ if(MO.el){ MO.el.pause(); MO.el.onended=null; MO.el.ontimeupdate=null; MO.el.onerror=null } }catch(e){}
 }
 /* egy hangszelet lejátszása: odaugrik, és a végénél megáll */
+/* A keresés (seek) aszinkron művelet. Ha közben elindítjuk a lejátszást, a böngésző
+   még a RÉGI pozícióról szól pár tized másodpercig — ez épp az új mondat első
+   szótagja —, majd a keresés landol, és az a szótag újra elhangzik. Innen jött a
+   „minden mondat elején duplázik” hiba. Ezért: megállunk, keresünk, megvárjuk a
+   „seeked” jelzést, és csak azután indítunk. */
+function moSeek(a,to){
+  return new Promise(res=>{
+    let done=false, tm=0;
+    const fin=()=>{ if(done)return; done=true; a.onseeked=null; clearTimeout(tm); res() };
+    if(Math.abs(a.currentTime-to)<0.02&&!a.seeking){ res(); return }
+    try{ a.pause() }catch(e){}
+    tm=setTimeout(fin,1200);          /* ha a jelzés elmarad, ne akadjunk meg */
+    a.onseeked=fin;
+    try{ a.currentTime=to }catch(e){ fin() }
+  });
+}
 function moPlay(sl,rate){
   return new Promise(res=>{
     /* a mondatvég finomítása: a szelet nem lehet rövidebb a felénél */
@@ -3646,8 +3662,9 @@ function moPlay(sl,rate){
       const a=MO.el;
       if(a.dataset.url!==url){ a.src=url; a.dataset.url=url }
       a.playbackRate=Math.max(.5,Math.min(2,rate||1));
-      const start=()=>{
-        try{ a.currentTime=sl.b }catch(e){}
+      const start=async()=>{
+        await moSeek(a,sl.b);                 /* előbb a keresés, csak utána a hang */
+        if(done||MO.token!==mine) return;
         a.onended=()=>fin(true);
         a.onerror=()=>fin(false);
         if(sl.e===Number.MAX_SAFE_INTEGER&&isFinite(a.duration)) sl={...sl,e:a.duration};
@@ -4041,15 +4058,13 @@ function karFlow(my){
       const a=MO.el;
       if(a.dataset.url!==url){ a.src=url; a.dataset.url=url }
       a.playbackRate=Math.max(.5,Math.min(2,rdSpeed||1));
-      const go=()=>{
-        /* Csak akkor ugrunk, ha nem ott vagyunk: szünet utáni folytatásnál így
-           onnan megy tovább, ahol megállt, nem a mondat elejétől. */
-        /* Csak akkor hagyjuk ott a fejet, ha ÉPP az aktuális mondat belsejében
-           vagyunk (szünet utáni folytatás). Máskülönben odaugrunk a mondat elejére —
-           különben egy korábbi lejátszás pozíciójáról indulnánk. */
+      const go=async()=>{
+        /* A lejátszófejet csak akkor hagyjuk ott, ha ÉPP az aktuális mondat
+           belsejében van (szünet utáni folytatás). Egyébként odaugrunk a mondat
+           elejére, és megvárjuk a keresés végét, hogy ne duplázzon az első szótag. */
         const t=a.currentTime;
         const inside=t>=first.b-0.1&&t<first.e-0.05;
-        if(!inside){ try{ a.currentTime=first.b }catch(e){} }
+        if(!inside){ await moSeek(a,first.b); if(fin||MO.token!==mine) return }
         a.onerror=()=>stop(false);
         a.onended=()=>{ KAR.i=last+1; stop(true) };
         const p=a.play(); if(p&&p.catch) p.catch(()=>stop(false));
