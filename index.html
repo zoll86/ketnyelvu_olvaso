@@ -604,6 +604,8 @@ body.railon #study,body.railon #match,body.railon #sent{
   color:var(--red);font-size:var(--t1);font-family:var(--mono);margin-bottom:4px}
 .qtile.hint{animation:hintp 1s ease 3;border-color:var(--gold)}
 @keyframes hintp{50%{transform:scale(1.12);box-shadow:0 0 16px rgba(232,182,76,.5)}}
+/* koreainál a szó közepén tilos törni — a böngésző alapból megtenné */
+body.cjk #reader,body.cjk .s{word-break:keep-all;line-break:strict}
 #toast{position:fixed;left:50%;bottom:1.4rem;transform:translate(-50%,2rem);opacity:0;
   background:rgba(20,14,9,.96);border:1px solid var(--line2);border-radius:var(--r2);
   padding:var(--sp3) var(--sp4);font-size:var(--t2);z-index:60;pointer-events:none;
@@ -652,6 +654,7 @@ body.railon #study,body.railon #match,body.railon #sent{
       <button class="pchip" id="plHu" title="Magyar fordítás felolvasása"></button>
       <button class="pchip" id="plGap" title="Szünet az idegen mondat után"></button>
       <button class="pchip" id="plSleep" title="Elalvás-időzítő"></button>
+    <button class="pchip" id="plNarr" title="A könyvbe csomagolt eredeti felvétel" hidden></button>
     <button class="pchip" id="plVoice" title="Váltás a neurális és a rendszerhang között" hidden></button>
   </div>
   <div class="pstat" id="plBuf" hidden></div>
@@ -743,6 +746,8 @@ body.railon #study,body.railon #match,body.railon #sent{
     <p>Napi adagolás: alapból 20 új és 120 ismétlés naponta, a beállításokban állítható. Egy szó két kártyája nem jön ugyanazon a napon, hogy a második ne legyen ingyen. A gombokon ott az intervallum, és a <b>↺ vissza</b> visszavonja az utolsó választ. A <b>statisztika</b> mutatja a napi sorozatot, a következő hét nap terhelését és a könyv lefedettségét.</p>
     <h4>Nyelvtan</h4>
     <p>A felolvasás alapból a <b>rendszerhangon</b> szól: azonnali, ingyenes, de gépies. A ⚙ → Hang alatt átállítható <b>Google felhőre</b>, ami hangoskönyvhöz közelítő minőséget ad, és mind a három nyelvet viszi — az angolt, a dánt és a magyart is. Ehhez egy saját Google TTS kulcs kell; a hangok listája a kulcs beírása után magától betöltődik, és nyelvenként külön választható. A <b>mind</b> gombbal ugyanaz a mondat végighallgatható minden azonos szintű hangon, hogy füllel dönthess. Érdemes a magyarhoz más hangot választani: akkor a nyelvváltást a hangváltás is jelzi. A legördülőben minden hang mellett ott az ára; a panel kiírja, mennyi karaktert használtál el ebben a hónapban, és a nyitott fejezet mérete is látszik, mielőtt legyártatnád. A <b>fejezet előgyártása</b> gombbal a teljes fejezet hangja előre elkészül, így a hallgatás offline és azonnali; ami egyszer legyártódott, a telefonon marad. Olvasás közben a program soha nem várakozik hangra: ami már kész, azt szólaltatja meg, ami nem, azt a rendszerhang mondja, miközben a háttérben előregyárt. A lejátszóban a <b>⛁</b> szám mutatja, hány mondat hangja van készen.</p>
+    <p><b>Audio ebook (EPUB 3 Media Overlays).</b> Ha a könyvbe eredeti hangfelvétel van csomagolva, a program azt használja gépi hang helyett: a ▶ felolvasás a narrátor hangján szólal meg, kétnyelvű módban pedig a felvétel után jön a magyar fordítás gépi hanggal. A lejátszóban az <b>Eredeti narráció</b> kapcsolóval váltható, és csak akkor jelenik meg, ha a könyv tartalmaz felvételt. Ha egy mondathoz nincs hang (például fejezetcímhez), azt a gépi hang mondja. Ilyen fájl a saját e-könyvedből és hangoskönyvedből is készíthető, például a Storyteller nevű nyílt eszközzel.</p>
+    <p><b>Koreai.</b> A nyelvváltó gomb három forrásnyelv között jár körbe: EN → DA → KO. A koreai a kétnyelvű olvasáshoz és a hangoskönyv-módhoz működik (mondatbontás a koreai írásjelekkel és párbeszédjelekkel, ko-KR felolvasás, helyes koreai sortörés) — a szótanuló funkciók viszont nem, mert a koreai ragozott szóalakokból szótő nélkül nem lehet szótárt építeni.</p>
     <p>A <b>▶ felolvasás</b> mondatonként végigolvassa a könyvet: először az idegen nyelvű mondat, utána a magyar fordítása, majd magától lép a következőre és a következő fejezetre. A tempógomb <b>csak az idegen nyelv</b> sebességét állítja (1× · 0,9× · 0,75× · 0,6× · 1,25×) — ezért ki is írja, melyik nyelvre vonatkozik —, a magyar mindig normál tempóban szól, hogy ne legyen vontatott. A felolvasás <b>lezárt kijelzőnél is folytatódik</b>, és a telefon zárolási képernyőjén megjelenő lejátszásvezérlőből szüneteltethető vagy ugrasztható. A ⏭ átlépi a hátralévő részt, a HU gombbal a magyar felolvasás kikapcsolható.</p>
     <p><b>Hangoskönyvként hallgatva</b> két dolog segít: a <b>szünet</b> gombbal beállítható, mennyi csend legyen az idegen mondat után (1–5 másodperc), hogy legyen időd fejben lefordítani, mielőtt megjön a magyar; az <b>⏾ időzítő</b> pedig 15–60 perc után magától leállítja a felolvasást, ha elalszol. A magyar fordítások a következő mondatokra előre elkészülnek a háttérben, ingyenes motorral, így nincs szünet a két nyelv között — és ami egyszer elkészült, offline is megszólal.</p>
     <p>A fordítás mellett a <b>miért így?</b> gomb megnevezi és magyarul elmagyarázza a mondat szerkezetét — befejezett jelen, szenvedő, feltételes, vonzatos ige és társai. Ingyenes motorral is működik, beépített mintafelismerésből; Claude-dal részletesebb elemzést ad.</p>
@@ -869,10 +874,6 @@ body.railon #study,body.railon #match,body.railon #sent{
     <div class="ssec">Alkalmazás</div>
     <div class="srow"><label>Verzió</label><span class="mono" id="verTxt"></span>
       <button class="mini" id="updChk">frissítés keresése</button></div>
-    <div class="srow"><label>Rezgés</label>
-      <button class="mini" id="hapBtn">be/ki</button>
-      <button class="mini" id="hapTest">próba</button>
-      <span class="note" style="margin:0" id="hapNote"></span></div>
     <div class="srow"><label>Tárhely</label><span class="mono" id="stoTxt">—</span></div>
     <div class="srow"><label>Karbantartás</label>
       <div style="display:flex;flex-wrap:wrap;gap:var(--sp2);flex:1">
@@ -944,7 +945,7 @@ body.railon #study,body.railon #match,body.railon #sent{
 
 <script>
 /* ============ PWA: verzió, service worker, frissítés ============ */
-const APP_VER='v93';
+const APP_VER='v94';
 let swReg=null, reloaded=false;
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   addEventListener('load',async()=>{
@@ -997,7 +998,9 @@ const OAI=Object.assign({url:'https://api.moonshot.ai/v1',model:'kimi-k2.6',key:
   JSON.parse(store.get('ek_oai')||'{}'));
 let src=store.get('ek_src')||'en';           // 'en' | 'da'
 const LANG={en:{name:'angol',en:'English',tts:'en-US',dict:true},
-            da:{name:'dán',  en:'Danish', tts:'da-DK',dict:false}};
+            da:{name:'dán',  en:'Danish', tts:'da-DK',dict:false},
+            ko:{name:'koreai',en:'Korean',tts:'ko-KR',dict:false,cjk:true}};
+const LANG_ORDER=['en','da','ko'];
 const ck=t=>src+'|'+t;
 let cache=JSON.parse(store.get('ek_cache')||'{}');       // mondat -> fordítás
 let vocab=JSON.parse(store.get('ek_vocab')||'[]');       // {en,hu,note,src}
@@ -1751,6 +1754,7 @@ const GRAM_DA=[
   'Az -ere végződés vagy a mere + melléknév hasonlít, az „end” a magyar „mint”.']
 ];
 function grammarHints(sent){
+  if(src!=='en'&&src!=='da') return [];      /* koreaira nincs mintakészletünk */
   const list=src==='da'?GRAM_DA:GRAM_EN, out=[];
   for(const [re,name,hu] of list){
     let m=null; try{ m=sent.match(new RegExp(re,'i')) }catch(e){}
@@ -1790,7 +1794,8 @@ const ABBR_DA=new Set(['bl.a','fx','f.eks','dvs','osv','ca','hr','fru','frk','kl
 const ENDERS=new Set(['p.m','a.m','u.s','u.k','etc','a.d','b.c']); // pont után is jöhet új mondat
 function splitSentences(text){
   const t=text.replace(/\s+/g,' ').trim(); if(!t) return [];
-  const out=[]; let start=0; const re=/([.!?…]+)(["'”’»)\]]*)(\s+)/g; let m;
+  /* a záró jelek közt a koreai 」 és 』 is szerepel, különben a párbeszéd egyben marad */
+  const out=[]; let start=0; const re=/([.!?…]+)(["'”’»)\]\u300D\u300F]*)(\s+)/g; let m;
   while((m=re.exec(t))!==null){
     const end=m.index+m[1].length+m[2].length;
     const before=t.slice(start,m.index);
@@ -1799,7 +1804,9 @@ function splitSentences(text){
     const abbrSet=src==='da'?ABBR_DA:ABBR;
     const isAbbr=m[1]==='.'&&!ENDERS.has(lw)&&(abbrSet.has(lw)||ABBR_DA.has(lw)||/^[a-z]$/.test(lw)||dotted);
     const next=t[end+m[3].length]||'';
-    const starts=/[A-ZÆØÅ“"'‘(\u00C0-\u017F0-9—]/.test(next);
+    /* a koreaiban nincs kis- és nagybetű: a hangul és a koreai nyitó
+       párbeszédjelek is mondatkezdésnek számítanak */
+    const starts=/[A-ZÆØÅ“"'‘(\u00C0-\u017F0-9—\uAC00-\uD7A3\u300C\u300E]/.test(next);
     if(isAbbr||!starts) continue;
     out.push(t.slice(start,end).trim()); start=end+m[3].length;
   }
@@ -1894,7 +1901,18 @@ async function loadEpub(f){
   const title=(opf.querySelector('metadata title, dc\\:title')||{}).textContent||f.name.replace(/\.epub$/i,'');
   const man={};
   opf.querySelectorAll('manifest item').forEach(i=>man[i.getAttribute('id')]={href:resolve(dir,i.getAttribute('href')),type:i.getAttribute('media-type')});
-  const spine=[...opf.querySelectorAll('spine itemref')].map(r=>man[r.getAttribute('idref')]).filter(x=>x&&/html/.test(x.type||''));
+  /* Media Overlays (audio ebook): a manifest itemen a media-overlay attribútum
+     mutat a SMIL fájlra, ami mondatonként köti a szöveget a hangfelvételhez. */
+  const moOf={};
+  opf.querySelectorAll('manifest item').forEach(i=>{
+    const mid=i.getAttribute('media-overlay'); if(!mid) return;
+    const smil=man[mid]; if(smil) moOf[resolve(dir,i.getAttribute('href'))]=smil.href;
+  });
+  const spine=[...opf.querySelectorAll('spine itemref')].map(r=>{
+    const it=man[r.getAttribute('idref')];
+    if(it) it.mo=moOf[it.href]||null;
+    return it;
+  }).filter(x=>x&&/html/.test(x.type||''));
   // fejezetnevek a könyv saját tartalomjegyzékéből (EPUB3 nav, majd EPUB2 ncx)
   const toc={};
   const addToc=(base,href,label)=>{
@@ -1940,7 +1958,36 @@ async function loadEpub(f){
     const h=body.querySelector('h1,h2,h3');
     const name=toc[spine[i].href]||(h&&h.textContent.replace(/\s+/g,' ').trim().slice(0,70))
       ||(doc.title||'').replace(/\s+/g,' ').trim()||'';
-    chapters.push({name,body,words:body.textContent.trim().split(/\s+/).length});
+    /* a fejezet narrációja: a SMIL párokból mondat-azonosító + hangszelet */
+    let mo=null;
+    if(spine[i].mo){
+      try{
+        const sf=zfile(zip,spine[i].mo);
+        if(sf){
+          const sdir=spine[i].mo.split('/').slice(0,-1).join('/');
+          const sd=P.parseFromString(await sf.async('text'),'application/xml');
+          const list=[];
+          for(const par of sd.getElementsByTagName('*')){
+            if(par.localName!=='par') continue;
+            let tx=null, au=null;
+            for(const c of par.getElementsByTagName('*')){
+              if(c.localName==='text') tx=c; else if(c.localName==='audio') au=c;
+            }
+            if(!tx||!au) continue;
+            const frag=(tx.getAttribute('src')||'').split('#')[1];
+            const ah=resolve(sdir,au.getAttribute('src')||'');
+            if(!frag||!ah) continue;
+            list.push({id:frag,au:ah,b:clockSec(au.getAttribute('clipBegin')),
+                       e:clockSec(au.getAttribute('clipEnd'))});
+          }
+          if(list.length){
+            mo=list;
+            for(const href of new Set(list.map(x=>x.au))) await moLoadAudio(zip,href);
+          }
+        }
+      }catch(e){ console.warn('media overlay kihagyva',e) }
+    }
+    chapters.push({name,body,mo,words:body.textContent.trim().split(/\s+/).length});
     $('bar').style.width=(30+60*(i+1)/spine.length)+'%';
   }
   if(!chapters.length) throw new Error('Nem találtam olvasható szöveget ebben az EPUB-ban.');
@@ -1958,7 +2005,9 @@ async function loadEpub(f){
   if(bookHu) setTimeout(()=>toast('A könyv magyarnak tűnik — a magyar hang olvassa, fordítás nélkül. A ⚙ → Hang alatt átállítható.',5200),1400);
   const guess=sniffLang(probe);
   if(!bookHu&&guess!==src){src=guess;store.set('ek_src',src);drawLang();
-    setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+(src==='da'?'DA':'EN')+'→HU-ra',3400),1200)}
+    if(chapters.some(c=>c.mo&&c.mo.length))
+      setTimeout(()=>toast('Ez a könyv eredeti hangfelvételt tartalmaz — a ▶ felolvasás azt fogja használni',5000),2400);
+    setTimeout(()=>toast('A könyv '+LANG[src].name+'nak tűnik — átváltottam '+src.toUpperCase()+'→HU-ra',3400),1200)}
   $('start').style.display='none'; $('reader').style.display='';
   document.body.classList.add('reading'); setChrome(false);
   try{ history.pushState({book:1},'') }catch(e){}
@@ -1974,7 +2023,6 @@ async function loadEpub(f){
 /* ============ megjelenítés ============ */
 const BLOCK='p,h1,h2,h3,h4,h5,h6,li,blockquote,td,dd,dt';
 function renderChapter(idx,sIdx){
-  if(chapters.length&&idx!==curChap) hap('page');
   curChap=idx; $('chapSel').value=idx;
   const src=chapters[idx].body.cloneNode(true);
   const out=document.createElement('div');
@@ -2028,6 +2076,8 @@ function renderChapter(idx,sIdx){
   if(idx<chapters.length-1){const b=document.createElement('button');b.className='btn pri';b.textContent='következő fejezet →';
     b.onclick=()=>{renderChapter(idx+1);$('main').scrollTop=0};nav.appendChild(b)}
   r.appendChild(nav);
+  try{ buildMoPlan() }catch(e){ MO.plan=null; MO.cnt=0 }
+  try{ drawPlayer() }catch(e){}
   $('main').scrollTop=0;
   if(sIdx>0){
     const all=sentList();
@@ -2097,8 +2147,8 @@ $('reader').addEventListener('click',e=>{
   if(!trOn()){
     const i=sentList().indexOf(sp);
     if(i<0) return;
-    rdPtr=i; rdFrom=i; hap('tap');
-    if(rdOn){ rdEpoch++; try{speechSynthesis.cancel()}catch(x){} ttsStop() }
+    rdPtr=i; rdFrom=i;
+    if(rdOn){ rdEpoch++; try{speechSynthesis.cancel()}catch(x){} ttsStop(); moStop() }
     else startReading();
     toast('felolvasás innen',1800);
     return;
@@ -2213,7 +2263,17 @@ function addVocab(en,hu,note,sr,srHu,dat){
   toast('«'+en.slice(0,28)+'» a szótárba került');
 }
 function speak(t){
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANG[src].tts;applyVoice(u,src);u.rate=src==='da'?.85:.9;speechSynthesis.speak(u)}
+  /* ha a könyvben van hozzá felvétel, azt szólaltatjuk meg */
+  if(moHas()){
+    const spans=sentList();
+    for(let i=0;i<spans.length;i++){
+      if(spans[i].textContent===t&&MO.plan[i]){
+        try{speechSynthesis.cancel()}catch(e){}
+        moPlay(MO.plan[i],1); return;
+      }
+    }
+  }
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANG[src].tts;applyVoice(u,src);u.rate=(src==='da'||src==='ko')?.85:.9;speechSynthesis.speak(u)}
   catch(e){toast('ez a böngésző nem tud felolvasni')}
 }
 /* előtöltés: a következő 3 mondat a háttérben */
@@ -2349,37 +2409,7 @@ function streak(){
   while(has(dayKey(d))){ n++; d.setDate(d.getDate()-1) }
   return n;
 }
-/* ---- Haptika -----------------------------------------------------------------
-   Szándékosan enyhe: a weben a rezgés ERŐSSÉGÉT nem lehet állítani, csak a hosszát,
-   tehát a „finom” annyit jelent, hogy rövid (6–14 ms). A hosszabb minták csak
-   ritka, valódi eseményekre valók (hiba, napi cél), különben zaklató lesz.
-   Két korlát, amit nem tudunk megkerülni:
-   · a Chrome összefüggő felhasználói érintést kér (sticky user activation), tehát
-     az első koppintás előtt minden hívás blokkolva van — ezért a hapReady kapu,
-     ami a konzolt is megkíméli a figyelmeztetésektől;
-   · a Firefox (Androidon a 79 óta) jelen tartja az API-t és sikert jelez, de a
-     motort nem mozgatja. Ezt nem lehet észlelni, csak füllel/kézzel — ezért van
-     próbagomb a beállításokban. */
-const HAP={
-  tap:8,        /* koppintás nyugtázása */
-  ok:12,        /* sikeres apró művelet */
-  good:[10,40,10],   /* helyes válasz */
-  bad:[26,44,26],    /* hiba */
-  page:6,       /* fejezet- vagy lapváltás */
-  start:14,     /* felolvasás indul/áll */
-  goal:[14,60,14],   /* napi cél */
-};
-let hapOn=store.get('ek_hap')!=='0';
-let hapReady=false;                    /* volt-e már felhasználói érintés */
-const hapArm=()=>{ hapReady=true };
-addEventListener('pointerdown',hapArm,{once:true,capture:true});
-addEventListener('keydown',hapArm,{once:true,capture:true});
-const hapCan=()=>!!(navigator.vibrate&&hapReady);
-function buzz(p){
-  if(!hapOn||!hapCan()) return false;
-  try{ return navigator.vibrate(p)!==false }catch(e){ return false }
-}
-const hap=name=>buzz(HAP[name]||HAP.tap);
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 /* ---- közös napi haladás: minden gyakorlattípus ide számol ---- */
 let goal=+(store.get('ek_goal')||30); if(!(goal>0)) goal=30;
 let hitsAll=+(store.get('ek_hitsall')||0);
@@ -2410,7 +2440,7 @@ function goalReached(){
   const st=goalStreak();
   toast('🎉 mai cél megvan'+(st>1?' — '+st+' napos sorozat!':'!'),3400);
   const el=$('rail'); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop') }
-  hap('goal');
+  buzz([14,60,14]);
 }
 /* a sáv a kezdőlapon és a gyakorlatok fölött látszik, olvasás közben nem
    (ott a képernyő a könyvé) */
@@ -2731,7 +2761,6 @@ function finishCard(rev){
   }
 }
 function reveal(){
-  hap('tap');
   $('sBack').hidden=false;
   speakCardBack();
   $('sCloze').hidden=true;          /* a teljes mondat a válaszban látszik, ne legyen kétszer */
@@ -2769,7 +2798,6 @@ function answer(q){
   sSeen++;
   saveVocab();
   if(q>=1) hit();                        /* „nehéz”, „jó”, „könnyű” = sikeres felidézés */
-  hap(q>=1?'good':'bad');
   sQueue.shift();
   /* ha tanulás alatt van és perceken belül visszajön, a kör végére kerül */
   if(cardSt(o.c)===1&&o.c.due-Date.now()<12*MIN) sQueue.push(o);
@@ -2975,7 +3003,7 @@ function ttsPlay(blob){
       res();
     };
     try{
-      ttsStop();                    /* az előzőt lezárja és feloldja */
+      ttsStop(); moStop();                    /* az előzőt lezárja és feloldja */
       const u=URL.createObjectURL(blob); a=new Audio(u);
       a._u=u; ttsAudio=a; ttsRes=fin;
       a.onended=fin; a.onerror=fin;
@@ -3071,13 +3099,14 @@ function drawTts(){
 }
 const GSAMPLE={en:'The road goes ever on and on, down from the door where it began.',
   da:'Vejen går altid videre, ned fra døren hvor den begyndte.',
+  ko:'오늘은 날씨가 좋습니다. 우리는 집으로 갑니다.',
   hu:'Az út mindig továbbmegy, le a kaputól, ahol elkezdődött.'};
 async function drawGVoiceRows(){
   const box=$('gVoiceRows'); if(!box) return;
   if(!TTS.gkey){ box.innerHTML='<p class="note" style="margin:0">Írd be a kulcsot, aztán „hangok betöltése”.</p>'; return }
   if(!TTS.list){ box.innerHTML='<p class="note" style="margin:0">'+(TTS.err||'nyomd meg a „hangok betöltése” gombot')+'</p>'; return }
   box.innerHTML='';
-  for(const [lg,label] of [['en','Angol'],['da','Dán'],['hu','Magyar']]){
+  for(const [lg,label] of [['en','Angol'],['da','Dán'],['ko','Koreai'],['hu','Magyar']]){
     const list=await gVoicesFor(lg);
     const row=document.createElement('div'); row.className='srow';
     const lab=document.createElement('label'); lab.textContent=label+' hang'; row.appendChild(lab);
@@ -3273,29 +3302,6 @@ $('huBtn').onclick=()=>{
   drawNar(); drawPlayer(); drawTtsSize(); applyJust();
   toast(bookHu?'magyar mű: a magyar hang olvassa, fordítás nélkül':'idegen nyelvű mű');
 };
-function drawHap(){
-  const b=$('hapBtn'), n=$('hapNote');
-  if(b) b.classList.toggle('on',hapOn);
-  if(!n) return;
-  n.textContent = !navigator.vibrate
-    ? 'ez a böngésző nem ismeri a rezgést'
-    : hapOn
-      ? 'finom visszajelzés koppintásra és válaszra — a „próba” megmutatja, érzed-e'
-      : 'ki';
-}
-$('hapBtn').onclick=()=>{
-  hapOn=!hapOn; store.set('ek_hap',hapOn?'1':'0'); drawHap();
-  if(hapOn) hap('ok');
-  toast(hapOn?'rezgés be':'rezgés ki');
-};
-$('hapTest').onclick=()=>{
-  if(!navigator.vibrate) return toast('ez a böngésző nem ismeri a rezgést',4000);
-  if(!hapOn) return toast('előbb kapcsold be a rezgést');
-  /* felismerhető, háromlépcsős minta: ha ezt nem érzed, a burok tiltja (pl. Firefox),
-     vagy a rendszerben van kikapcsolva a tapintható visszajelzés */
-  buzz([12,90,12,90,26]);
-  toast('rövid–rövid–hosszabb. Ha nem érzed: a telefon beállításaiban a tapintható visszajelzés, vagy a böngésző tiltja (Firefoxban Androidon nem működik).',8000);
-};
 $('lisBtn').onclick=()=>{
   lisMode=!lisMode; store.set('ek_lismode',lisMode?'1':'0'); drawLis();
   toast(lisMode?'hangoskönyv mód: ott folytatja, ahol abbahagytad':'hangoskönyv mód ki');
@@ -3366,7 +3372,7 @@ function speakLang(t,lg){
   if(!t) return;
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);
     u.lang=lg==='hu'?'hu-HU':lg==='da'?'da-DK':'en-US'; applyVoice(u,lg);
-    u.rate=lg==='hu'?.95:lg==='da'?.85:.9;speechSynthesis.speak(u)}catch(e){}
+    u.rate=lg==='hu'?.95:(lg==='da'||lg==='ko')?.85:.9;speechSynthesis.speak(u)}catch(e){}
 }
 /* automatikus felolvasás a gyakorlásban: elöl a kérdés, felfedéskor a válasz nyelvén */
 let autoTts=store.get('ek_autotts')==='1';
@@ -3409,6 +3415,120 @@ const huKey=()=>book?('ek_hu_'+book.id):'';
    ilyenkor a mód mindig 'src', és a magyar hang szólal meg. */
 const narSrc=()=>bookHu||rdNar!=='hu';
 const narHu=()=>!bookHu&&rdNar!=='src';
+
+/* ============ Media Overlays: eredeti narráció (audio ebook) ============
+   A könyvbe csomagolt hangfelvétel mondatonkénti lejátszása. Ez nem gépi hang:
+   a felvételt ember mondta, csak az időzítést kapjuk a SMIL fájlból. */
+const MO={au:{}, el:null, on:store.get('ek_mo')!=='0', plan:null, cnt:0};
+/* SMIL óraformátumok: "0:00:12.345", "12.345s", "1:30", "90ms" */
+function clockSec(v){
+  if(!v) return 0;
+  v=String(v).trim();
+  let m=v.match(/^(?:(\d+):)?(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if(m) return (+(m[1]||0))*3600+(+m[2])*60+parseFloat(m[3]);
+  m=v.match(/^([\d.]+)\s*(ms|s|min|h)?$/);
+  if(m){ const n=parseFloat(m[1]);
+    return m[2]==='ms'?n/1000:m[2]==='min'?n*60:m[2]==='h'?n*3600:n }
+  return 0;
+}
+async function moLoadAudio(zip,href){
+  if(MO.au[href]) return;
+  const e=zfile(zip,href); if(!e) return;
+  const ext=(href.split('.').pop()||'mp3').toLowerCase();
+  const mime=ext==='m4a'||ext==='mp4'?'audio/mp4':ext==='ogg'||ext==='opus'?'audio/ogg':
+             ext==='wav'?'audio/wav':'audio/mpeg';
+  MO.au[href]=URL.createObjectURL(new Blob([await e.async('arraybuffer')],{type:mime}));
+}
+function moFree(){
+  for(const k in MO.au){ try{URL.revokeObjectURL(MO.au[k])}catch(e){} }
+  MO.au={}; MO.plan=null; MO.cnt=0;
+}
+const moHas=()=>MO.on&&!!(MO.plan&&MO.cnt);
+
+/* A SMIL a szöveg elemeire hivatkozik, a képernyőn viszont mondatokra bontunk.
+   Ezért minden megjelenített mondathoz megkeressük a hozzá tartozó SMIL-párt.
+   Ha egy pár több mondatot fog át (bekezdés-szintű narráció), a hangszeletet
+   hosszarányosan osztjuk szét a mondatok között. */
+function buildMoPlan(){
+  MO.plan=null; MO.cnt=0;
+  const ch=chapters[curChap]; if(!ch||!ch.mo||!ch.mo.length) return;
+  const ids={}; ch.body.querySelectorAll('[id]').forEach(e=>ids[e.id]=e);
+  const key=s=>(s||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');
+  const pars=[];
+  for(const p of ch.mo){
+    const el=ids[p.id]; if(!el) continue;
+    const k=key(el.textContent); if(!k) continue;
+    pars.push({k,au:p.au,b:p.b,e:p.e});
+  }
+  if(!pars.length) return;
+  const spans=sentList(); if(!spans.length) return;
+  const plan=new Array(spans.length).fill(null);
+  const owner=new Array(spans.length).fill(-1);
+  let pi=0;
+  for(let i=0;i<spans.length;i++){
+    const sk=key(spans[i].textContent); if(!sk) continue;
+    let found=-1;
+    for(let j=pi;j<Math.min(pars.length,pi+5);j++){
+      if(pars[j].k.includes(sk)){ found=j; break }
+    }
+    if(found<0) continue;
+    pi=found; owner[i]=found;
+  }
+  /* egy páron belül hosszarányos időosztás */
+  let i=0;
+  while(i<spans.length){
+    if(owner[i]<0){ i++; continue }
+    const p=owner[i]; let j=i;
+    while(j+1<spans.length&&owner[j+1]===p) j++;
+    const lens=[]; let tot=0;
+    for(let k2=i;k2<=j;k2++){ const L=Math.max(1,key(spans[k2].textContent).length); lens.push(L); tot+=L }
+    const P=pars[p], span=Math.max(0,P.e-P.b);
+    let acc=0;
+    for(let k2=i;k2<=j;k2++){
+      const frac=lens[k2-i]/tot;
+      plan[k2]={au:P.au,b:P.b+span*acc,e:P.b+span*(acc+frac)};
+      acc+=frac; MO.cnt++;
+    }
+    i=j+1;
+  }
+  MO.plan=plan;
+}
+const moSlice=i=>(moHas()&&MO.plan[i])||null;
+function moStop(){
+  try{ if(MO.el){ MO.el.pause(); MO.el.onended=null; MO.el.ontimeupdate=null; MO.el.onerror=null } }catch(e){}
+}
+/* egy hangszelet lejátszása: odaugrik, és a végénél megáll */
+function moPlay(sl,rate){
+  return new Promise(res=>{
+    const url=MO.au[sl.au];
+    if(!url){ res(false); return }
+    let done=false, iv=0;
+    const fin=ok=>{ if(done)return; done=true; clearInterval(iv);
+      try{ MO.el.pause(); MO.el.ontimeupdate=null; MO.el.onended=null; MO.el.onerror=null }catch(e){}
+      res(ok!==false) };
+    try{
+      if(!MO.el){ MO.el=new Audio(); MO.el.preload='auto' }
+      const a=MO.el;
+      if(a.dataset.url!==url){ a.src=url; a.dataset.url=url }
+      a.playbackRate=Math.max(.5,Math.min(2,rate||1));
+      const start=()=>{
+        try{ a.currentTime=sl.b }catch(e){}
+        a.onended=()=>fin(true);
+        a.onerror=()=>fin(false);
+        const p=a.play(); if(p&&p.catch) p.catch(()=>fin(false));
+        /* Sűrű figyelés: a timeupdate csak ~250 ms-onként jelez, ami mondathatáron
+           hallhatóan túlfutna a következő mondatba. A második ág biztonsági határ,
+           hogy elnyelt jelzéseknél se akadjunk meg. */
+        const limit=((sl.e-sl.b)/a.playbackRate)*1000+6000, t0=Date.now();
+        iv=setInterval(()=>{
+          if(a.currentTime>=sl.e-0.015||Date.now()-t0>limit) fin(true);
+        },40);
+      };
+      if(a.readyState>=1) start();
+      else { a.onloadedmetadata=start; a.load() }
+    }catch(e){ fin(false) }
+  });
+}
 const srcTts=()=>bookHu?'hu-HU':LANG[src].tts;
 const srcLg=()=>bookHu?'hu':src;
 let huMissWarned=false;
@@ -3540,6 +3660,14 @@ function drawPlayer(){
   const vc=$('plVoice');
   if(vc){
     vc.hidden=!TTS.gkey;
+  const nb=$('plNarr');
+  if(nb){
+    const total=(chapters[curChap]&&chapters[curChap].mo)?chapters[curChap].mo.length:0;
+    nb.hidden=!total;
+    if(total) chip('plNarr','Eredeti narráció',MO.on?'be':'ki',MO.on,
+      MO.on?('a felvétel szól — '+MO.cnt+' mondathoz van hang')
+           :'most gépi hang szól a felvétel helyett');
+  }
     chip('plVoice','Hang',cloudOn()?'felhő':'rendszer',cloudOn(),
       cloudOn()?'koppints a gyors rendszerhangra váltáshoz':'koppints a felhős hangra');
   }
@@ -3585,7 +3713,7 @@ function startReading(){
       toast('folytatás a '+(p.s+1)+'. mondattól',2600);
     }
   }
-  rdOn=true; rdEpoch++; rdRun++; hap('start');
+  rdOn=true; rdEpoch++; rdRun++;
   $('player').hidden=false; drawPlayer();
   setChrome(false); rdWake(true); keepAudio(true); mediaSess('playing');
   loopRead();                            /* azonnal indul: semmire nem kell várni */
@@ -3593,10 +3721,10 @@ function startReading(){
   ttsRunAhead();                          /* felhős úton csendben előregyártunk */
 }
 function stopReading(){
-  if(rdOn) hap('start');
+  moStop();
   lisSave();                             /* a hallgatási pont azonnal rögzül */
   rdOn=false; rdEpoch++; rdRun++;
-  try{speechSynthesis.cancel()}catch(e){} ttsStop();
+  try{speechSynthesis.cancel()}catch(e){} ttsStop(); moStop();
   sentList().forEach(s=>s.classList.remove('rdnow'));
   $('player').hidden=true; rdWake(false); keepAudio(false); mediaSess('none');
   rdSleepEnd=0; rdSleepMin=0; clearTimeout(rdSleepT); rdSleepT=0;
@@ -3626,7 +3754,9 @@ async function loopRead(){
       drawPlayer();                          /* az időzítő hátralévő ideje frissül */
       rdPrefetch(all,rdPtr);                 /* a következő mondatok magyarja a háttérben készül */
       if(narSrc()){
-        await speakAsync(sent, srcTts(), rdSpeed);
+        /* eredeti narráció, ha a könyvben van hozzá felvétel; különben gépi hang */
+        const sl=(!bookHu)&&moSlice(rdPtr);
+        if(!sl||!(await moPlay(sl,rdSpeed))) await speakAsync(sent, srcTts(), rdSpeed);
         if(!rdOn||my!==rdRun) break;
         if(e!==rdEpoch) continue;            /* ⏭: a magyar rész kimarad */
       }
@@ -3659,11 +3789,11 @@ async function loopRead(){
 }
 $('readBtn').onclick=()=>startReading();
 $('plPause').onclick=()=>{
-  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} ttsStop(); keepAudio(false); mediaSess('paused') }
+  if(rdOn){ rdOn=false; try{speechSynthesis.cancel()}catch(e){} ttsStop(); moStop(); keepAudio(false); mediaSess('paused') }
   else { rdOn=true; rdEpoch++; rdRun++; keepAudio(true); mediaSess('playing'); loopRead(); rdWake(true) }
   drawPlayer();
 };
-$('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} ttsStop(); };
+$('plSkip').onclick=()=>{ rdPtr++; rdEpoch++; try{speechSynthesis.cancel()}catch(e){} ttsStop(); moStop(); };
 $('plSpeed').onclick=()=>{
   rdSpeed=RD_SPEEDS[(RD_SPEEDS.indexOf(rdSpeed)+1)%RD_SPEEDS.length];
   store.set('ek_rdspeed',String(rdSpeed)); drawPlayer();
@@ -3687,6 +3817,12 @@ $('plMore').onclick=()=>{
   store.set('ek_plwide',open?'1':'0'); drawPlayer();
 };
 if(store.get('ek_plwide')==='1'){ $('player').classList.add('wide'); $('plMore').classList.add('sel') }
+$('plNarr').onclick=()=>{
+  MO.on=!MO.on; store.set('ek_mo',MO.on?'1':'0');
+  if(MO.on){ try{ buildMoPlan() }catch(e){} } else moStop();
+  drawPlayer();
+  toast(MO.on?'eredeti narráció bekapcsolva':'visszaálltam a gépi hangra');
+};
 $('plGap').onclick=()=>{
   rdGap=RD_GAPS[(RD_GAPS.indexOf(rdGap)+1)%RD_GAPS.length];
   store.set('ek_rdgap',String(rdGap)); drawPlayer();
@@ -4350,6 +4486,7 @@ function qMenu(){
 /* Mindig látszik: ha épp olvasol, a nyitott könyvből gyűjt, ha nem, előbb
    választhatsz a könyvtáradból — ott keresi az ember, ezért ott is legyen. */
 function addBookBtn(box){
+  if(src!=='en') return;      /* a szűrés és a besorolás angol nyelvtanra épül */
   const b=document.createElement('button'); b.className='btn';
   const has=chapters.length>0;
   b.innerHTML='<span>📖 mondatok a könyvből</span><small>'+
@@ -4733,10 +4870,10 @@ function tryPair(first,second,group){
     const o=first.o, hard=mWrong.has(String(o.i));
     mSeen[o.i]=(mSeen[o.i]||0)+1;
     if(deduced){
-      hap('tap');
+      buzz(8);
       requeue(o,2);                              /* valódi próbát kap egy másik körben */
     } else {
-      hap('ok'); mScore++; hit();
+      buzz(12); mScore++; hit();
       mNeed[o.i]=Math.max(0,mNeedOf(o.i)-1);
       if(mNeed[o.i]>0) requeue(o,hard?2:5);      /* a nehéz sűrűbben, a többi ritkábban */
       const st=cardSt(o.c);
@@ -4752,7 +4889,7 @@ function tryPair(first,second,group){
       mRound++; setTimeout(matchRound,520);
     }
   } else {
-    b.classList.add('bad'); hap('bad');
+    b.classList.add('bad'); buzz([28,40,28]);
     /* MINDKÉT szó nehéz lesz: amelyikbe belehibáztál, és amelyikre tévesen mutattál —
        ez utóbbit ugyanis csak kizárásos alapon tudnád legközelebb */
     [first.o,second.o].forEach(o=>{
@@ -4959,7 +5096,7 @@ function closeBook(){
   $('reader').style.display='none'; $('reader').innerHTML='';
   $('start').style.display='';
   $('chapSel').style.display='none'; $('progTxt').textContent='';
-  chapters=[]; book=null; bookId=''; totalSent=0; pq=[];
+  chapters=[]; book=null; bookId=''; totalSent=0; moFree(); pq=[];
   drawLib();
   $('main').scrollTop=0;
 }
@@ -5152,14 +5289,22 @@ document.addEventListener('pointerdown',e=>{
      vc.classList.remove('open');
 },true);
 applyRead();
-function drawLang(){$('langBtn').textContent=(src==='da'?'DA':'EN')+'\u2192HU';
-  $('langBtn').classList.toggle('on',src==='da')}
+function drawLang(){
+  $('langBtn').textContent=src.toUpperCase()+'\u2192HU';
+  $('langBtn').classList.toggle('on',src!=='en');
+  document.body.classList.toggle('cjk',!!(LANG[src]&&LANG[src].cjk));
+}
 drawLang();
-$('langBtn').onclick=()=>{src=src==='da'?'en':'da';store.set('ek_src',src);drawLang();
+$('langBtn').onclick=()=>{
+  src=LANG_ORDER[(LANG_ORDER.indexOf(src)+1)%LANG_ORDER.length];
+  store.set('ek_src',src);drawLang();
   toast(LANG[src].name+' \u2192 magyar');
   if(chapters.length){const y=$('main').scrollTop;renderChapter(curChap);$('main').scrollTop=y}};
 function sniffLang(text){
-  const t=' '+text.toLowerCase().slice(0,4000)+' ';
+  const sample=text.slice(0,4000);
+  /* a hangul félreérthetetlen jel: nincs szükség szólistás találgatásra */
+  if(((sample.match(/[\uAC00-\uD7A3]/g)||[]).length)>sample.length*0.15) return 'ko';
+  const t=' '+sample.toLowerCase()+' ';
   let da=(t.match(/[æøå]/g)||[]).length*3;
   ['ikke','og','til','som','det','jeg','han','hun','der','med','var','skal','hvad'].forEach(w=>{
     da+=(t.match(new RegExp('\\s'+w+'\\s','g'))||[]).length});
@@ -5334,7 +5479,6 @@ document.addEventListener('keydown',e=>{
    és a szkript ott elhalna — az egész felület működésképtelenül. */
 initStartLayout();
 foldSettings();
-drawHap();
 applyJust();
 drawNar();
 drawLis();
